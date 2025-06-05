@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Head and Neck DMG Dashboard</title>
+  <title>Head and Neck DMG</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
@@ -308,12 +308,15 @@ document.getElementById("pwdInput").addEventListener("keyup", function(e){
   if (e.key === "Enter") checkLogin();
 });
 function setRolePermissions() {
+  // Hide download button for guest
   document.getElementById('downloadExcelBtn').style.display = (userRole === "admin") ? "" : "none";
 }
-const SHEETDB_URL = "https://script.google.com/macros/s/AKfycbzpOuROpsxYOhqCU3hdBgNwYokX3isxLTFnE3AyNFSI/dev";
+
+const SHEETDB_URL = "https://sheetdb.io/api/v1/6wvack0690fe0";
 let editMode = false;
 let editRowId = null;
 let tableData = [];
+
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 function dateDiff(start, end) {
   if (!start || !end) return NaN;
@@ -321,13 +324,16 @@ function dateDiff(start, end) {
   if (isNaN(s.getTime()) || isNaN(e.getTime())) return NaN;
   return Math.round((e - s) / (1000 * 3600 * 24));
 }
+
 function calcComplianceNCType(row) {
   const today = todayStr();
   let modalityNC = false, delayNC = false;
+
   if (
     row.planned_treatment && row.actual_treatment &&
     row.planned_treatment !== row.actual_treatment
   ) modalityNC = true;
+
   if (
     (row.planned_treatment === "Def RT" || row.planned_treatment === "Def RT+CT") &&
     row.planned_treatment_start_date
@@ -341,7 +347,9 @@ function calcComplianceNCType(row) {
   }
   if (row.date_of_surgery && !row.date_of_starting_adjuvant_rt && dateDiff(row.date_of_surgery, today) > 42) delayNC = true;
   if (row.date_of_surgery && row.date_of_starting_adjuvant_rt && dateDiff(row.date_of_surgery, row.date_of_starting_adjuvant_rt) > 42) delayNC = true;
+
   if (row.actual_treatment && !row.planned_treatment) modalityNC = true;
+
   let compliance = "";
   let ncType = "";
   if (modalityNC && delayNC) {
@@ -356,18 +364,22 @@ function calcComplianceNCType(row) {
   } else if (row.planned_treatment && row.actual_treatment) {
     compliance = "C";
   }
+
   let detail = "";
   if (modalityNC && delayNC) detail = "Both modality and timing non-compliance";
   else if (modalityNC) detail = "Planned and actual treatment mismatch";
   else if (delayNC) detail = "Treatment delayed beyond allowed window";
+
   return {compliance, ncType, detail};
 }
+
 function ncTypeClass(type) {
   if(type==="Modality NC") return "nc-type-cell nc-type-modality";
   if(type==="Delay NC") return "nc-type-cell nc-type-delay";
   if(type==="Modality + Delay NC") return "nc-type-cell nc-type-both";
   return "nc-type-cell";
 }
+
 function fetchData() {
   fetch(SHEETDB_URL)
     .then(res => res.json())
@@ -379,9 +391,11 @@ function fetchData() {
       updateBar();
     });
 }
+
 let currentPage = 1;
 const rowsPerPage = 10;
 let lastSelectedRow = null;
+
 function updateTable() {
   const tbody = document.getElementById('tableBody');
   tbody.innerHTML = "";
@@ -400,11 +414,13 @@ function updateTable() {
     if (searchPID && (!row.patient_id || !row.patient_id.toLowerCase().includes(searchPID))) return false;
     return true;
   });
+
   const totalPages = Math.max(1, Math.ceil(displayData.length / rowsPerPage));
   if (currentPage > totalPages) currentPage = totalPages;
   const start = (currentPage - 1) * rowsPerPage;
   const end = start + rowsPerPage;
   const pagedData = displayData.slice(start, end);
+
   pagedData.forEach((row, idx) => {
     const rowId = `row_${start + idx}`;
     const whatsappLink = row.phone_number ? `<a class="whatsapp-link" href="https://wa.me/91${row.phone_number}" target="_blank" title="Message on WhatsApp"><img src="https://img.icons8.com/color/48/000000/whatsapp--v1.png"/></a>` : '';
@@ -441,6 +457,7 @@ function updateTable() {
       </tr>
     `;
   });
+
   pagedData.forEach((row, idx) => {
     const rowElem = document.getElementById(`row_${start + idx}`);
     rowElem.onclick = function() {
@@ -453,6 +470,7 @@ function updateTable() {
       window.scrollTo({top:0, behavior:"smooth"});
     };
   });
+
   let pagDiv = document.getElementById("pagination");
   pagDiv.innerHTML = `
     <button onclick="gotoPage(1)" ${currentPage === 1 ? "disabled" : ""}>&lt;&lt;</button>
@@ -462,16 +480,19 @@ function updateTable() {
     <button onclick="gotoPage(${totalPages})" ${currentPage === totalPages ? "disabled" : ""}>&gt;&gt;</button>
   `;
 }
+
 function gotoPage(page) {
   currentPage = page;
   updateTable();
 }
+
 function median(arr) {
   arr = arr.filter(x => !isNaN(x)).sort((a, b) => a - b);
   if (!arr.length) return 0;
   let mid = Math.floor(arr.length / 2);
   return arr.length % 2 ? arr[mid] : ((arr[mid - 1] + arr[mid]) / 2).toFixed(1);
 }
+
 function updateStats() {
   let tatArr = [], surgRTArr = [], rtWaitArr = [];
   tableData.forEach(row => {
@@ -494,6 +515,7 @@ function updateStats() {
      Median Surgery-to-RT Interval: ${median(surgRTArr)} days &nbsp; | &nbsp; 
      Median RT Waiting: ${median(rtWaitArr)} days`;
 }
+
 let pie;
 function updatePie() {
   const ctx = document.getElementById('pieChart').getContext('2d');
@@ -526,6 +548,7 @@ function updatePie() {
     plugins: [ChartDataLabels]
   });
 }
+
 let bar;
 function updateBar() {
   const ctx = document.getElementById('barChart').getContext('2d');
@@ -537,6 +560,7 @@ function updateBar() {
   const ncomp_mod = consultants.map(c => tableData.filter(r => calcComplianceNCType(r).ncType === "Modality NC" && r.consultant === c).length);
   const ncomp_delay = consultants.map(c => tableData.filter(r => calcComplianceNCType(r).ncType === "Delay NC" && r.consultant === c).length);
   const ncomp_both = consultants.map(c => tableData.filter(r => calcComplianceNCType(r).ncType === "Modality + Delay NC" && r.consultant === c).length);
+
   if (bar) bar.destroy();
   bar = new Chart(ctx, {
     type: "bar",
@@ -560,6 +584,7 @@ function updateBar() {
     }
   });
 }
+
 const allDateFieldsArr = [
   'date_of_registration','planned_treatment_start_date','actual_treatment_start_date',
   'date_of_surgery','date_of_starting_adjuvant_rt','date_of_completion_of_treatment'
@@ -581,15 +606,18 @@ function checkFutureDates() {
   });
   document.getElementById('submitBtn').disabled = hasFuture;
 }
+
 document.getElementById('entryForm').addEventListener('input', autoCalcForm);
 function autoCalcForm() {
   const t = document.getElementById('t_stage').value;
   const n = document.getElementById('n_stage').value;
   const m = document.getElementById('m_stage').value;
   document.getElementById('tnm').value = (t && n && m) ? `${t}${n}${m}` : "";
+
   const d1 = document.getElementById('date_of_registration').value;
   const d2 = document.getElementById('planned_treatment_start_date').value;
   document.getElementById('tat').value = (d1 && d2 && !isNaN(dateDiff(d1, d2))) ? dateDiff(d1, d2) : "";
+
   const formRow = {
     planned_treatment: document.getElementById('planned_treatment').value,
     actual_treatment: document.getElementById('actual_treatment').value,
@@ -611,11 +639,13 @@ function autoCalcForm() {
   }
   showComplianceDetail(detail ? `${detail} (${ncType})` : "");
 }
+
 function showComplianceDetail(detail) {
   let el = document.getElementById('complianceDetail');
   if (detail) { el.innerText = detail; el.style.display = "block"; }
   else el.style.display = "none";
 }
+
 document.getElementById('entryForm').onsubmit = function(e) {
   e.preventDefault();
   let form = e.target;
@@ -665,25 +695,22 @@ document.getElementById('entryForm').onsubmit = function(e) {
   };
   if (compliance === "NC" && detail) showFormAlert("Non-compliance: " + detail + ` (${ncType})`, true);
   else hideFormAlert();
+
   if (compliance === "NC" && !form.reason_for_deviation.value) {
     showFormAlert("Please select a reason for deviation.", true);
     document.getElementById('reason_for_deviation').focus();
     return false;
   }
+
   if (editMode && editRowId) {
-    fetch(SHEETDB_URL, {
-      method: "PUT",
+    fetch(SHEETDB_URL + '/patient_id/' + encodeURIComponent(editRowId), {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newRow)
-    })
-    .then(res => res.json())
-    .then(res => {
-      if (res.error) showFormAlert(res.error, true);
-      else {
-        editMode = false; editRowId = null; form.reset(); showComplianceDetail(""); fetchData();
-        document.getElementById("submitBtn").value = "Add";
-        autoCalcForm();
-      }
+      body: JSON.stringify({ data: newRow })
+    }).then(() => { 
+      editMode = false; editRowId = null; form.reset(); showComplianceDetail(""); fetchData();
+      document.getElementById("submitBtn").value = "Add";
+      autoCalcForm();
     });
   } else {
     if (tableData.some(row => row.patient_id === newRow.patient_id)) {
@@ -692,18 +719,12 @@ document.getElementById('entryForm').onsubmit = function(e) {
     fetch(SHEETDB_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newRow)
-    })
-    .then(res => res.json())
-    .then(res => {
-      if (res.error) showFormAlert(res.error, true);
-      else {
-        form.reset(); showComplianceDetail(""); fetchData(); document.getElementById("submitBtn").value = "Add"; autoCalcForm();
-      }
-    });
+      body: JSON.stringify({ data: newRow })
+    }).then(() => { form.reset(); showComplianceDetail(""); fetchData(); document.getElementById("submitBtn").value = "Add"; autoCalcForm(); });
   }
   return false;
 };
+
 function showFormAlert(msg, warn) {
   let el = document.getElementById('formAlert');
   el.innerText = msg;
@@ -713,6 +734,7 @@ function showFormAlert(msg, warn) {
 function hideFormAlert() {
   document.getElementById('formAlert').style.display = 'none';
 }
+
 function editEntry(pid) {
   let row = tableData.find(r => r.patient_id === pid);
   if (!row) return;
@@ -725,16 +747,14 @@ function editEntry(pid) {
 }
 function deleteEntry(pid) {
   if (!confirm("Delete this entry?")) return;
-  fetch(SHEETDB_URL + '?patient_id=' + encodeURIComponent(pid), { method: "DELETE" })
-    .then(res => res.json())
-    .then(res => {
-      if (res.error) alert(res.error);
-      fetchData();
-    });
+  fetch(SHEETDB_URL + '/patient_id/' + encodeURIComponent(pid), { method: "DELETE" })
+    .then(() => { fetchData(); });
 }
+
 document.getElementById('filterCompliance').onchange = updateTable;
 document.getElementById('filterConsultant').onchange = updateTable;
 document.getElementById('searchPID').oninput = updateTable;
+
 document.getElementById('addNewBtn').onclick = function() {
   document.getElementById('entryForm').reset();
   editMode = false;
@@ -745,6 +765,7 @@ document.getElementById('addNewBtn').onclick = function() {
   showComplianceDetail("");
   window.scrollTo({top:0, behavior:"smooth"});
 };
+
 function downloadExcel() {
   if(userRole !== "admin") return;
   let exportData = tableData.map(row => {
