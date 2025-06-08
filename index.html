@@ -487,10 +487,10 @@ function gotoPage(page) {
 }
 
 function median(arr) {
-  arr = arr.filter(x => !isNaN(x)).sort((a, b) => a - b);
+  arr = arr.filter(x => !isNaN(x)).map(Number).sort((a, b) => a - b);
   if (!arr.length) return 0;
   let mid = Math.floor(arr.length / 2);
-  return arr.length % 2 ? arr[mid] : ((arr[mid - 1] + arr[mid]) / 2).toFixed(1);
+  return arr.length % 2 ? arr[mid] : (arr[mid - 1] + arr[mid]) / 2;
 }
 
 function updateStats() {
@@ -510,10 +510,13 @@ function updateStats() {
       if (!isNaN(rtWait)) rtWaitArr.push(rtWait);
     }
   });
+  const tatMed = median(tatArr).toFixed(1);
+  const surgRtMed = median(surgRTArr).toFixed(1);
+  const rtWaitMed = median(rtWaitArr).toFixed(1);
   document.getElementById('statsDiv').innerHTML =
-    `Median TAT: ${median(tatArr)} days &nbsp; | &nbsp; 
-     Median Surgery-to-RT Interval: ${median(surgRTArr)} days &nbsp; | &nbsp; 
-     Median RT Waiting: ${median(rtWaitArr)} days`;
+    `Median TAT: ${tatMed} days &nbsp; | &nbsp;
+     Median Surgery-to-RT Interval: ${surgRtMed} days &nbsp; | &nbsp;
+     Median RT Waiting: ${rtWaitMed} days`;
 }
 
 let pie;
