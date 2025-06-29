@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Resident Academic Activity Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.2/css/all.min.css" rel="stylesheet">
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f7fafd; margin: 0; padding: 0; }
+    .container { max-width: 1100px; margin: 40px auto; padding: 20px; background: #fff; border-radius: 16px; box-shadow: 0 4px 20px #2a2a2a12; }
+    h1, h2 { color: #204080; margin-bottom: 12px; }
+    .flex { display: flex; gap: 30px; flex-wrap: wrap; }
+    .card { background: #e8eefa; padding: 18px 22px; border-radius: 12px; box-shadow: 0 2px 12px #0001; margin-bottom: 20px; }
+    .card h2 { font-size: 1.15em; margin: 0 0 8px 0; }
+    .btn { background: #204080; color: #fff; border: none; padding: 7px 16px; border-radius: 6px; cursor: pointer; font-size: 1em; margin: 2px 0; }
+    .btn:hover { background: #2a50a0; }
+    .manual-btn { background: #6c40a0; }
+    .manual-btn:hover { background: #8a64d1; }
+    .table-scroll { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; margin: 0 0 12px 0; }
+    th, td { padding: 8px 7px; border: 1px solid #e3e8f2; font-size: 1em; }
+    th { background: #f0f3fa; color: #204080; }
+    tr.seminar-row { background: #f5f0ff !important; }
+    tr.journal-row { background: #e8f8ff !important; }
+    tr.audit-row { background: #fff8e3 !important; }
+    .fc-event.seminar { background-color: #8e5fff !important; border: none !important; }
+    .fc-event.journal { background-color: #22b7d9 !important; border: none !important; }
+    .fc-event.audit { background-color: #ffe477 !important; color: #856800 !important; border: none !important; }
+    select, input[type="text"], input[type="date"] { padding: 4px 6px; border-radius: 4px; border: 1px solid #d6dbe8; margin-right: 8px; }
+    .fc-toolbar-title { font-size: 1.15em; }
+    .hidden { display: none !important; }
+    @media (max-width: 900px) { .flex { flex-direction: column; gap: 0; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Resident Academic Activity Dashboard</h1>
+    <div class="card flex" style="align-items:center; justify-content:space-between;">
+      <div>
+        <label>Filter by Resident: 
+          <select id="filterResident"><option value="">All</option></select>
+        </label>
+        <label>Activity:
+          <select id="filterActivity"><option value="">All</option><option>Seminar</option><option>Journal Club</option><option>Audit</option></select>
+        </label>
+        <label>Status:
+          <select id="filterStatus"><option value="">All</option><option>Completed</option><option>Pending</option><option>Cancelled</option></select>
+        </label>
+        <button class="btn" onclick="resetFilters()">Reset</button>
+      </div>
+      <div>
+        <button class="btn" onclick="generateActivities()">Generate Activities (4 months)</button>
+        <button class="btn" onclick="autoAllocate()">Auto Allocate</button>
+        <button class="manual-btn btn" onclick="openManualAllocate()">Manual Allocate</button>
+      </div>
+    </div>
+    <div class="card" id="upcomingCard">
+      <h2>Upcoming Activities (Next 3)</h2>
+      <ul id="upcomingList"></ul>
+    </div>
+    <div class="card">
+      <h2>Monthly Calendar</h2>
+      <div id="calendar"></div>
+    </div>
+    <div class="card table-scroll">
+      <h2>All Activities</h2>
+      <table id="activityTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Activity</th>
+            <th>Topic</th>
+            <th>Resident</th>
+            <th>Status</th>
+            <th>FileLink</th>
+            <th>Feedback</th>
+            <th>Comments</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- Upload/Edit Modal -->
+    <div id="modal" class="hidden" style="position:fixed; left:0;top:0; width:100vw;height:100vh; background:rgba(50,60,80,0.15); display:flex; align-items:center; justify-content:center; z-index:100;">
+      <div style="background:#fff; padding:28px 32px; border-radius:10px; min-width:340px; box-shadow:0 2px 12px #0004; position:relative;">
+        <h2 id="modalTitle">Edit/Upload</h2>
+        <form id="editForm">
+          <input type="hidden" id="editRowId">
+          <div><label>Date: <input type="date" id="editDate" required></label></div>
+          <div><label>Activity:
+            <select id="editActivity" required>
+              <option>Seminar</option>
+              <option>Journal Club</option>
+              <option>Audit</option>
+            </select>
+          </label></div>
+          <div><label>Topic: <input type="text" id="editTopic" required></label></div>
+          <div><label>Resident:
+            <select id="editResident" required></select>
+          </label></div>
+          <div><label>Status:
+            <select id="editStatus" required>
+              <option>Pending</option>
+              <option>Completed</option>
+              <option>Cancelled</option>
+            </select>
+          </label></div>
+          <div><label>File Link: <input type="text" id="editFileLink" placeholder="Paste Google Drive/Dropbox/OneDrive URL"></label></div>
+          <div>
+            <input type="file" id="driveUploadInput" style="display:none">
+            <button type="button" class="btn" onclick="uploadToGoogleDrive()">Upload to Google Drive</button>
+            <span id="uploadStatus"></span>
+          </div>
+          <div><label>Feedback: <input type="text" id="editFeedback"></label></div>
+          <div><label>Comments: <input type="text" id="editComments"></label></div>
+          <br>
+          <button class="btn" type="submit">Save</button>
+          <button class="btn" type="button" onclick="closeModal()">Cancel</button>
+        </form>
+        <span style="position:absolute;right:20px;top:14px;cursor:pointer;font-size:1.2em;" onclick="closeModal()">&times;</span>
+      </div>
+    </div>
+
+    <!-- Manual Allocate Modal (with editable Topic) -->
+    <div id="manualModal" class="hidden" style="position:fixed; left:0;top:0; width:100vw;height:100vh; background:rgba(50,60,80,0.15); display:flex; align-items:center; justify-content:center; z-index:101;">
+      <div style="background:#fff; padding:26px 24px; border-radius:10px; min-width:340px; box-shadow:0 2px 12px #0004; position:relative;">
+        <h2>Manual Allocation</h2>
+        <form id="manualForm">
+          <div><label>Select Activity:
+            <select id="manualActivity"></select>
+          </label></div>
+          <div><label>Assign Resident:
+            <select id="manualResident"></select>
+          </label></div>
+          <div><label>Edit Topic:
+            <input type="text" id="manualTopic">
+          </label></div>
+          <br>
+          <button class="btn" type="submit">Assign</button>
+          <button class="btn" type="button" onclick="closeManualModal()">Cancel</button>
+        </form>
+        <span style="position:absolute;right:20px;top:14px;cursor:pointer;font-size:1.2em;" onclick="closeManualModal()">&times;</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.js"></script>
+  <script>
+const SHEETDB_API_GET = "https://sheetdb.io/api/v1/bujxq0iah3mw5?limit=1000";
+const SHEETDB_API = "https://sheetdb.io/api/v1/bujxq0iah3mw5";
+const RESIDENTS = [
+  "Dr Deeksha Sharma",
+  "Dr Rupjyoti Das",
+  "Dr Prakash Sutar",
+  "Dr Soumya Jee",
+  "Dr Kanishk",
+  "Dr Yamuna"
+];
+
+let allData = [];
+let filteredData = [];
+let activeRowId = null;
+let calendar = null;
+
+window.onload = function() {
+  fetchActivities();
+  document.getElementById("modal").addEventListener("click", function(e) {
+    if (e.target === this) closeModal();
+  });
+  document.getElementById("manualModal").addEventListener("click", function(e) {
+    if (e.target === this) closeManualModal();
+  });
+};
+
+function fetchActivities() {
+  fetch(SHEETDB_API_GET)
+    .then(res => res.json())
+    .then(data => {
+      allData = data;
+      filteredData = [...allData];
+      renderResidentDropdowns();
+      renderUpcoming();
+      renderActivityTable();
+      renderCalendar();
+      renderFilters();
+    });
+}
+
+function renderResidentDropdowns() {
+  let options = '<option value="">All</option>';
+  RESIDENTS.forEach(name => { options += `<option>${name}</option>`; });
+  document.getElementById("filterResident").innerHTML = options;
+  let rOptions = '';
+  RESIDENTS.forEach(name => { rOptions += `<option>${name}</option>`; });
+  document.getElementById("editResident").innerHTML = rOptions;
+  document.getElementById("manualResident").innerHTML = rOptions;
+}
+
+function renderFilters() {
+  document.getElementById("filterResident").onchange = filterTable;
+  document.getElementById("filterActivity").onchange = filterTable;
+  document.getElementById("filterStatus").onchange = filterTable;
+}
+function resetFilters() {
+  document.getElementById("filterResident").value = "";
+  document.getElementById("filterActivity").value = "";
+  document.getElementById("filterStatus").value = "";
+  filterTable();
+}
+function filterTable() {
+  const resident = document.getElementById("filterResident").value;
+  const activity = document.getElementById("filterActivity").value;
+  const status = document.getElementById("filterStatus").value;
+  filteredData = allData.filter(row => 
+    (!resident || row.Resident === resident) &&
+    (!activity || row.Activity === activity) &&
+    (!status || row.Status === status)
+  );
+  renderUpcoming();
+  renderActivityTable();
+  renderCalendar();
+}
+function renderUpcoming() {
+  const ul = document.getElementById("upcomingList");
+  ul.innerHTML = "";
+  const today = new Date();
+  let upNext = filteredData
+    .filter(row => row.Date && new Date(row.Date) >= today)
+    .sort((a, b) => new Date(a.Date) - new Date(b.Date))
+    .slice(0, 3);
+  upNext.forEach(row => {
+    let li = document.createElement("li");
+    li.innerHTML = `${row.Activity} <b>(${row.Topic})</b> – ${row.Resident} – <span style="color:#204080">${row.Date}</span> 
+    <button class="btn" onclick="openModal('${row.id}')">Edit/Upload</button>`;
+    ul.appendChild(li);
+  });
+  if (upNext.length === 0) {
+    ul.innerHTML = "<li>No upcoming activities.</li>";
+  }
+}
+function renderActivityTable() {
+  const tbody = document.querySelector("#activityTable tbody");
+  tbody.innerHTML = "";
+  filteredData.forEach((row, idx) => {
+    let tr = document.createElement("tr");
+    let rowClass = "";
+    if (row.Activity === "Seminar") rowClass = "seminar-row";
+    if (row.Activity === "Journal Club") rowClass = "journal-row";
+    if (row.Activity === "Audit") rowClass = "audit-row";
+    tr.className = rowClass;
+    tr.innerHTML = `
+      <td>${row.Date || ""}</td>
+      <td>${row.Activity || ""}</td>
+      <td>${row.Topic || ""}</td>
+      <td>${row.Resident || ""}</td>
+      <td>${row.Status || ""}</td>
+      <td>${row.FileLink ? `<a href="${row.FileLink}" target="_blank">View</a>` : ""}</td>
+      <td>${row.Feedback || ""}</td>
+      <td>${row.Comments || ""}</td>
+      <td>
+        <button class="btn" onclick="openModal('${row.id}')"><i class="fa fa-pen"></i> Edit</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+function renderCalendar() {
+  if (calendar) { calendar.destroy(); }
+  const calendarEl = document.getElementById('calendar');
+  if (!filteredData || filteredData.length === 0) {
+    calendarEl.innerHTML = '<div style="text-align:center; color:#aaa; margin-top:40px;">No activities to show on calendar.</div>';
+    return;
+  }
+  const events = filteredData.map(row => {
+    let className = "";
+    if (row.Activity === "Seminar") className = "seminar";
+    if (row.Activity === "Journal Club") className = "journal";
+    if (row.Activity === "Audit") className = "audit";
+    let startDate = row.Date;
+    return {
+      title: `${row.Activity}: ${row.Topic} (${row.Resident})`,
+      start: startDate,
+      color: undefined,
+      className: className,
+      extendedProps: { ...row }
+    };
+  });
+  calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    height: 500,
+    events: events,
+    eventClick: function(info) {
+      openModal(info.event.extendedProps.id || "");
+    }
+  });
+  calendar.render();
+}
+function openModal(rowId) {
+  let row = allData.find(r => String(r.id) === String(rowId));
+  if (!row) row = { Date: "", Activity: "Seminar", Topic: "", Resident: RESIDENTS[0], Status: "Pending", FileLink: "", Feedback: "", Comments: "", id: "" };
+  activeRowId = row.id;
+  document.getElementById("editRowId").value = activeRowId;
+  document.getElementById("editDate").value = row.Date || "";
+  document.getElementById("editActivity").value = row.Activity || "Seminar";
+  document.getElementById("editTopic").value = row.Topic || "";
+  document.getElementById("editResident").value = row.Resident || RESIDENTS[0];
+  document.getElementById("editStatus").value = row.Status || "Pending";
+  document.getElementById("editFileLink").value = row.FileLink || "";
+  document.getElementById("editFeedback").value = row.Feedback || "";
+  document.getElementById("editComments").value = row.Comments || "";
+  document.getElementById("modal").classList.remove("hidden");
+}
+function closeModal() {
+  document.getElementById("modal").classList.add("hidden");
+}
+document.getElementById("editForm").onsubmit = async function(e) {
+  e.preventDefault();
+  let idx = allData.findIndex(r => String(r.id) === String(activeRowId));
+  if (idx === -1) { alert("Row not found"); return; }
+  const updated = {
+    Date: document.getElementById("editDate").value,
+    Activity: document.getElementById("editActivity").value,
+    Topic: document.getElementById("editTopic").value,
+    Resident: document.getElementById("editResident").value,
+    Status: document.getElementById("editStatus").value,
+    FileLink: document.getElementById("editFileLink").value,
+    Feedback: document.getElementById("editFeedback").value,
+    Comments: document.getElementById("editComments").value
+  };
+  try {
+    await fetch(`${SHEETDB_API}/id/${activeRowId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data: updated })
+    });
+    Object.assign(allData[idx], updated);
+    filterTable();
+    closeModal();
+  } catch (err) {
+    alert("Failed to update activity! " + err);
+  }
+};
+
+function shuffle(array) {
+  let arr = array.slice();
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// Robust autoAllocate
+function autoAllocate() {
+  let seminarRows = allData.filter(row =>
+    row.Activity === "Seminar" &&
+    row.Date &&
+    new Date(row.Date).getDay() === 3 &&
+    new Date(row.Date).getDate() > 7
+  ).sort((a, b) => new Date(a.Date) - new Date(b.Date));
+
+  let jcRows = allData.filter(row =>
+    row.Activity === "Journal Club" &&
+    row.Date &&
+    new Date(row.Date).getDay() === 4
+  ).sort((a, b) => new Date(a.Date) - new Date(b.Date));
+
+  let n = RESIDENTS.length;
+  let seminarIndex = 0;
+  let jcIndex = 0;
+  let success = 0, fail = 0;
+
+  // 2-week gap logic for Seminar
+  for (let i = 0; i < seminarRows.length; i++) {
+    let resident = RESIDENTS[seminarIndex % n];
+    seminarIndex++;
+    fetch(`${SHEETDB_API}/id/${seminarRows[i].id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data: { Resident: resident } })
+    }).then(r => r.json())
+      .then(result => { if (result.updated === 1) success++; else fail++; });
+    if ((seminarIndex) % n === 0) seminarIndex += n; // skip n weeks after each full cycle
+  }
+
+  // 2-week gap logic for JC
+  for (let i = 0; i < jcRows.length; i++) {
+    let resident = RESIDENTS[jcIndex % n];
+    jcIndex++;
+    fetch(`${SHEETDB_API}/id/${jcRows[i].id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data: { Resident: resident } })
+    }).then(r => r.json())
+      .then(result => { if (result.updated === 1) success++; else fail++; });
+    if ((jcIndex) % n === 0) jcIndex += n;
+  }
+  setTimeout(fetchActivities, 2000);
+  alert(`Auto-allocation finished! Success: ${success}, Fail: ${fail}`);
+}
+
+function openManualAllocate() {
+  let options = "";
+  allData.forEach(row => {
+    options += `<option value="${row.id}">${row.Date} - ${row.Activity} (${row.Topic}) [${row.Resident}]</option>`;
+  });
+  document.getElementById("manualActivity").innerHTML = options;
+  let rid = allData[0] ? allData[0].id : "";
+  let row = allData.find(r => String(r.id) === String(rid));
+  document.getElementById("manualResident").value = row ? row.Resident : RESIDENTS[0];
+  document.getElementById("manualTopic").value = row ? row.Topic : "";
+  document.getElementById("manualModal").classList.remove("hidden");
+  document.getElementById("manualActivity").onchange = function() {
+    let r = allData.find(x => String(x.id) === String(this.value));
+    document.getElementById("manualResident").value = r ? r.Resident : RESIDENTS[0];
+    document.getElementById("manualTopic").value = r ? r.Topic : "";
+  };
+}
+function closeManualModal() {
+  document.getElementById("manualModal").classList.add("hidden");
+}
+
+document.getElementById("manualForm").onsubmit = async function(e) {
+  e.preventDefault();
+  let rowId = document.getElementById("manualActivity").value;
+  let resident = document.getElementById("manualResident").value;
+  let topic = document.getElementById("manualTopic").value;
+  let idx = allData.findIndex(r => String(r.id) === String(rowId));
+  if (idx === -1) { alert("Row not found"); return; }
+  try {
+    await fetch(`${SHEETDB_API}/id/${rowId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data: { Resident: resident, Topic: topic } })
+    });
+    allData[idx].Resident = resident;
+    allData[idx].Topic = topic;
+    filterTable();
+    closeManualModal();
+    alert("Resident/Topic assigned.");
+  } catch (err) {
+    alert("Failed to assign! " + err);
+  }
+};
+
+function generateActivities() {
+  alert("This button is just a placeholder! Use your Google Sheet to generate activity rows.");
+}
+  </script>
+  <!-- GOOGLE DRIVE UPLOAD SCRIPTS -->
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script>
+  const CLIENT_ID = "748450733930-smq6hlp1pk26qtujrt2sk07ckqcuaaar.apps.googleusercontent.com";
+  const API_KEY = "AIzaSyBMbkEX9K-JjMoK65wxOi237900z5lKSio";
+  const SCOPES = "https://www.googleapis.com/auth/drive.file";
+  function uploadToGoogleDrive() {
+    gapi.load('client:auth2', async () => {
+      await gapi.client.init({
+        apiKey: API_KEY,
+        clientId: CLIENT_ID,
+        scope: SCOPES
+      });
+      await gapi.auth2.getAuthInstance().signIn();
+      let fileInput = document.getElementById('driveUploadInput');
+      fileInput.value = "";
+      fileInput.click();
+      fileInput.onchange = async function() {
+        let file = fileInput.files[0];
+        if (!file) return;
+        document.getElementById('uploadStatus').innerText = "Uploading...";
+        let metadata = {
+          'name': file.name,
+          'mimeType': file.type
+        };
+        let form = new FormData();
+        form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+        form.append("file", file);
+        let accessToken = gapi.auth.getToken().access_token;
+        let res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink,webContentLink", {
+          method: "POST",
+          headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
+          body: form
+        });
+        let data = await res.json();
+        if (data.id) {
+          await fetch(`https://www.googleapis.com/drive/v3/files/${data.id}/permissions`, {
+            method: "POST",
+            headers: {
+              'Authorization': 'Bearer ' + accessToken,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ role: "reader", type: "anyone" })
+          });
+          const link = `https://drive.google.com/file/d/${data.id}/view`;
+          document.getElementById('editFileLink').value = link;
+          document.getElementById('uploadStatus').innerText = "Upload successful!";
+        } else {
+          document.getElementById('uploadStatus').innerText = "Upload failed!";
+        }
+      };
+    });
+  }
+  </script>
+</body>
+</html>
