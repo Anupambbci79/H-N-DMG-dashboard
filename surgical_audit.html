@@ -1,0 +1,1793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>H&N Surgical Audit System</title>
+  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;color:#2d3748;min-height:100vh}
+    .app-header{background:linear-gradient(135deg,#1a365d 0%,#2b6cb0 100%);color:white;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+    .app-header h1{font-size:1.4rem;font-weight:700;letter-spacing:.5px}
+    .app-header .subtitle{font-size:.75rem;opacity:.75;margin-top:2px}
+    .stats-bar{display:flex;gap:12px}
+    .stat-chip{background:rgba(255,255,255,.15);border-radius:20px;padding:4px 12px;font-size:.8rem;white-space:nowrap}
+    .nav-tabs{background:white;border-bottom:2px solid #e2e8f0;display:flex;padding:0 20px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+    .nav-tab{padding:13px 18px;cursor:pointer;font-size:.88rem;font-weight:500;color:#718096;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;display:flex;align-items:center;gap:7px;user-select:none}
+    .nav-tab:hover{color:#2b6cb0}
+    .nav-tab.active{color:#2b6cb0;border-bottom-color:#2b6cb0}
+    .main-content{max-width:1200px;margin:22px auto;padding:0 20px}
+    .tab-content{display:none}
+    .tab-content.active{display:block}
+    .settings-bar{background:white;border-radius:10px;padding:12px 18px;margin-bottom:18px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+    .settings-bar label{font-size:.82rem;color:#718096;white-space:nowrap}
+    .settings-bar input{border:1px solid #e2e8f0;border-radius:6px;padding:6px 10px;font-size:.88rem;flex:1;min-width:160px;background:#f7fafc}
+    .settings-bar input:focus{outline:none;border-color:#2b6cb0;background:white}
+    .card{background:white;border-radius:12px;padding:22px;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+    .card-title{font-size:.98rem;font-weight:600;color:#1a365d;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:8px}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .form-grid.three-col{grid-template-columns:1fr 1fr 1fr}
+    .form-grid.four-col{grid-template-columns:1fr 1fr 1fr 1fr}
+    .form-group{display:flex;flex-direction:column;gap:5px}
+    .form-group.full-width{grid-column:1/-1}
+    .form-group.span2{grid-column:span 2}
+    .form-group label{font-size:.75rem;font-weight:600;color:#4a5568;text-transform:uppercase;letter-spacing:.5px}
+    .form-group input,.form-group select,.form-group textarea{border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 11px;font-size:.9rem;font-family:inherit;transition:border-color .2s;background:#f7fafc;color:#2d3748}
+    select[multiple]{padding:4px;height:auto}
+    select[multiple] option{padding:5px 8px;border-radius:4px;margin:1px 0}
+    select[multiple] option:checked{background:#2b6cb0;color:#fff}
+    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:#2b6cb0;background:white}
+    .form-group textarea{resize:vertical;min-height:72px}
+    .req{color:#e53e3e}
+    .hidden{display:none!important}
+    /* Complications checkboxes */
+    .complic-section{margin-top:4px}
+    .complic-label{font-size:.72rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.5px;margin:10px 0 5px}
+    .complic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:5px}
+    .complic-item{display:flex;align-items:center;gap:6px;font-size:.85rem;color:#2d3748;padding:4px 6px;border-radius:6px;cursor:pointer;transition:background .15s}
+    .complic-item:hover{background:#f7fafc}
+    .complic-item input[type=checkbox]{accent-color:#2b6cb0;width:14px;height:14px;flex-shrink:0;cursor:pointer}
+    /* Image upload */
+    .image-upload-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+    .upload-zone{border:2px dashed #cbd5e0;border-radius:10px;padding:18px 12px;text-align:center;cursor:pointer;transition:all .2s;background:#f7fafc;position:relative}
+    .upload-zone:hover,.upload-zone.dragover{border-color:#2b6cb0;background:#ebf4ff}
+    .zone-icon{font-size:1.8rem;margin-bottom:6px}
+    .zone-label{font-size:.78rem;font-weight:600;color:#4a5568;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+    .zone-hint{font-size:.72rem;color:#a0aec0}
+    .image-previews{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+    .img-thumb{position:relative;display:inline-block}
+    .img-thumb img{width:76px;height:76px;object-fit:cover;border-radius:7px;border:2px solid #e2e8f0;display:block}
+    .img-thumb .del-img{position:absolute;top:-6px;right:-6px;background:#e53e3e;color:white;border:none;border-radius:50%;width:19px;height:19px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;line-height:1}
+    /* Buttons */
+    .btn{padding:9px 18px;border-radius:8px;font-size:.88rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:7px;font-family:inherit}
+    .btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+    .btn-primary{background:#2b6cb0;color:white}
+    .btn-primary:hover:not(:disabled){background:#2c5282;box-shadow:0 4px 12px rgba(43,108,176,.3)}
+    .btn-success{background:#276749;color:white}
+    .btn-success:hover:not(:disabled){background:#22543d;box-shadow:0 4px 12px rgba(39,103,73,.3)}
+    .btn-danger{background:#e53e3e;color:white}
+    .btn-danger:hover:not(:disabled){background:#c53030}
+    .btn-outline{background:transparent;border:2px solid #2b6cb0;color:#2b6cb0}
+    .btn-outline:hover:not(:disabled){background:#ebf4ff}
+    .btn-ghost{background:transparent;color:#718096;border:1.5px solid #e2e8f0}
+    .btn-ghost:hover:not(:disabled){background:#f7fafc}
+    .btn-sm{padding:6px 12px;font-size:.8rem}
+    .form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid #e2e8f0}
+    /* Cases table */
+    .search-bar{display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
+    .search-input{flex:1;min-width:200px;border:1.5px solid #e2e8f0;border-radius:8px;padding:9px 13px;font-size:.9rem;background:#f7fafc;font-family:inherit}
+    .search-input:focus{outline:none;border-color:#2b6cb0;background:white}
+    .data-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .cases-table{width:100%;border-collapse:collapse;font-size:.85rem}
+    .cases-table th{background:#f7fafc;color:#4a5568;font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;padding:9px 11px;text-align:left;border-bottom:2px solid #e2e8f0;white-space:nowrap}
+    .cases-table td{padding:10px 11px;border-bottom:1px solid #f0f4f8;vertical-align:middle}
+    .cases-table tr:hover td{background:#fafcff}
+    .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.72rem;font-weight:600;white-space:nowrap}
+    .badge-blue{background:#ebf4ff;color:#2b6cb0}
+    .badge-green{background:#f0fff4;color:#276749}
+    .badge-red{background:#fff5f5;color:#c53030}
+    .badge-gray{background:#f7fafc;color:#718096}
+    .badge-purple{background:#faf5ff;color:#6b46c1}
+    .act-cell{display:flex;gap:5px}
+    .empty-state{text-align:center;padding:52px 20px;color:#a0aec0}
+    .empty-icon{font-size:2.8rem;margin-bottom:10px}
+    /* PPT filter */
+    .ppt-filter-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:0}
+    .ppt-top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px;flex-wrap:wrap;gap:10px}
+    .sel-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .sel-count{background:#ebf4ff;color:#2b6cb0;padding:5px 13px;border-radius:20px;font-size:.82rem;font-weight:600}
+    .case-selector{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
+    .cs-item{border:2px solid #e2e8f0;border-radius:10px;padding:13px;cursor:pointer;transition:all .2s;display:flex;align-items:flex-start;gap:11px}
+    .cs-item:hover{border-color:#2b6cb0;background:#fafcff}
+    .cs-item.selected{border-color:#2b6cb0;background:#ebf4ff}
+    .cs-item input[type=checkbox]{margin-top:2px;accent-color:#2b6cb0;width:15px;height:15px;flex-shrink:0;cursor:pointer}
+    .cs-reg{font-weight:700;color:#1a365d;font-size:.88rem}
+    .cs-name{color:#4a5568;font-size:.82rem;margin-top:2px}
+    .cs-meta{color:#a0aec0;font-size:.73rem;margin-top:3px}
+    /* Progress */
+    .ppt-progress{display:none;margin-top:14px}
+    .prog-bar{background:#e2e8f0;border-radius:10px;height:7px;overflow:hidden}
+    .prog-fill{background:linear-gradient(90deg,#2b6cb0,#38a169);height:100%;border-radius:10px;transition:width .3s;width:0%}
+    .prog-text{font-size:.82rem;color:#718096;margin-top:6px}
+    /* Toast */
+    .toast{position:fixed;bottom:22px;right:22px;color:white;padding:11px 18px;border-radius:10px;font-size:.88rem;box-shadow:0 4px 20px rgba(0,0,0,.25);z-index:9999;display:flex;align-items:center;gap:9px;animation:toastIn .3s ease;max-width:340px}
+    .toast.success{background:#276749}
+    .toast.error{background:#c53030}
+    .toast.info{background:#2b6cb0}
+    @keyframes toastIn{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+    /* Modal */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;display:flex;align-items:center;justify-content:center;padding:20px}
+    .modal{background:white;border-radius:14px;padding:26px;max-width:720px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+    .modal-title{font-size:1.05rem;font-weight:700;color:#1a365d;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #e2e8f0}
+    .modal-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:18px;padding-top:12px;border-top:1px solid #e2e8f0}
+    .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+    .df{display:flex;flex-direction:column;gap:3px}
+    .df.full{grid-column:1/-1}
+    .df .dl{font-size:.72rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.5px}
+    .df .dv{font-size:.9rem;color:#2d3748}
+    .img-section-label{font-size:.73rem;font-weight:600;color:#4a5568;text-transform:uppercase;letter-spacing:.5px;margin:12px 0 6px}
+    .img-viewer{display:flex;flex-wrap:wrap;gap:8px}
+    .img-viewer img{width:110px;height:85px;object-fit:cover;border-radius:7px;cursor:pointer;border:2px solid #e2e8f0;transition:transform .2s}
+    .img-viewer img:hover{transform:scale(1.06);border-color:#2b6cb0}
+    .edit-banner{background:#fefcbf;border:1px solid #d69e2e;border-radius:8px;padding:9px 14px;margin-bottom:14px;font-size:.85rem;color:#744210;display:none;align-items:center;gap:8px}
+    .tnm-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    .nd-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .divider-label{font-size:.72rem;font-weight:600;color:#a0aec0;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 4px;padding-bottom:4px;border-bottom:1px solid #f0f4f8}
+    @media(max-width:768px){
+      .form-grid,.form-grid.three-col,.form-grid.four-col,.image-upload-grid,.tnm-row,.nd-row,.ppt-filter-row{grid-template-columns:1fr}
+      .main-content{padding:0 12px}
+      .stats-bar{display:none}
+    }
+    /* ===== LOGIN ===== */
+    .login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#1a365d 0%,#2b6cb0 100%);z-index:9000;display:flex;align-items:center;justify-content:center}
+    .login-box{background:white;border-radius:16px;padding:40px 36px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+    .login-logo{text-align:center;font-size:2.5rem;margin-bottom:8px}
+    .login-title{text-align:center;font-size:1.3rem;font-weight:700;color:#1a365d;margin-bottom:4px}
+    .login-sub{text-align:center;font-size:.82rem;color:#718096;margin-bottom:24px}
+    .login-tabs{display:flex;background:#f7fafc;border-radius:8px;padding:4px;gap:4px;margin-bottom:20px}
+    .login-tab{flex:1;padding:8px;text-align:center;border-radius:6px;cursor:pointer;font-size:.85rem;font-weight:600;color:#718096;transition:all .2s}
+    .login-tab.active{background:white;color:#2b6cb0;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+    .login-field{margin-bottom:14px}
+    .login-field label{display:block;font-size:.75rem;font-weight:600;color:#4a5568;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+    .login-field input{width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:10px 13px;font-size:.95rem;font-family:inherit;transition:border-color .2s}
+    .login-field input:focus{outline:none;border-color:#2b6cb0}
+    .login-btn{width:100%;padding:11px;border-radius:8px;font-size:.95rem;font-weight:700;cursor:pointer;border:none;background:#2b6cb0;color:white;margin-top:6px;font-family:inherit;transition:background .2s}
+    .login-btn:hover:not(:disabled){background:#2c5282}
+    .login-btn:disabled{opacity:.6;cursor:not-allowed}
+    .login-err{color:#c53030;font-size:.82rem;margin-top:8px;text-align:center;min-height:18px}
+    .user-badge{display:flex;align-items:center;gap:8px}
+    .user-chip{border-radius:20px;padding:4px 12px;font-size:.8rem}
+    .logout-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:white;border-radius:20px;padding:4px 12px;font-size:.8rem;cursor:pointer;font-family:inherit}
+    .logout-btn:hover{background:rgba(255,255,255,.25)}
+  </style>
+</head>
+<body>
+
+
+<!-- Login Screen -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="login-logo">🏥</div>
+    <div class="login-title">H&amp;N Surgical Audit</div>
+    <div class="login-sub">Department of Head &amp; Neck Oncology</div>
+    <div class="login-tabs">
+      <div class="login-tab active" id="lt-resident" onclick="switchLoginTab('resident')">👨‍⚕️ Resident</div>
+      <div class="login-tab" id="lt-faculty" onclick="switchLoginTab('faculty')">🎓 Faculty</div>
+    </div>
+    <div id="lp-resident">
+      <div class="login-field">
+        <label>Access Password</label>
+        <input type="password" id="li-rpass" placeholder="Enter resident password" onkeydown="if(event.key==='Enter')doResidentLogin()">
+      </div>
+      <button class="login-btn" onclick="doResidentLogin()">Enter System</button>
+    </div>
+    <div id="lp-faculty" style="display:none">
+      <div class="login-field">
+        <label>Email</label>
+        <input type="email" id="li-femail" placeholder="Faculty email" value="anupamdasgmc@gmail.com">
+      </div>
+      <div class="login-field">
+        <label>Password</label>
+        <input type="password" id="li-fpass" placeholder="Firebase password" onkeydown="if(event.key==='Enter')doFacultyLogin()">
+      </div>
+      <button class="login-btn" id="loginFacBtn" onclick="doFacultyLogin()">Faculty Sign In</button>
+    </div>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<div class="app-header">
+  <div>
+    <h1>🏥 H&N Surgical Audit System</h1>
+    <div class="subtitle">Head &amp; Neck Oncology — Case Documentation &amp; Presentation Generator</div>
+  </div>
+  <div class="stats-bar">
+    <div class="stat-chip" id="statTotal">0 cases</div>
+    <div class="stat-chip" id="statMonth">0 this month</div>
+    <div class="user-badge" id="userBadge" style="display:none">
+      <span class="user-chip" id="userChip"></span>
+      <button class="logout-btn" onclick="doLogout()">Sign Out</button>
+    </div>
+  </div>
+</div>
+
+<div class="nav-tabs">
+  <div class="nav-tab active" onclick="switchTab('add')" id="tab-add">➕ Add / Edit Case</div>
+  <div class="nav-tab" onclick="switchTab('cases')" id="tab-cases">📋 All Cases</div>
+  <div class="nav-tab" onclick="switchTab('ppt')" id="tab-ppt">📊 Generate PPT</div>
+</div>
+
+<div class="main-content">
+
+  <div class="settings-bar">
+    <label>🏛️ Department:</label>
+    <input type="text" id="deptName" placeholder="e.g., Head &amp; Neck Oncology" value="Department of Head &amp; Neck Oncology" oninput="saveSetting('dept',this.value)">
+  </div>
+
+  <!-- ===== TAB: ADD / EDIT ===== -->
+  <div class="tab-content active" id="content-add">
+
+    <div class="edit-banner" id="editBanner">
+      ✏️ <strong>Edit mode</strong> — editing an existing case. Save to update or <a href="#" onclick="cancelEdit();return false" style="color:#744210">cancel</a>.
+    </div>
+
+    <!-- Patient Information -->
+    <div class="card">
+      <div class="card-title">👤 Patient Information</div>
+      <div class="form-grid three-col">
+        <div class="form-group">
+          <label>Patient Name <span class="req">*</span></label>
+          <input type="text" id="f-name" placeholder="Full name">
+        </div>
+        <div class="form-group">
+          <label>Registration ID <span class="req">*</span></label>
+          <input type="text" id="f-regNo" placeholder="e.g., MRD-2024-00123">
+        </div>
+        <div class="form-group">
+          <label>Faculty <span class="req">*</span></label>
+          <select id="f-faculty">
+            <option value="">Select faculty</option>
+            <option>Dr. A. K. Das</option>
+            <option>Dr. T. Rahman</option>
+            <option>Dr. R. J. Das</option>
+            <option>Dr. K. Das</option>
+            <option>Dr. A. Das</option>
+            <option>Dr. Kaberi Kakati</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Age (years)</label>
+          <input type="number" id="f-age" placeholder="Age" min="0" max="120">
+        </div>
+        <div class="form-group">
+          <label>Sex</label>
+          <select id="f-sex">
+            <option value="">Select</option>
+            <option>Male</option><option>Female</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Registration Date</label>
+          <input type="date" id="f-regDate">
+        </div>
+        <div class="form-group">
+          <label>Date of Surgery <span class="req">*</span></label>
+          <input type="date" id="f-dateSurg">
+        </div>
+        <div class="form-group">
+          <label>Date of Discharge</label>
+          <input type="date" id="f-dateDisch">
+        </div>
+      </div>
+    </div>
+
+    <!-- Tumour Details -->
+    <div class="card">
+      <div class="card-title">🔬 Tumour Details</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Primary Site <span class="req">*</span></label>
+          <select id="f-site">
+            <option value="">Select primary site</option>
+            <option>Oral cavity</option>
+            <option>Thyroid</option>
+            <option>Larynx</option>
+            <option>Hypopharynx</option>
+            <option>Parotid</option>
+            <option>Neck node</option>
+            <option>Sinonasal</option>
+            <option>Orbit</option>
+            <option>Cutaneous Malignancy</option>
+          </select>
+        </div>
+        <div class="form-group" id="subsite-group" style="display:none">
+          <label>Subsite <span style="color:#718096;font-weight:400;text-transform:none;font-size:.72rem">(Ctrl/⌘ click for multiple)</span></label>
+          <select id="f-subsite" multiple size="5"></select>
+        </div>
+      </div>
+      <div class="divider-label">TNM Staging <span style="font-size:.72rem;color:#a0aec0;font-weight:400;text-transform:none">(options refine when primary site is selected)</span></div>
+      <div class="tnm-row">
+        <div class="form-group">
+          <label>T Stage</label>
+          <select id="f-tStage">
+            <option value="">— T —</option>
+            <option>TX</option><option>T0</option>
+            <option>T1</option><option>T1a</option><option>T1b</option>
+            <option>T2</option>
+            <option>T3</option><option>T3a</option><option>T3b</option>
+            <option>T4</option><option>T4a</option><option>T4b</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>N Stage</label>
+          <select id="f-nStage">
+            <option value="">— N —</option>
+            <option>N0</option>
+            <option>N1</option><option>N1a</option><option>N1b</option>
+            <option>N2</option><option>N2a</option><option>N2b</option><option>N2c</option>
+            <option>N3</option><option>N3a</option><option>N3b</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>M Stage</label>
+          <select id="f-mStage">
+            <option value="">— M —</option>
+            <option>M0</option>
+            <option>M1</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Surgical Details -->
+    <div class="card">
+      <div class="card-title">🔪 Surgical Details</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Surgery Performed <span class="req">*</span></label>
+          <select id="f-surgery" onchange="onSurgeryChange()">
+            <option value="">— Select primary site first —</option>
+            <option value="Others">Others (specify)</option>
+          </select>
+        </div>
+        <div class="form-group" id="surgery-other-group" style="display:none">
+          <label>Specify Surgery</label>
+          <input type="text" id="f-surgeryOther" placeholder="Describe surgery performed">
+        </div>
+      </div>
+      <div class="divider-label">Neck Dissection</div>
+      <div class="nd-row">
+        <div class="form-group">
+          <label>Side</label>
+          <select id="f-ndSide">
+            <option value="">None / Not done</option>
+            <option>Right</option>
+            <option>Left</option>
+            <option>Bilateral</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select id="f-ndType">
+            <option value="">— Select type —</option>
+            <option>Selective neck dissection</option>
+            <option>Modified radical neck dissection (MRND)</option>
+            <option>Radical neck dissection (RND)</option>
+            <option>Extended radical neck dissection</option>
+          </select>
+        </div>
+      </div>
+      <div class="divider-label">Reconstruction</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Reconstruction Used</label>
+          <select id="f-recon" onchange="onReconChange()">
+            <option value="">None / Primary closure</option>
+            <option>Split-thickness skin graft (STSG)</option>
+            <option>Local flap</option>
+            <option>PMMC (Pectoralis Major Myocutaneous)</option>
+            <option>Latissimus Dorsi (LD) flap</option>
+            <option>FRAFF (Free Radial Forearm Flap)</option>
+            <option>ALT (Anterolateral Thigh Flap)</option>
+            <option>FFOCF (Free Fibula Osteocutaneous Flap)</option>
+            <option value="Others">Others (specify)</option>
+          </select>
+        </div>
+        <div class="form-group" id="recon-other-group" style="display:none">
+          <label>Specify Reconstruction</label>
+          <input type="text" id="f-reconOther" placeholder="Describe reconstruction used">
+        </div>
+      </div>
+    </div>
+
+    <!-- Post-operative -->
+    <div class="card">
+      <div class="card-title">🩺 Post-operative</div>
+      <div class="divider-label" style="margin-top:0">Complications</div>
+      <div class="complic-section" id="complic-general">
+        <div class="complic-label">General</div>
+        <div class="complic-grid" id="complic-general-checks">
+          <label class="complic-item"><input type="checkbox" value="Surgical site infection (SSI)"> Surgical site infection (SSI)</label>
+          <label class="complic-item"><input type="checkbox" value="Seroma"> Seroma</label>
+          <label class="complic-item"><input type="checkbox" value="Hematoma"> Hematoma</label>
+          <label class="complic-item"><input type="checkbox" value="Wound dehiscence"> Wound dehiscence</label>
+          <label class="complic-item"><input type="checkbox" value="Partial flap necrosis"> Partial flap necrosis</label>
+          <label class="complic-item"><input type="checkbox" value="Total flap necrosis"> Total flap necrosis</label>
+          <label class="complic-item"><input type="checkbox" value="Bleeding / hemorrhage"> Bleeding / hemorrhage</label>
+          <label class="complic-item"><input type="checkbox" value="DVT / PE"> DVT / PE</label>
+        </div>
+      </div>
+      <div class="complic-section" id="complic-site-section" style="display:none">
+        <div class="complic-label" id="complic-site-label">Site-specific</div>
+        <div class="complic-grid" id="complic-site-checks"></div>
+      </div>
+      <div class="form-group" style="margin-top:10px;max-width:400px">
+        <label>Other complication</label>
+        <input type="text" id="f-complicOther" placeholder="Specify if not listed above">
+      </div>
+    </div>
+
+    <!-- Histopathology -->
+    <div class="card">
+      <div class="card-title">🔬 Histopathology (HPE)</div>
+      <div class="form-grid three-col">
+        <div class="form-group span2">
+          <label>Histological Type</label>
+          <select id="f-hpeType" onchange="onHpeTypeChange()">
+            <option value="">Select type</option>
+            <option>Squamous cell carcinoma (SCC)</option>
+            <option>Well-differentiated SCC</option>
+            <option>Moderately differentiated SCC</option>
+            <option>Poorly differentiated SCC</option>
+            <option>Adenocarcinoma</option>
+            <option>Mucoepidermoid carcinoma (Low grade)</option>
+            <option>Mucoepidermoid carcinoma (High grade)</option>
+            <option>Adenoid cystic carcinoma</option>
+            <option>Papillary thyroid carcinoma</option>
+            <option>Follicular thyroid carcinoma</option>
+            <option>Medullary thyroid carcinoma</option>
+            <option>Anaplastic thyroid carcinoma</option>
+            <option>Basal cell carcinoma</option>
+            <option>Melanoma</option>
+            <option value="Others">Others (specify)</option>
+          </select>
+        </div>
+        <div class="form-group" id="hpe-type-other-group" style="display:none">
+          <label>Specify Type</label>
+          <input type="text" id="f-hpeTypeOther" placeholder="Histological type">
+        </div>
+      </div>
+      <div class="form-grid four-col" style="margin-top:12px">
+        <div class="form-group">
+          <label>DOI (mm)</label>
+          <input type="number" id="f-hpeDOI" placeholder="e.g., 8" min="0" step="0.1">
+        </div>
+        <div class="form-group">
+          <label>LVI</label>
+          <select id="f-hpeLVI">
+            <option value="">—</option>
+            <option>Present</option>
+            <option>Absent</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>PNI</label>
+          <select id="f-hpePNI">
+            <option value="">—</option>
+            <option>Present</option>
+            <option>Absent</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Margin Status</label>
+          <select id="f-hpeMargin">
+            <option value="">—</option>
+            <option>Clear (&gt;5 mm)</option>
+            <option>Close (1–5 mm)</option>
+            <option>Involved (&lt;1 mm)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Nodes Positive</label>
+          <input type="number" id="f-hpeNodesPos" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label>Nodes Total</label>
+          <input type="number" id="f-hpeNodesTotal" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label>ENE</label>
+          <select id="f-hpeENE">
+            <option value="">—</option>
+            <option>Present</option>
+            <option>Absent</option>
+            <option>N/A</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Follow-up -->
+    <div class="card">
+      <div class="card-title">📋 Follow-up / Plan</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Plan</label>
+          <select id="f-fu" onchange="onFollowUpChange()">
+            <option value="">— Select —</option>
+            <option>Observation</option>
+            <option>Adjuvant RT</option>
+            <option>Adjuvant RT + CT</option>
+            <option value="Others">Others (specify)</option>
+          </select>
+        </div>
+        <div class="form-group" id="fu-other-group" style="display:none">
+          <label>Specify plan</label>
+          <input type="text" id="f-fuOther" placeholder="Describe follow-up plan">
+        </div>
+      </div>
+    </div>
+
+    <!-- Images -->
+    <div class="card">
+      <div class="card-title">📸 Images
+        <span style="font-size:.75rem;color:#718096;font-weight:400">(drag &amp; drop or click; max 4 per category)</span>
+      </div>
+      <div class="image-upload-grid">
+        <div>
+          <div class="upload-zone" id="zone-pre" onclick="document.getElementById('inp-pre').click()"
+               ondragover="dOver(event,'zone-pre')" ondragleave="dLeave('zone-pre')" ondrop="dDrop(event,'pre')">
+            <div class="zone-icon">🔬</div>
+            <div class="zone-label">Pre-operative</div>
+            <div class="zone-hint">Click or drag images</div>
+          </div>
+          <input type="file" id="inp-pre" accept="image/*" multiple style="display:none" onchange="imgUpload(event,'pre')">
+          <div class="image-previews" id="prev-pre"></div>
+        </div>
+        <div>
+          <div class="upload-zone" id="zone-intra" onclick="document.getElementById('inp-intra').click()"
+               ondragover="dOver(event,'zone-intra')" ondragleave="dLeave('zone-intra')" ondrop="dDrop(event,'intra')">
+            <div class="zone-icon">🏥</div>
+            <div class="zone-label">Intra-operative</div>
+            <div class="zone-hint">Click or drag images</div>
+          </div>
+          <input type="file" id="inp-intra" accept="image/*" multiple style="display:none" onchange="imgUpload(event,'intra')">
+          <div class="image-previews" id="prev-intra"></div>
+        </div>
+        <div>
+          <div class="upload-zone" id="zone-post" onclick="document.getElementById('inp-post').click()"
+               ondragover="dOver(event,'zone-post')" ondragleave="dLeave('zone-post')" ondrop="dDrop(event,'post')">
+            <div class="zone-icon">✅</div>
+            <div class="zone-label">Post-operative</div>
+            <div class="zone-hint">Click or drag images</div>
+          </div>
+          <input type="file" id="inp-post" accept="image/*" multiple style="display:none" onchange="imgUpload(event,'post')">
+          <div class="image-previews" id="prev-post"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="clearForm()">🗑️ Clear</button>
+      <button class="btn btn-primary" id="saveBtn" onclick="saveCase()">💾 Save Case</button>
+    </div>
+  </div>
+
+  <!-- ===== TAB: ALL CASES ===== -->
+  <div class="tab-content" id="content-cases">
+    <div class="card">
+      <div class="search-bar">
+        <input class="search-input" id="searchInput" placeholder="🔍 Search by name, ID, site, faculty, surgery..." oninput="renderTable()">
+        <div class="data-actions">
+          <button class="btn btn-outline btn-sm" onclick="exportJSON()">📤 Export JSON</button>
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('importInp').click()">📥 Import JSON</button>
+          <input type="file" id="importInp" accept=".json" style="display:none" onchange="importJSON(event)">
+        </div>
+      </div>
+      <div id="tableWrap"></div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: GENERATE PPT ===== -->
+  <div class="tab-content" id="content-ppt">
+    <div class="card">
+      <div class="card-title">🔍 Filter Cases</div>
+      <div class="ppt-filter-row">
+        <div class="form-group">
+          <label>Faculty</label>
+          <select id="ppt-faculty" onchange="renderPPT()">
+            <option value="">All Faculty</option>
+            <option>Dr. A. K. Das</option>
+            <option>Dr. T. Rahman</option>
+            <option>Dr. R. J. Das</option>
+            <option>Dr. K. Das</option>
+            <option>Dr. A. Das</option>
+            <option>Dr. Kaberi Kakati</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Surgery Date From</label>
+          <input type="date" id="ppt-dateFrom" oninput="renderPPT()">
+        </div>
+        <div class="form-group">
+          <label>Surgery Date To</label>
+          <input type="date" id="ppt-dateTo" oninput="renderPPT()">
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📊 Select Cases for Presentation</div>
+      <div class="ppt-top-bar">
+        <div class="sel-tools">
+          <span class="sel-count" id="selCount">0 selected</span>
+          <button class="btn btn-ghost btn-sm" onclick="selAll()">Select All</button>
+          <button class="btn btn-ghost btn-sm" onclick="selNone()">Clear</button>
+        </div>
+        <button class="btn btn-success" id="genBtn" onclick="generatePPT()">📊 Generate PowerPoint</button>
+      </div>
+      <div class="case-selector" id="caseSelector"></div>
+      <div class="ppt-progress" id="pptProg">
+        <div class="prog-bar"><div class="prog-fill" id="progFill"></div></div>
+        <div class="prog-text" id="progText">Preparing...</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- View Case Modal -->
+<div class="modal-overlay" id="viewModal" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title" id="vmTitle"></div>
+    <div id="vmBody"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()">Close</button>
+      <button class="btn btn-outline btn-sm" id="vmEditBtn">✏️ Edit</button>
+      <button class="btn btn-danger btn-sm" id="vmDelBtn">🗑️ Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Delete -->
+<div class="modal-overlay" id="delModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-title">⚠️ Delete this case?</div>
+    <p style="color:#718096;font-size:.88rem">This cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('delModal').style.display='none'">Cancel</button>
+      <button class="btn btn-danger btn-sm" id="confirmDel">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// FIREBASE CONFIG & INIT
+// ============================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyB4eTtNA-US_9HN98_N4teKXa60Ryu5a5Q",
+  authDomain: "hn-surgical-audit.firebaseapp.com",
+  projectId: "hn-surgical-audit",
+  storageBucket: "hn-surgical-audit.firebasestorage.app",
+  messagingSenderId: "590292745534",
+  appId: "1:590292745534:web:0620bf397973d581bc006f"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth();
+const RESIDENT_PASSWORD = "bbcihn123*";
+
+// ============================================================
+// SITE DATA
+// ============================================================
+const SITES = {
+  'Oral cavity': {
+    subsites: ['Tongue','Buccal mucosa','Floor of mouth','Alveolus (upper)','Alveolus (lower)','Hard palate','Lip','Retromolar trigone'],
+    t: ['T1','T2','T3','T4a','T4b'],
+    n: ['N0','N1','N2a','N2b','N2c','N3a','N3b'],
+    surgeries: ['Wide local excision','Partial glossectomy','Hemiglossectomy','Near-total glossectomy','Total glossectomy','Marginal mandibulectomy','Segmental mandibulectomy','Partial maxillectomy','Infrastructure maxillectomy','Total maxillectomy','Commando operation (composite resection)'],
+    complic: ['Oro-cutaneous fistula','Trismus','Dysphagia','Hardware / plate exposure','Bone / mandible necrosis','Palatal fistula']
+  },
+  'Thyroid': {
+    subsites: [],
+    t: ['T1a','T1b','T2','T3a','T3b','T4a','T4b'],
+    n: ['N0','N1a','N1b'],
+    surgeries: ['Hemithyroidectomy','Near-total thyroidectomy','Total thyroidectomy','Completion thyroidectomy','Total thyroidectomy + central compartment dissection','Thyroidectomy + lateral neck dissection'],
+    complic: ['RLN palsy (temporary)','RLN palsy (permanent)','Hypoparathyroidism (temporary)','Hypoparathyroidism (permanent)','Hypocalcemia','Hypothyroidism','Tracheomalacia','Thyroid storm']
+  },
+  'Larynx': {
+    subsites: ['Supraglottis','Glottis','Subglottis'],
+    t: ['T1','T1a','T1b','T2','T3','T4a','T4b'],
+    n: ['N0','N1','N2a','N2b','N2c','N3a','N3b'],
+    surgeries: ['Microlaryngoscopic excision','Cordectomy','Supraglottic laryngectomy','Partial laryngectomy','Total laryngectomy','Total laryngectomy + partial pharyngectomy'],
+    complic: ['Pharyngocutaneous fistula','Aspiration pneumonia','Tracheostomy site complication','Dysphagia','Voice change / dysphonia','Laryngeal / stomal stenosis']
+  },
+  'Hypopharynx': {
+    subsites: ['Pyriform sinus','Posterior pharyngeal wall','Post-cricoid'],
+    t: ['T1','T2','T3','T4a','T4b'],
+    n: ['N0','N1','N2a','N2b','N2c','N3a','N3b'],
+    surgeries: ['Partial pharyngectomy','Pharyngolaryngectomy','Total pharyngolaryngectomy','Laryngopharyngectomy + reconstruction'],
+    complic: ['Pharyngocutaneous fistula','Aspiration pneumonia','Dysphagia','Stricture / stenosis','Flap failure']
+  },
+  'Parotid': {
+    subsites: [],
+    t: ['T1','T2','T3','T4a','T4b'],
+    n: ['N0','N1','N2a','N2b','N2c','N3a','N3b'],
+    surgeries: ['Superficial parotidectomy','Total parotidectomy','Radical parotidectomy','Extended parotidectomy'],
+    complic: ['Facial nerve palsy (temporary)','Facial nerve palsy (permanent)',"Frey's syndrome",'Sialocele','Salivary fistula','First bite syndrome']
+  },
+  'Neck node': {
+    subsites: [],
+    t: ['TX','T0'],
+    n: ['N1','N2a','N2b','N2c','N3a','N3b'],
+    surgeries: ['Excision biopsy','Neck dissection (therapeutic)','Neck dissection + panendoscopy'],
+    complic: ['Chyle leak','Lymphedema','Shoulder dysfunction']
+  },
+  'Sinonasal': {
+    subsites: [],
+    t: ['T1','T2','T3','T4a','T4b'],
+    n: ['N0','N1','N2a','N2b','N2c','N3'],
+    surgeries: ['Endoscopic resection','Medial maxillectomy','Infrastructure maxillectomy','Total maxillectomy','Craniofacial resection','Lateral rhinotomy + resection'],
+    complic: ['CSF leak','Meningitis','Orbital complications','Epiphora','Trismus','Epistaxis']
+  },
+  'Orbit': {
+    subsites: [],
+    t: ['T1','T2','T3','T4'],
+    n: ['N0','N1'],
+    surgeries: ['Orbital exenteration','Orbital decompression','Lateral orbitotomy','Excision of orbital tumour'],
+    complic: ['Diplopia','Enophthalmos','Visual impairment','CSF leak','Prosthesis-related issues']
+  },
+  'Cutaneous Malignancy': {
+    subsites: [],
+    t: ['T1','T2','T3','T4a','T4b'],
+    n: ['N0','N1','N2','N3'],
+    surgeries: ['Wide local excision','Wide local excision + SLNB','Mohs surgery','Excision with frozen section margins'],
+    complic: ['Local recurrence','Lymphedema','Paraesthesia / sensory change','Wound dehiscence']
+  }
+};
+
+const GENERAL_COMPLIC = [
+  'Surgical site infection (SSI)','Seroma','Hematoma',
+  'Wound dehiscence','Partial flap necrosis','Total flap necrosis',
+  'Bleeding / hemorrhage','DVT / PE'
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let cases = [];
+let imgs = { pre: [], intra: [], post: [] };
+let editingId = null;
+let selIds = new Set();
+let currentUser = null;   // {role:"resident"} or {role:"faculty",uid,email}
+let unsubCases = null;    // Firestore onSnapshot unsubscribe fn
+
+// ============================================================
+// INIT
+// ============================================================
+(function init() {
+  // Wire up form event listeners
+  document.getElementById('f-site').addEventListener('change', onSiteChange);
+  document.getElementById('f-surgery').addEventListener('change', onSurgeryChange);
+  document.getElementById('f-recon').addEventListener('change', onReconChange);
+  document.getElementById('f-hpeType').addEventListener('change', onHpeTypeChange);
+  document.getElementById('f-fu').addEventListener('change', onFollowUpChange);
+  // Load local settings
+  const d = localStorage.getItem('sa_dept');
+  if (d) document.getElementById('deptName').value = d;
+  // Check session
+  if (sessionStorage.getItem('sa_role') === 'resident') {
+    setLoggedIn({role:'resident'});
+  } else {
+    auth.onAuthStateChanged(user => {
+      if (user) setLoggedIn({role:'faculty', uid:user.uid, email:user.email});
+      // else: overlay stays visible
+    });
+  }
+})();
+
+function saveSetting(k,v){ localStorage.setItem(k==='dept'?'sa_dept':'sa_inst', v); }
+
+function persist(){ /* data now stored in Firestore */ }
+
+function setLoggedIn(user) {
+  currentUser = user;
+  document.getElementById('loginOverlay').style.display = 'none';
+  const badge = document.getElementById('userBadge');
+  const chip  = document.getElementById('userChip');
+  badge.style.display = 'flex';
+  if (user.role === 'faculty') {
+    chip.textContent = '🎓 Faculty';
+    chip.style.cssText = 'background:rgba(104,211,145,.35);border-radius:20px;padding:4px 12px;font-size:.8rem';
+    sessionStorage.removeItem('sa_role');
+  } else {
+    chip.textContent = '👨\u200d\u2695\ufe0f Resident';
+    chip.style.cssText = 'background:rgba(255,255,255,.2);border-radius:20px;padding:4px 12px;font-size:.8rem';
+    sessionStorage.setItem('sa_role', 'resident');
+  }
+  startFirestoreListener();
+}
+
+function startFirestoreListener() {
+  if (unsubCases) unsubCases();
+  unsubCases = db.collection('cases').onSnapshot(snapshot => {
+    cases = snapshot.docs.map(doc => {
+      const data = doc.data();
+      const localImgs = JSON.parse(localStorage.getItem('img_' + doc.id) || '{"pre":[],"intra":[],"post":[]}');
+      return {...data, id: doc.id, images: localImgs};
+    });
+    updateStats(); renderTable(); renderPPT();
+  }, err => {
+    console.error('Firestore:', err);
+    toast('Database error: ' + err.message, 'error');
+  });
+}
+
+// ============================================================
+// LOGIN / AUTH
+// ============================================================
+function switchLoginTab(tab) {
+  document.getElementById('lt-resident').classList.toggle('active', tab==='resident');
+  document.getElementById('lt-faculty').classList.toggle('active', tab==='faculty');
+  document.getElementById('lp-resident').style.display = tab==='resident' ? '' : 'none';
+  document.getElementById('lp-faculty').style.display  = tab==='faculty'  ? '' : 'none';
+  document.getElementById('loginErr').textContent = '';
+}
+
+function doResidentLogin() {
+  const pass = document.getElementById('li-rpass').value;
+  if (pass === RESIDENT_PASSWORD) {
+    setLoggedIn({role:'resident'});
+  } else {
+    document.getElementById('loginErr').textContent = 'Incorrect password. Please try again.';
+  }
+}
+
+async function doFacultyLogin() {
+  const email = document.getElementById('li-femail').value.trim();
+  const pass  = document.getElementById('li-fpass').value;
+  const btn   = document.getElementById('loginFacBtn');
+  const errEl = document.getElementById('loginErr');
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  errEl.textContent = '';
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+    // auth.onAuthStateChanged will call setLoggedIn
+  } catch(e) {
+    errEl.textContent =
+      e.code === 'auth/wrong-password'  ? 'Wrong password.' :
+      e.code === 'auth/user-not-found'  ? 'User not found.' :
+      e.code === 'auth/invalid-credential' ? 'Invalid email or password.' :
+      'Login failed: ' + e.message;
+    btn.disabled = false; btn.textContent = 'Faculty Sign In';
+  }
+}
+
+function doLogout() {
+  if (currentUser && currentUser.role === 'faculty') auth.signOut();
+  sessionStorage.removeItem('sa_role');
+  currentUser = null;
+  if (unsubCases) { unsubCases(); unsubCases = null; }
+  cases = [];
+  document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('userBadge').style.display = 'none';
+  document.getElementById('li-rpass').value = '';
+  document.getElementById('li-fpass').value = '';
+  document.getElementById('loginErr').textContent = '';
+  switchLoginTab('resident');
+  renderTable(); renderPPT();
+}
+
+function updateStats(){
+  document.getElementById('statTotal').textContent = cases.length + ' case' + (cases.length!==1?'s':'');
+  const m = new Date().toISOString().slice(0,7);
+  const n = cases.filter(c=>(c.dateSurg||c.regDate||'').startsWith(m)).length;
+  document.getElementById('statMonth').textContent = n + ' this month';
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(t){
+  document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  document.getElementById('content-'+t).classList.add('active');
+  if(t==='cases') renderTable();
+  if(t==='ppt') renderPPT();
+}
+
+// ============================================================
+// SITE-DEPENDENT DYNAMIC FIELDS
+// ============================================================
+function setSelectOptions(selId, optList, placeholder) {
+  var sel = document.getElementById(selId);
+  if (!sel) return;
+  // Remove all existing options
+  while (sel.options.length > 0) sel.remove(0);
+  // Add placeholder
+  sel.add(new Option(placeholder || '— select —', ''));
+  // Add items
+  for (var i = 0; i < optList.length; i++) {
+    sel.add(new Option(optList[i], optList[i]));
+  }
+}
+
+function onSiteChange() {
+  var site = document.getElementById('f-site').value;
+  var data = (SITES && SITES[site]) ? SITES[site] : {};
+
+  // --- Subsite ---
+  var sg = document.getElementById('subsite-group');
+  var subs = data.subsites || [];
+  if (sg) {
+    if (subs.length > 0) {
+      var subSel = document.getElementById('f-subsite');
+      if (subSel) {
+        while (subSel.options.length > 0) subSel.remove(0);
+        for (var si = 0; si < subs.length; si++) subSel.add(new Option(subs[si], subs[si]));
+      }
+      sg.style.display = '';
+    } else {
+      sg.style.display = 'none';
+      var ss = document.getElementById('f-subsite');
+      if (ss) { while (ss.options.length > 0) ss.remove(0); }
+    }
+  }
+
+  // --- T Stage (site-specific) ---
+  if (data.t && data.t.length > 0) {
+    setSelectOptions('f-tStage', data.t, '— T —');
+  }
+
+  // --- N Stage (site-specific) ---
+  if (data.n && data.n.length > 0) {
+    setSelectOptions('f-nStage', data.n, '— N —');
+  }
+
+  // --- Surgery ---
+  var surgSel = document.getElementById('f-surgery');
+  if (surgSel) {
+    while (surgSel.options.length > 0) surgSel.remove(0);
+    var surgs = data.surgeries || [];
+    if (surgs.length > 0) {
+      surgSel.add(new Option('Select surgery', ''));
+      for (var j = 0; j < surgs.length; j++) {
+        surgSel.add(new Option(surgs[j], surgs[j]));
+      }
+    } else {
+      surgSel.add(new Option('— Select primary site first —', ''));
+    }
+    surgSel.add(new Option('Others (specify)', 'Others'));
+    onSurgeryChange();
+  }
+
+  // --- Site-specific complications ---
+  renderSiteComplications(site);
+}
+
+function onSurgeryChange(){
+  const v = document.getElementById('f-surgery').value;
+  document.getElementById('surgery-other-group').style.display = v==='Others' ? '' : 'none';
+}
+
+function onReconChange(){
+  const v = document.getElementById('f-recon').value;
+  document.getElementById('recon-other-group').style.display = v==='Others' ? '' : 'none';
+}
+
+function onHpeTypeChange(){
+  const v = document.getElementById('f-hpeType').value;
+  document.getElementById('hpe-type-other-group').style.display = v==='Others' ? '' : 'none';
+}
+
+function onFollowUpChange(){
+  const v = document.getElementById('f-fu').value;
+  document.getElementById('fu-other-group').style.display = v==='Others' ? '' : 'none';
+}
+
+// ============================================================
+// COMPLICATIONS RENDERING
+// ============================================================
+
+function renderSiteComplications(site){
+  const data = SITES[site] || {};
+  const sec = document.getElementById('complic-site-section');
+  const c = document.getElementById('complic-site-checks');
+  const lbl = document.getElementById('complic-site-label');
+  if(data.complic && data.complic.length){
+    lbl.textContent = site + ' — specific';
+    c.innerHTML = data.complic.map(x=>
+      `<label class="complic-item"><input type="checkbox" value="${x}" onchange="syncComplications()"> ${x}</label>`
+    ).join('');
+    sec.style.display = '';
+  } else {
+    sec.style.display = 'none';
+    c.innerHTML = '';
+  }
+}
+
+function syncComplications(){ /* state read at save time */ }
+
+function getSelectedComplications(){
+  const checks = document.querySelectorAll('#complic-general-checks input[type=checkbox]:checked, #complic-site-checks input[type=checkbox]:checked');
+  return Array.from(checks).map(c=>c.value);
+}
+
+function setComplications(arr){
+  // Uncheck all first
+  document.querySelectorAll('#complic-general-checks input, #complic-site-checks input').forEach(c=>{ c.checked = false; });
+  if(!arr) return;
+  arr.forEach(v=>{
+    const el = document.querySelector(`#complic-general-checks input[value="${v}"], #complic-site-checks input[value="${v}"]`);
+    if(el) el.checked = true;
+  });
+}
+
+// ============================================================
+// IMAGES
+// ============================================================
+function compress(dataUrl, maxW=1400, q=0.75){
+  return new Promise(res=>{
+    const img=new Image(); img.onload=()=>{
+      const cv=document.createElement('canvas');
+      let w=img.width, h=img.height;
+      if(w>maxW){ h=h*maxW/w; w=maxW; }
+      cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      res(cv.toDataURL('image/jpeg',q));
+    }; img.src=dataUrl;
+  });
+}
+
+function imgUpload(ev,type){ processFiles(Array.from(ev.target.files),type); ev.target.value=''; }
+
+function processFiles(files,type){
+  files.forEach(f=>{
+    if(!f.type.startsWith('image/')) return;
+    if(imgs[type].length>=4){ toast('Max 4 images per category','error'); return; }
+    const r=new FileReader();
+    r.onload=async e=>{ const d=await compress(e.target.result); imgs[type].push({name:f.name,data:d}); renderPreviews(); };
+    r.readAsDataURL(f);
+  });
+}
+
+function dOver(e,id){ e.preventDefault(); document.getElementById(id).classList.add('dragover'); }
+function dLeave(id){ document.getElementById(id).classList.remove('dragover'); }
+function dDrop(e,type){
+  e.preventDefault();
+  const zm={pre:'zone-pre',intra:'zone-intra',post:'zone-post'};
+  dLeave(zm[type]);
+  processFiles(Array.from(e.dataTransfer.files),type);
+}
+
+function renderPreviews(){
+  ['pre','intra','post'].forEach(type=>{
+    const c=document.getElementById('prev-'+type); c.innerHTML='';
+    imgs[type].forEach((img,i)=>{
+      const d=document.createElement('div'); d.className='img-thumb';
+      d.innerHTML=`<img src="${img.data}" title="${img.name}"><button class="del-img" onclick="rmImg('${type}',${i})" title="Remove">✕</button>`;
+      c.appendChild(d);
+    });
+  });
+}
+
+function rmImg(type,i){ imgs[type].splice(i,1); renderPreviews(); }
+
+// ============================================================
+// FORM
+// ============================================================
+function fv(id){ return document.getElementById(id).value.trim(); }
+function fset(id,v){ document.getElementById(id).value = v||''; }
+
+function getFormData(){
+  return {
+    patientName: fv('f-name'),
+    regNo: fv('f-regNo'),
+    faculty: fv('f-faculty'),
+    age: fv('f-age'),
+    sex: document.getElementById('f-sex').value,
+    regDate: fv('f-regDate'),
+    dateSurg: fv('f-dateSurg'),
+    dateDisch: fv('f-dateDisch'),
+    primarySite: document.getElementById('f-site').value,
+    subsite: Array.from(document.getElementById('f-subsite').selectedOptions).map(function(o){return o.value;}),
+    tStage: document.getElementById('f-tStage').value,
+    nStage: document.getElementById('f-nStage').value,
+    mStage: document.getElementById('f-mStage').value,
+    surgery: document.getElementById('f-surgery').value,
+    surgeryOther: fv('f-surgeryOther'),
+    ndSide: document.getElementById('f-ndSide').value,
+    ndType: document.getElementById('f-ndType').value,
+    reconstruction: document.getElementById('f-recon').value,
+    reconOther: fv('f-reconOther'),
+    complications: getSelectedComplications(),
+    complicOther: fv('f-complicOther'),
+    hpeType: document.getElementById('f-hpeType').value,
+    hpeTypeOther: fv('f-hpeTypeOther'),
+    hpeDOI: fv('f-hpeDOI'),
+    hpeLVI: document.getElementById('f-hpeLVI').value,
+    hpePNI: document.getElementById('f-hpePNI').value,
+    hpeMargin: document.getElementById('f-hpeMargin').value,
+    hpeNodesPos: fv('f-hpeNodesPos'),
+    hpeNodesTotal: fv('f-hpeNodesTotal'),
+    hpeENE: document.getElementById('f-hpeENE').value,
+    followUp: document.getElementById('f-fu').value,
+    followUpOther: fv('f-fuOther')
+  };
+}
+
+function setFormData(c){
+  fset('f-name',c.patientName); fset('f-regNo',c.regNo);
+  document.getElementById('f-faculty').value = c.faculty||'';
+  fset('f-age',c.age); document.getElementById('f-sex').value = c.sex||'';
+  fset('f-regDate',c.regDate); fset('f-dateSurg',c.dateSurg); fset('f-dateDisch',c.dateDisch);
+
+  // Site triggers dynamic updates — call onSiteChange first to populate dependent dropdowns
+  document.getElementById('f-site').value = c.primarySite||'';
+  onSiteChange();
+  // Now set the saved values (options are now populated)
+  var subsiteEl = document.getElementById('f-subsite');
+  if (subsiteEl) {
+    var subsArr = Array.isArray(c.subsite) ? c.subsite : (c.subsite ? [c.subsite] : []);
+    Array.from(subsiteEl.options).forEach(function(opt){ opt.selected = subsArr.includes(opt.value); });
+  }
+  var tEl = document.getElementById('f-tStage');
+  if (tEl) tEl.value = c.tStage||'';
+  var nEl = document.getElementById('f-nStage');
+  if (nEl) nEl.value = c.nStage||'';
+  var mEl = document.getElementById('f-mStage');
+  if (mEl) mEl.value = c.mStage||'';
+
+  document.getElementById('f-surgery').value = c.surgery||'';
+  onSurgeryChange();
+  fset('f-surgeryOther',c.surgeryOther);
+  document.getElementById('f-ndSide').value = c.ndSide||'';
+  document.getElementById('f-ndType').value = c.ndType||'';
+  document.getElementById('f-recon').value = c.reconstruction||'';
+  onReconChange();
+  fset('f-reconOther',c.reconOther);
+
+  // Complications — site-specific checkboxes already rendered by onSiteChange
+  setComplications(c.complications||[]);
+  fset('f-complicOther',c.complicOther);
+
+  document.getElementById('f-hpeType').value = c.hpeType||'';
+  onHpeTypeChange();
+  fset('f-hpeTypeOther',c.hpeTypeOther);
+  fset('f-hpeDOI',c.hpeDOI);
+  document.getElementById('f-hpeLVI').value = c.hpeLVI||'';
+  document.getElementById('f-hpePNI').value = c.hpePNI||'';
+  document.getElementById('f-hpeMargin').value = c.hpeMargin||'';
+  fset('f-hpeNodesPos',c.hpeNodesPos);
+  fset('f-hpeNodesTotal',c.hpeNodesTotal);
+  document.getElementById('f-hpeENE').value = c.hpeENE||'';
+  document.getElementById('f-fu').value = c.followUp||'';
+  onFollowUpChange();
+  fset('f-fuOther', c.followUpOther);
+}
+
+function clearForm(){
+  ['f-name','f-regNo','f-age','f-regDate','f-dateSurg','f-dateDisch',
+   'f-surgeryOther','f-reconOther','f-complicOther','f-hpeTypeOther',
+   'f-hpeDOI','f-hpeNodesPos','f-hpeNodesTotal','f-fuOther'].forEach(id=>fset(id,''));
+  ['f-faculty','f-sex','f-site','f-tStage','f-nStage','f-mStage',
+   'f-surgery','f-ndSide','f-ndType','f-recon','f-hpeType','f-hpeLVI',
+   'f-hpePNI','f-hpeMargin','f-hpeENE','f-fu'].forEach(id=>{ document.getElementById(id).value=''; });
+  Array.from(document.getElementById('f-subsite').options).forEach(o=>{ o.selected=false; });
+  document.getElementById('subsite-group').style.display='none';
+  document.getElementById('surgery-other-group').style.display='none';
+  document.getElementById('recon-other-group').style.display='none';
+  document.getElementById('hpe-type-other-group').style.display='none';
+  document.getElementById('fu-other-group').style.display='none';
+  document.getElementById('complic-site-section').style.display='none';
+  document.querySelectorAll('#complic-general-checks input').forEach(c=>c.checked=false);
+  document.getElementById('complic-site-checks').innerHTML='';
+  imgs={pre:[],intra:[],post:[]}; renderPreviews();
+  editingId=null;
+  document.getElementById('saveBtn').textContent='💾 Save Case';
+  document.getElementById('editBanner').style.display='none';
+}
+
+function cancelEdit(){ clearForm(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+async function saveCase(){
+  const d = getFormData();
+  if(!d.patientName){ toast('Patient name is required','error'); return; }
+  if(!d.regNo){ toast('Registration ID is required','error'); return; }
+  if(!d.faculty){ toast('Faculty is required','error'); return; }
+  if(!d.dateSurg){ toast('Date of surgery is required','error'); return; }
+  if(!d.primarySite){ toast('Primary site is required','error'); return; }
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true;
+  try {
+    if(editingId){
+      await db.collection('cases').doc(editingId).set(
+        {...d, id:editingId, updatedAt:new Date().toISOString()});
+      localStorage.setItem('img_'+editingId, JSON.stringify(imgs));
+      toast('Case updated ✓','success');
+      editingId = null;
+    } else {
+      if(cases.some(c=>c.regNo===d.regNo)){
+        if(!confirm(`Reg ID ${d.regNo} already exists. Add anyway?`)){ btn.disabled=false; return; }
+      }
+      const newId = uid();
+      await db.collection('cases').doc(newId).set(
+        {...d, id:newId, createdAt:new Date().toISOString()});
+      localStorage.setItem('img_'+newId, JSON.stringify(imgs));
+      toast('Case saved ✓','success');
+    }
+    clearForm(); switchTab('cases');
+  } catch(err){
+    toast('Save failed: '+err.message, 'error');
+    console.error(err);
+  }
+  btn.disabled = false;
+}
+
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).substr(2,6); }
+function subsiteStr(c){ return Array.isArray(c.subsite)?c.subsite.join(', '):(c.subsite||''); }
+
+function editCase(id){
+  const c = cases.find(c=>c.id===id); if(!c) return;
+  editingId = id;
+  setFormData(c);
+  imgs = JSON.parse(JSON.stringify(c.images||{pre:[],intra:[],post:[]}));
+  renderPreviews();
+  switchTab('add');
+  document.getElementById('saveBtn').textContent='💾 Update Case';
+  document.getElementById('editBanner').style.display='flex';
+  closeModal();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function deleteCase(id){
+  if(!currentUser||currentUser.role!=='faculty'){
+    toast('Only faculty can delete cases','error'); return;
+  }
+  document.getElementById('delModal').style.display='flex';
+  document.getElementById('confirmDel').onclick=async()=>{
+    try{
+      await db.collection('cases').doc(id).delete();
+      localStorage.removeItem('img_'+id);
+      document.getElementById('delModal').style.display='none';
+      closeModal();
+      toast('Case deleted','info');
+    }catch(err){
+      toast('Delete failed: '+err.message,'error');
+    }
+  };
+}
+
+// ============================================================
+// CASES TABLE
+// ============================================================
+function renderTable(){
+  const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
+  const filtered=cases.filter(c=>
+    !q||
+    (c.patientName||'').toLowerCase().includes(q)||
+    (c.regNo||'').toLowerCase().includes(q)||
+    (c.primarySite||'').toLowerCase().includes(q)||
+    (c.faculty||'').toLowerCase().includes(q)||
+    (c.surgery||'').toLowerCase().includes(q)||
+    (Array.isArray(c.subsite)?c.subsite.join(', '):c.subsite||'').toLowerCase().includes(q)
+  );
+  const w=document.getElementById('tableWrap');
+  if(!filtered.length){
+    w.innerHTML=`<div class="empty-state"><div class="empty-icon">📭</div><p>${cases.length?'No matches found.':'No cases yet — add your first case!'}</p></div>`;
+    return;
+  }
+  const sorted=[...filtered].sort((a,b)=>(b.dateSurg||b.createdAt||'').localeCompare(a.dateSurg||a.createdAt||''));
+  w.innerHTML=`<table class="cases-table">
+    <thead><tr>
+      <th>#</th><th>Reg. ID</th><th>Patient</th><th>Age/Sex</th><th>Faculty</th>
+      <th>Primary Site</th><th>TNM</th><th>Surgery Date</th><th>Complications</th><th>Images</th><th>Actions</th>
+    </tr></thead>
+    <tbody>${sorted.map((c,i)=>`<tr>
+      <td style="color:#a0aec0;font-size:.78rem">${i+1}</td>
+      <td><strong>${c.regNo}</strong></td>
+      <td>${c.patientName}</td>
+      <td>${c.age||'-'}${c.sex?'/'+c.sex[0]:''}</td>
+      <td><span class="badge badge-purple">${c.faculty||'-'}</span></td>
+      <td>${c.primarySite||'-'}${subsiteStr(c)?' <span style="color:#a0aec0;font-size:.78rem">('+subsiteStr(c)+')</span>':''}</td>
+      <td><span class="badge badge-blue">${tnmLabel(c)}</span></td>
+      <td>${fmtDate(c.dateSurg)}</td>
+      <td>${hasComp(c)?'<span class="badge badge-red">Yes</span>':'<span class="badge badge-green">None</span>'}</td>
+      <td><span class="badge badge-gray">${imgCount(c.images)} img</span></td>
+      <td><div class="act-cell">
+        <button class="btn btn-sm btn-ghost" onclick="viewCase('${c.id}')">👁️</button>
+        <button class="btn btn-sm btn-outline" onclick="editCase('${c.id}')">✏️</button>
+        ${currentUser&&currentUser.role==='faculty'?`<button class="btn btn-sm btn-danger" onclick="deleteCase('${c.id}')">🗑️</button>`:''}
+      </div></td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function tnmLabel(c){
+  const t=c.tStage||'', n=c.nStage||'', m=c.mStage||'';
+  if(!t&&!n&&!m) return '—';
+  return [t,n,m].filter(Boolean).join(' ');
+}
+function hasComp(c){ return (c.complications&&c.complications.length>0)||(c.complicOther&&c.complicOther.trim()&&c.complicOther.toLowerCase()!=='none'); }
+function imgCount(im){ if(!im) return 0; return (im.pre||[]).length+(im.intra||[]).length+(im.post||[]).length; }
+function fmtDate(s){ if(!s) return '—'; const d=new Date(s+'T00:00:00'); return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); }
+
+function viewCase(id){
+  const c=cases.find(c=>c.id===id); if(!c) return;
+  document.getElementById('vmTitle').textContent=`${c.patientName} — ${c.regNo}`;
+  const imgSec=(arr,label)=>{
+    if(!arr||!arr.length) return '';
+    return `<div class="img-section-label">${label}</div>
+    <div class="img-viewer">${arr.map(i=>`<img src="${i.data}" title="${i.name}" onclick="window.open('${i.data}','_blank')">`).join('')}</div>`;
+  };
+  const compList = [...(c.complications||[]), ...(c.complicOther?[c.complicOther]:[])].join(', ')||'None';
+  const hpeType = c.hpeType==='Others'?(c.hpeTypeOther||'Others'):c.hpeType||'—';
+  const nodalStr = (c.hpeNodesPos||c.hpeNodesTotal) ? `${c.hpeNodesPos||0} / ${c.hpeNodesTotal||0}` : '—';
+  const surgLabel = c.surgery==='Others'?(c.surgeryOther||'Others'):c.surgery||'—';
+  const reconLabel = c.reconstruction==='Others'?(c.reconOther||'Others'):c.reconstruction||'None';
+
+  document.getElementById('vmBody').innerHTML=`
+    <div class="detail-grid">
+      <div class="df"><div class="dl">Reg. ID</div><div class="dv">${c.regNo}</div></div>
+      <div class="df"><div class="dl">Patient</div><div class="dv">${c.patientName}</div></div>
+      <div class="df"><div class="dl">Age / Sex</div><div class="dv">${c.age||'—'} / ${c.sex||'—'}</div></div>
+      <div class="df"><div class="dl">Faculty</div><div class="dv">${c.faculty||'—'}</div></div>
+      <div class="df"><div class="dl">Reg. Date</div><div class="dv">${fmtDate(c.regDate)}</div></div>
+      <div class="df"><div class="dl">Date of Surgery</div><div class="dv">${fmtDate(c.dateSurg)}</div></div>
+      <div class="df"><div class="dl">Date of Discharge</div><div class="dv">${fmtDate(c.dateDisch)}</div></div>
+      <div class="df"><div class="dl">Primary Site</div><div class="dv">${c.primarySite||'—'}${subsiteStr(c)?' — '+subsiteStr(c):''}</div></div>
+      <div class="df"><div class="dl">TNM Stage</div><div class="dv">${tnmLabel(c)||'—'}</div></div>
+      <div class="df full"><div class="dl">Surgery Performed</div><div class="dv">${surgLabel}</div></div>
+      <div class="df"><div class="dl">Neck Dissection</div><div class="dv">${c.ndSide||'None'}${c.ndType?' — '+c.ndType:''}</div></div>
+      <div class="df"><div class="dl">Reconstruction</div><div class="dv">${reconLabel}</div></div>
+      <div class="df full"><div class="dl">Complications</div><div class="dv">${compList}</div></div>
+      <div class="df"><div class="dl">HPE Type</div><div class="dv">${hpeType}</div></div>
+      <div class="df"><div class="dl">DOI</div><div class="dv">${c.hpeDOI?c.hpeDOI+' mm':'—'}</div></div>
+      <div class="df"><div class="dl">LVI / PNI</div><div class="dv">${c.hpeLVI||'—'} / ${c.hpePNI||'—'}</div></div>
+      <div class="df"><div class="dl">Margin</div><div class="dv">${c.hpeMargin||'—'}</div></div>
+      <div class="df"><div class="dl">Nodal Status</div><div class="dv">${nodalStr}</div></div>
+      <div class="df"><div class="dl">ENE</div><div class="dv">${c.hpeENE||'—'}</div></div>
+      ${(c.followUp)?`<div class="df full"><div class="dl">Follow-up / Plan</div><div class="dv">${c.followUp==='Others'?(c.followUpOther||'Others'):c.followUp}</div></div>`:''}
+    </div>
+    ${imgSec(c.images?.pre,'🔬 Pre-operative')}
+    ${imgSec(c.images?.intra,'🏥 Intra-operative')}
+    ${imgSec(c.images?.post,'✅ Post-operative')}
+  `;
+  document.getElementById('vmEditBtn').onclick=()=>editCase(id);
+  document.getElementById('vmDelBtn').onclick=()=>deleteCase(id);
+  document.getElementById('vmDelBtn').style.display=currentUser&&currentUser.role==='faculty'?'':' none';
+  document.getElementById('viewModal').style.display='flex';
+}
+function closeModal(){ document.getElementById('viewModal').style.display='none'; }
+
+// ============================================================
+// EXPORT / IMPORT
+// ============================================================
+function exportJSON(){
+  const blob=new Blob([JSON.stringify({version:2,exportDate:new Date().toISOString(),cases},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='hn_audit_'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+  toast('Exported ✓','success');
+}
+
+function importJSON(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=async e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      const arr=data.cases||(Array.isArray(data)?data:[]);
+      if(!arr.length){ toast('No cases in file','error'); return; }
+      if(!confirm(`Import ${arr.length} cases? Duplicate IDs will be skipped.`)) return;
+      const existing=new Set(cases.map(c=>c.id));
+      let added=0;
+      const batch=db.batch();
+      arr.forEach(c=>{
+        if(!existing.has(c.id)){
+          const {images, ...caseData}=c;
+          batch.set(db.collection('cases').doc(c.id), caseData);
+          if(images) localStorage.setItem('img_'+c.id, JSON.stringify(images));
+          added++;
+        }
+      });
+      await batch.commit();
+      toast(`Imported ${added} case${added!==1?'s':''}  ✓`,'success');
+    }catch(err){ toast('Import failed: '+err.message,'error'); }
+  };
+  r.readAsText(f); ev.target.value='';
+}
+
+// ============================================================
+// PPT SELECTOR
+// ============================================================
+function getFilteredCases(){
+  const fac = document.getElementById('ppt-faculty')?.value||'';
+  const from = document.getElementById('ppt-dateFrom')?.value||'';
+  const to = document.getElementById('ppt-dateTo')?.value||'';
+  return cases.filter(c=>{
+    if(fac && c.faculty!==fac) return false;
+    const d = c.dateSurg||'';
+    if(from && d && d<from) return false;
+    if(to && d && d>to) return false;
+    return true;
+  });
+}
+
+function renderPPT(){
+  const filtered=getFilteredCases();
+  const ctr=document.getElementById('caseSelector');
+  if(!ctr) return;
+  if(!filtered.length){
+    ctr.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">📭</div><p>No cases match the filters.</p></div>`;
+    updateSelCount(); return;
+  }
+  const sorted=[...filtered].sort((a,b)=>(b.dateSurg||b.createdAt||'').localeCompare(a.dateSurg||a.createdAt||''));
+  ctr.innerHTML=sorted.map(c=>`
+    <div class="cs-item ${selIds.has(c.id)?'selected':''}" onclick="toggleSel('${c.id}',event)">
+      <input type="checkbox" ${selIds.has(c.id)?'checked':''} onclick="toggleSel('${c.id}',event)">
+      <div>
+        <div class="cs-reg">📋 ${c.regNo}</div>
+        <div class="cs-name">${c.patientName}${c.age?', '+c.age:''}${c.sex?'/'+c.sex[0]:''}</div>
+        <div class="cs-meta">${c.primarySite||'—'}${subsiteStr(c)?' · '+subsiteStr(c):''} · ${tnmLabel(c)}</div>
+        <div class="cs-meta">${c.faculty||'—'} · ${fmtDate(c.dateSurg)}</div>
+      </div>
+    </div>
+  `).join('');
+  updateSelCount();
+}
+
+function toggleSel(id,ev){ ev.stopPropagation(); selIds.has(id)?selIds.delete(id):selIds.add(id); renderPPT(); }
+function selAll(){ getFilteredCases().forEach(c=>selIds.add(c.id)); renderPPT(); }
+function selNone(){ selIds.clear(); renderPPT(); }
+function updateSelCount(){ document.getElementById('selCount').textContent=selIds.size+' case'+(selIds.size!==1?'s':'')+' selected'; }
+
+// ============================================================
+// PPT GENERATION
+// ============================================================
+async function generatePPT(){
+  if(!selIds.size){ toast('Select at least one case','error'); return; }
+  if(typeof PptxGenJS==='undefined'){ toast('PowerPoint library not loaded — check internet and refresh','error'); return; }
+
+  const selected=cases.filter(c=>selIds.has(c.id));
+  const dept=document.getElementById('deptName').value||'Department of Head & Neck Oncology';
+  const inst=document.getElementById('instName')?.value||'';
+  const footer=dept+(inst?' | '+inst:'');
+
+  document.getElementById('pptProg').style.display='block';
+  document.getElementById('genBtn').disabled=true;
+  setProgress(0,'Initialising...');
+
+  try { await _runPPT(selected,dept,inst,footer); }
+  catch(err){
+    console.error(err);
+    toast('Error: '+err.message,'error');
+    document.getElementById('pptProg').style.display='none';
+    document.getElementById('genBtn').disabled=false;
+  }
+}
+
+async function _runPPT(selected,dept,inst,footer){
+  const pptx=new PptxGenJS();
+  pptx.layout='LAYOUT_WIDE'; // 13.33" × 7.5"
+
+  const fac=document.getElementById('ppt-faculty').value;
+  const from=document.getElementById('ppt-dateFrom').value;
+  const to=document.getElementById('ppt-dateTo').value;
+  let auditLabel='Surgical Audit';
+  if(from||to) auditLabel+=` (${from?fmtDate(from):''}${from&&to?' – ':''}${to?fmtDate(to):''})`;
+  else auditLabel+=' — '+new Date().toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+
+  const C={
+    darkBlue:'1a365d', blue:'2b6cb0', lightBlue:'EBF4FF',
+    green:'276749',   white:'FFFFFF', light:'F7FAFC',
+    gray:'718096',    dark:'2D3748',  accent:'38a169',
+    teal:'2c7a7b',    amber:'744210'
+  };
+
+  // Hospital stay in days
+  function stayDays(c){
+    if(!c.regDate||!c.dateDisch) return null;
+    const d=Math.round((new Date(c.dateDisch)-new Date(c.regDate))/86400000);
+    return d>=0?d:null;
+  }
+
+  // ---- TITLE SLIDE ----
+  const ts=pptx.addSlide();
+  ts.addShape(pptx.ShapeType.rect,{x:0,y:0,w:'100%',h:'100%',fill:{color:C.darkBlue}});
+  ts.addShape(pptx.ShapeType.rect,{x:0.7,y:2.2,w:0.14,h:2.8,fill:{color:C.accent}});
+  ts.addText('HEAD & NECK SURGICAL AUDIT',{x:1.1,y:1.4,w:11.5,h:0.9,fontSize:40,bold:true,color:C.white,fontFace:'Calibri'});
+  ts.addText('Monthly Case Presentation',{x:1.1,y:2.42,w:11.5,h:0.55,fontSize:22,color:'b3d4f5',fontFace:'Calibri'});
+  ts.addText(dept,{x:1.1,y:3.08,w:11.5,h:0.5,fontSize:17,color:'e2e8f0',fontFace:'Calibri'});
+  if(fac) ts.addText(fac,{x:1.1,y:3.68,w:11.5,h:0.5,fontSize:20,bold:true,color:'68d391',fontFace:'Calibri'});
+  ts.addText(auditLabel,{x:1.1,y:4.28,w:11.5,h:0.45,fontSize:15,color:'68d391',fontFace:'Calibri'});
+  ts.addText(`${selected.length} Case${selected.length!==1?'s':''} Presented`,{x:1.1,y:4.83,w:11.5,h:0.38,fontSize:13,color:'a0aec0',fontFace:'Calibri'});
+
+  // Slide width constant
+  const SW=13.33;
+
+  for(let i=0;i<selected.length;i++){
+    const c=selected[i];
+    const n=i+1;
+    setProgress(Math.round(i/selected.length*90),`Case ${n}/${selected.length}: ${c.regNo}`);
+    await new Promise(r=>setTimeout(r,15));
+
+    const hdr=(slide,title,bg)=>{
+      slide.addShape(pptx.ShapeType.rect,{x:0,y:0,w:'100%',h:0.92,fill:{color:bg||C.darkBlue}});
+      slide.addText(`Case ${n} of ${selected.length}  ·  ${c.regNo}`,{x:0.28,y:0.06,w:8,h:0.3,fontSize:9,color:'a0aec0',fontFace:'Calibri'});
+      slide.addText(title,{x:0.28,y:0.4,w:9,h:0.46,fontSize:16,bold:true,color:C.white,fontFace:'Calibri'});
+      slide.addText(dept,{x:8.5,y:0.06,w:4.6,h:0.28,fontSize:8,color:'b3d4f5',fontFace:'Calibri',align:'right'});
+    };
+    const foot=(slide)=>{
+      slide.addShape(pptx.ShapeType.rect,{x:0,y:7.15,w:'100%',h:0.35,fill:{color:C.light}});
+      slide.addText(footer,{x:0.25,y:7.18,w:SW-0.5,h:0.25,fontSize:7.5,color:C.gray,fontFace:'Calibri'});
+    };
+
+    const surgLabel  = c.surgery==='Others'?(c.surgeryOther||'Others'):c.surgery||'—';
+    const reconLabel = c.reconstruction==='Others'?(c.reconOther||'Others'):(c.reconstruction||'None');
+    const hpeType    = c.hpeType==='Others'?(c.hpeTypeOther||'Others'):c.hpeType||'—';
+    const fuLabel    = c.followUp==='Others'?(c.followUpOther||'Others'):c.followUp||'';
+    const ndStr      = c.ndSide?(c.ndSide+(c.ndType?' – '+c.ndType+' neck dissection':'')):'None';
+    // Guard: old cases may have stored complications as a string — always use array
+    const compArr    = Array.isArray(c.complications)?c.complications:[];
+    const compList   = [...compArr,(c.complicOther?[c.complicOther]:[])].flat().filter(Boolean).join(', ')||'None';
+    const nodalStr   = (c.hpeNodesPos||c.hpeNodesTotal)?`${c.hpeNodesPos||0} / ${c.hpeNodesTotal||0} nodes positive`:'—';
+    const stay       = stayDays(c);
+    // Guard: old cases may have undefined primarySite
+    const siteLabel  = (c.primarySite||'—')+(subsiteStr(c)?' — '+subsiteStr(c):'');
+
+    // ==================== SLIDE 1: Clinical Data ====================
+    const s1=pptx.addSlide();
+    s1.background={color:C.white};
+    hdr(s1,'CLINICAL DATA',C.darkBlue);
+
+    // Patient name band — full width
+    s1.addShape(pptx.ShapeType.rect,{x:0,y:0.92,w:'100%',h:0.72,fill:{color:C.lightBlue}});
+    s1.addText(c.patientName||'Unknown',{x:0.3,y:0.95,w:8.5,h:0.65,fontSize:26,bold:true,color:C.darkBlue,fontFace:'Calibri'});
+    const ageSex=`${c.age?c.age+' yrs':''}${c.sex?' · '+c.sex:''}`;
+    if(ageSex.trim()) s1.addText(ageSex,{x:9,y:1.0,w:4.1,h:0.52,fontSize:18,color:C.blue,fontFace:'Calibri',align:'right',bold:true});
+
+    // Vertical divider at midpoint
+    const divX=6.55;
+    s1.addShape(pptx.ShapeType.rect,{x:divX,y:1.74,w:0.03,h:5.32,fill:{color:'e2e8f0'}});
+
+    // ---- LEFT COLUMN: patient & tumour info ----
+    const lLabelW=2.25, lValueX=2.62, lValueW=divX-lValueX-0.12;
+    const lRows=[
+      ['Reg. ID',         c.regNo||'—'],
+      ['Faculty',         c.faculty||'—'],
+      ['Reg. Date',       fmtDate(c.regDate)],
+      ['Date of Surgery', fmtDate(c.dateSurg)],
+      ['Date of Discharge',fmtDate(c.dateDisch)],
+      ...(stay!==null?[['Hospital Stay',stay+' day'+(stay!==1?'s':'')]]:[] ),
+      ['Primary Site',    siteLabel],
+      ['TNM Stage',       tnmLabel(c)||'—'],
+    ];
+    let ry=1.82;
+    lRows.forEach(([l,v])=>{
+      s1.addText(l+':',{x:0.3,y:ry,w:lLabelW,h:0.44,fontSize:16,color:C.gray,fontFace:'Calibri',bold:true});
+      s1.addText(v,{x:lValueX,y:ry,w:lValueW,h:0.5,fontSize:16,color:C.dark,fontFace:'Calibri',wrap:true});
+      ry+=0.62;
+    });
+
+    // ---- RIGHT COLUMN: surgical info + boxes ----
+    const rx=divX+0.18, rw=SW-rx-0.22;
+    const rLabelW=2.15, rValueX=rx+2.2, rValueW=rw-2.2;
+    const rRows=[
+      ['Surgery',          surgLabel],
+      ['Neck Dissection',  ndStr],
+      ['Reconstruction',   reconLabel],
+    ];
+    let rry=1.82;
+    rRows.forEach(([l,v])=>{
+      s1.addText(l+':',{x:rx,y:rry,w:rLabelW,h:0.44,fontSize:16,color:C.gray,fontFace:'Calibri',bold:true});
+      s1.addText(v,{x:rValueX,y:rry,w:rValueW,h:0.56,fontSize:16,color:C.dark,fontFace:'Calibri',wrap:true});
+      rry+=0.80;
+    });
+
+    // Complications box
+    const cbY=rry+0.1;
+    s1.addShape(pptx.ShapeType.rect,{x:rx,y:cbY,w:rw,h:0.33,fill:{color:C.darkBlue}});
+    s1.addText('COMPLICATIONS',{x:rx+0.12,y:cbY+0.05,w:rw-0.2,h:0.25,fontSize:11,bold:true,color:C.white,fontFace:'Calibri'});
+    s1.addShape(pptx.ShapeType.rect,{x:rx,y:cbY+0.33,w:rw,h:1.1,fill:{color:C.light},line:{color:'e2e8f0',width:0.5}});
+    s1.addText(compList,{x:rx+0.14,y:cbY+0.38,w:rw-0.25,h:1.0,fontSize:16,color:C.dark,fontFace:'Calibri',valign:'top',wrap:true});
+
+    // Follow-up box
+    if(fuLabel){
+      const fbY=cbY+0.33+1.1+0.12;
+      const fbContentH=7.12-fbY-0.35;
+      s1.addShape(pptx.ShapeType.rect,{x:rx,y:fbY,w:rw,h:0.33,fill:{color:C.blue}});
+      s1.addText('FOLLOW-UP / PLAN',{x:rx+0.12,y:fbY+0.05,w:rw-0.2,h:0.25,fontSize:11,bold:true,color:C.white,fontFace:'Calibri'});
+      s1.addShape(pptx.ShapeType.rect,{x:rx,y:fbY+0.33,w:rw,h:fbContentH,fill:{color:'EBF8FF'},line:{color:'bee3f8',width:0.5}});
+      s1.addText(fuLabel,{x:rx+0.14,y:fbY+0.38,w:rw-0.25,h:fbContentH-0.1,fontSize:16,color:C.dark,fontFace:'Calibri',valign:'top',wrap:true});
+    }
+    foot(s1);
+
+    // ==================== SLIDE 2: Pre-op & Intra-op ====================
+    const s2=pptx.addSlide();
+    s2.background={color:C.white};
+    hdr(s2,'PRE-OPERATIVE & INTRA-OPERATIVE IMAGES',C.darkBlue);
+
+    const halfW=(SW-0.48)/2; // ~6.43"
+    const s2ImgY=1.32, s2ImgH=5.75;
+
+    s2.addShape(pptx.ShapeType.rect,{x:0.15,y:0.97,w:halfW,h:0.32,fill:{color:'2c5282'}});
+    s2.addText('PRE-OPERATIVE',{x:0.28,y:0.99,w:halfW-0.2,h:0.26,fontSize:10,bold:true,color:C.white,fontFace:'Calibri'});
+    await placeImages(pptx,s2,c.images?.pre||[],0.15,s2ImgY,halfW,s2ImgH);
+
+    s2.addShape(pptx.ShapeType.rect,{x:halfW+0.23,y:0.92,w:0.02,h:6.18,fill:{color:'e2e8f0'}});
+
+    const s2rx=halfW+0.3, s2rw=SW-s2rx-0.15;
+    s2.addShape(pptx.ShapeType.rect,{x:s2rx,y:0.97,w:s2rw,h:0.32,fill:{color:C.amber}});
+    s2.addText('INTRA-OPERATIVE',{x:s2rx+0.12,y:0.99,w:s2rw-0.2,h:0.26,fontSize:10,bold:true,color:C.white,fontFace:'Calibri'});
+    await placeImages(pptx,s2,c.images?.intra||[],s2rx,s2ImgY,s2rw,s2ImgH);
+
+    if(!imgCount({pre:c.images?.pre,intra:c.images?.intra})){
+      s2.addText('No images uploaded for this stage',{x:1,y:3.8,w:SW-2,h:0.5,fontSize:14,color:'a0aec0',fontFace:'Calibri',align:'center'});
+    }
+    foot(s2);
+
+    // ==================== SLIDE 3: Post-op & HPE ====================
+    const s3=pptx.addSlide();
+    s3.background={color:C.white};
+    hdr(s3,'POST-OPERATIVE & HISTOPATHOLOGY',C.green);
+
+    const postW=7.6, s3ImgY=1.32, s3ImgH=5.75;
+    s3.addShape(pptx.ShapeType.rect,{x:0.15,y:0.97,w:postW,h:0.32,fill:{color:'2f855a'}});
+    s3.addText('POST-OPERATIVE',{x:0.28,y:0.99,w:postW-0.2,h:0.26,fontSize:10,bold:true,color:C.white,fontFace:'Calibri'});
+    await placeImages(pptx,s3,c.images?.post||[],0.15,s3ImgY,postW,s3ImgH);
+    if(!c.images?.post?.length){
+      s3.addText('No post-operative images uploaded',{x:0.5,y:3.8,w:postW-0.5,h:0.5,fontSize:12,color:'a0aec0',fontFace:'Calibri',align:'center'});
+    }
+
+    s3.addShape(pptx.ShapeType.rect,{x:postW+0.22,y:0.92,w:0.02,h:6.18,fill:{color:'e2e8f0'}});
+
+    const hpeX=postW+0.35, hpeW=SW-hpeX-0.18;
+    s3.addShape(pptx.ShapeType.rect,{x:hpeX,y:0.97,w:hpeW,h:0.32,fill:{color:C.darkBlue}});
+    s3.addText('HISTOPATHOLOGY REPORT',{x:hpeX+0.12,y:0.99,w:hpeW-0.2,h:0.26,fontSize:10,bold:true,color:C.white,fontFace:'Calibri'});
+
+    const hpeRows=[
+      ['Tumour Type', hpeType],
+      ['DOI',         c.hpeDOI?c.hpeDOI+' mm':'—'],
+      ['LVI',         c.hpeLVI||'—'],
+      ['PNI',         c.hpePNI||'—'],
+      ['Margin',      c.hpeMargin||'—'],
+      ['Nodal Status',nodalStr],
+      ['ENE',         c.hpeENE||'—'],
+    ];
+    let hry=1.35;
+    hpeRows.forEach(([l,v],ri)=>{
+      const rowBg=ri%2===0?C.light:C.white;
+      s3.addShape(pptx.ShapeType.rect,{x:hpeX,y:hry,w:hpeW,h:0.60,fill:{color:rowBg}});
+      s3.addText(l+':',{x:hpeX+0.14,y:hry+0.1,w:2.1,h:0.44,fontSize:16,color:C.gray,fontFace:'Calibri',bold:true});
+      s3.addText(v||'—',{x:hpeX+2.3,y:hry+0.1,w:hpeW-2.45,h:0.44,fontSize:16,color:C.dark,fontFace:'Calibri',wrap:true});
+      hry+=0.60;
+    });
+
+    foot(s3);
+  }
+
+  // ==================== SUMMARY SLIDE PER FACULTY ====================
+  setProgress(95,'Building summary slide...');
+  await new Promise(r=>setTimeout(r,15));
+
+  // Always faculty-wise: if faculty filter set, one slide; else one per faculty found
+  const facList = fac ? [fac] : [...new Set(selected.map(c=>c.faculty||'Unknown'))];
+
+  for(const faculty of facList){
+    const fc = fac ? selected : selected.filter(c=>(c.faculty||'Unknown')===faculty);
+    if(!fc.length) continue;
+
+    const siteCt={}, surgCt={}, complCt={};
+    fc.forEach(c=>{
+      const site=c.primarySite||'Unknown';
+      siteCt[site]=(siteCt[site]||0)+1;
+      const surg=c.surgery==='Others'?(c.surgeryOther||'Others'):(c.surgery||'Not recorded');
+      surgCt[surg]=(surgCt[surg]||0)+1;
+      [...(c.complications||[]),(c.complicOther?[c.complicOther]:[])].flat()
+        .filter(Boolean).forEach(x=>{ complCt[x]=(complCt[x]||0)+1; });
+    });
+
+    const sortBy=obj=>Object.entries(obj).sort((a,b)=>b[1]-a[1]);
+    const sites=sortBy(siteCt), surgs=sortBy(surgCt), compls=sortBy(complCt);
+
+    const ss=pptx.addSlide();
+    ss.background={color:'EBF4FF'};
+
+    ss.addShape(pptx.ShapeType.rect,{x:0,y:0,w:'100%',h:1.18,fill:{color:C.darkBlue}});
+    ss.addText('CASE SUMMARY',{x:0.32,y:0.07,w:10,h:0.3,fontSize:10,bold:true,color:'a0aec0',fontFace:'Calibri',charSpacing:2});
+    ss.addText(faculty,{x:0.32,y:0.4,w:9.2,h:0.65,fontSize:24,bold:true,color:C.white,fontFace:'Calibri'});
+    ss.addText(String(fc.length),{x:10.5,y:0.08,w:2.6,h:0.72,fontSize:52,bold:true,color:'68d391',fontFace:'Calibri',align:'right'});
+    ss.addText('case'+(fc.length!==1?'s':''),{x:10.5,y:0.78,w:2.6,h:0.3,fontSize:12,color:'68d391',fontFace:'Calibri',align:'right'});
+    if(from||to) ss.addText(`Period: ${from?fmtDate(from):''}${from&&to?' – ':''}${to?fmtDate(to):''}`,{x:0.32,y:0.92,w:9,h:0.22,fontSize:9,color:'90cdf4',fontFace:'Calibri'});
+
+    const panelColors=[C.darkBlue, C.teal, C.amber];
+    const panelBars  =['dbeafe',  'd1fae5','fde8c8'];
+    const panelMids  =['60a5fa',  '34d399','fb923c']; // medium-tone bar fill (valid 6-char hex)
+    const panelTitles=['PRIMARY SITE','SURGERY PERFORMED','COMPLICATIONS'];
+    const panelData  =[sites, surgs, compls];
+    const emptyMsg   =['No data','No data','None recorded'];
+    const panelGap=0.1;
+    const panelW=(SW-0.3-2*panelGap)/3;
+    const panelY=1.28, panelH=7.1-panelY-0.22;
+
+    panelData.forEach((data,pi)=>{
+      const px=0.15+pi*(panelW+panelGap);
+      ss.addShape(pptx.ShapeType.rect,{x:px,y:panelY,w:panelW,h:0.42,fill:{color:panelColors[pi]}});
+      ss.addText(panelTitles[pi],{x:px+0.14,y:panelY+0.09,w:panelW-0.25,h:0.27,fontSize:9.5,bold:true,color:C.white,fontFace:'Calibri',charSpacing:1});
+      ss.addShape(pptx.ShapeType.rect,{x:px,y:panelY+0.42,w:panelW,h:panelH-0.42,fill:{color:C.white},line:{color:'e2e8f0',width:0.5}});
+
+      if(!data.length){
+        ss.addText(emptyMsg[pi],{x:px+0.15,y:panelY+1.2,w:panelW-0.3,h:0.4,fontSize:10,color:'a0aec0',fontFace:'Calibri',align:'center'});
+      } else {
+        const maxCt=data[0][1];
+        const availH=panelH-0.55;
+        const rowH=Math.min(0.78,Math.max(0.55,availH/data.length));
+        let dy=panelY+0.5;
+        data.forEach(([label,count])=>{
+          if(dy+rowH>panelY+panelH-0.08) return;
+          const barFrac=count/maxCt;
+          // Light full-width background
+          ss.addShape(pptx.ShapeType.rect,{x:px+0.12,y:dy+0.04,w:panelW-0.24,h:rowH-0.08,fill:{color:panelBars[pi]}});
+          // Proportional medium-tone bar
+          ss.addShape(pptx.ShapeType.rect,{x:px+0.12,y:dy+0.04,w:Math.max(0.1,(panelW-0.24)*barFrac),h:rowH-0.08,fill:{color:panelMids[pi]}});
+          ss.addText(label,{x:px+0.18,y:dy+0.08,w:panelW-1.05,h:rowH-0.16,fontSize:16,color:C.dark,fontFace:'Calibri',wrap:false,bold:false});
+          ss.addText(count+(count===1?' case':' cases'),{x:px+panelW-0.95,y:dy+0.08,w:0.88,h:rowH-0.16,fontSize:14,bold:true,color:panelColors[pi],fontFace:'Calibri',align:'right'});
+          dy+=rowH;
+        });
+      }
+    });
+
+    ss.addShape(pptx.ShapeType.rect,{x:0,y:7.15,w:'100%',h:0.35,fill:{color:C.light}});
+    ss.addText(footer,{x:0.25,y:7.18,w:SW-0.5,h:0.25,fontSize:7.5,color:C.gray,fontFace:'Calibri'});
+  }
+
+  setProgress(100,'Saving file...');
+  const fname=`HN_Audit${fac?'_'+fac.replace(/[^a-z0-9]/gi,'_'):''}${document.getElementById('ppt-dateFrom').value?'_'+document.getElementById('ppt-dateFrom').value:''}.pptx`;
+  await pptx.writeFile({fileName:fname});
+
+  document.getElementById('pptProg').style.display='none';
+  document.getElementById('genBtn').disabled=false;
+  toast(`✅ Saved: ${fname}  (check Downloads folder)`,'success');
+}
+
+async function placeImages(pptx,slide,images,x,y,maxW,maxH){
+  if(!images||!images.length) return;
+  const n=Math.min(images.length,4);
+  const list=images.slice(0,n);
+  let cols,rows;
+  if(n===1){cols=1;rows=1;}
+  else if(n===2){cols=1;rows=2;}
+  else{cols=2;rows=2;}
+  const gap=0.07;
+  const cellW=(maxW-(cols-1)*gap)/cols;
+  const cellH=(maxH-(rows-1)*gap)/rows;
+  for(let i=0;i<list.length;i++){
+    const col=i%cols, row=Math.floor(i/cols);
+    try{
+      slide.addImage({data:list[i].data,x:x+col*(cellW+gap),y:y+row*(cellH+gap),w:cellW,h:cellH,sizing:{type:'contain',w:cellW,h:cellH}});
+    }catch(e){ console.warn('Image error:',list[i].name,e); }
+  }
+}
+
+function setProgress(pct,text){
+  document.getElementById('progFill').style.width=pct+'%';
+  document.getElementById('progText').textContent=text;
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function toast(msg,type='info'){
+  document.querySelectorAll('.toast').forEach(t=>t.remove());
+  const t=document.createElement('div'); t.className='toast '+type; t.textContent=msg;
+  document.body.appendChild(t); setTimeout(()=>t.remove(),4000);
+}
+</script>
+</body>
+</html>
