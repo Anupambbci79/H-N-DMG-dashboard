@@ -815,12 +815,36 @@ function setLoggedIn(user) {
 function startFirestoreListener() {
   if (unsubCases) unsubCases();
   unsubCases = db.collection('cases').onSnapshot(snapshot => {
+    // Pass 1: load from localStorage (instant)
     cases = snapshot.docs.map(doc => {
       const data = doc.data();
-      const localImgs = JSON.parse(localStorage.getItem('img_' + doc.id) || '{"pre":[],"intra":[],"post":[]}');
-      return {...data, id: doc.id, images: localImgs};
+      const local = localStorage.getItem('img_' + doc.id);
+      return {...data, id: doc.id,
+        images: local ? JSON.parse(local) : {pre:[],intra:[],post:[]}};
     });
     updateStats(); renderTable(); renderPPT();
+
+    // Pass 2: fetch Firestore images for cases with no local images
+    const needCloud = cases.filter(c =>
+      !c.images.pre.length && !c.images.intra.length && !c.images.post.length
+    ).map(c => c.id);
+    if (needCloud.length) {
+      Promise.all(needCloud.map(id =>
+        db.collection('images').doc(id).get()
+          .then(d => ({id, imgs: d.exists ? d.data() : null}))
+      )).then(results => {
+        let changed = false;
+        results.forEach(({id, imgs}) => {
+          if (!imgs) return;
+          const idx = cases.findIndex(c => c.id === id);
+          if (idx !== -1 && (imgs.pre.length || imgs.intra.length || imgs.post.length)) {
+            cases[idx] = {...cases[idx], images: imgs};
+            changed = true;
+          }
+        });
+        if (changed) { renderTable(); renderPPT(); }
+      }).catch(err => console.warn('Cloud image fetch:', err));
+    }
   }, err => {
     console.error('Firestore:', err);
     toast('Database error: ' + err.message, 'error');
@@ -1044,6 +1068,31 @@ function compress(dataUrl, maxW=1400, q=0.75){
   });
 }
 
+// Compress for cloud storage (smaller file, fits Firestore 1MB doc limit)
+function compressCloud(dataUrl){
+  return new Promise(res=>{
+    const img=new Image(); img.onload=()=>{
+      const cv=document.createElement('canvas');
+      let w=img.width, h=img.height;
+      if(w>700){ h=Math.round(h*700/w); w=700; }
+      cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      res(cv.toDataURL('image/jpeg',0.60));
+    }; img.src=dataUrl;
+  });
+}
+
+async function compressAllForCloud(imgsObj){
+  const result={pre:[],intra:[],post:[]};
+  for(const type of ['pre','intra','post']){
+    for(const img of (imgsObj[type]||[])){
+      const d=await compressCloud(img.data);
+      result[type].push({name:img.name,data:d});
+    }
+  }
+  return result;
+}
+
 function imgUpload(ev,type){ processFiles(Array.from(ev.target.files),type); ev.target.value=''; }
 
 function processFiles(files,type){
@@ -1210,6 +1259,10 @@ async function saveCase(){
       await db.collection('cases').doc(editingId).set(
         {...d, id:editingId, updatedAt:new Date().toISOString()});
       localStorage.setItem('img_'+editingId, JSON.stringify(imgs));
+      if(imgs.pre.length||imgs.intra.length||imgs.post.length){
+        compressAllForCloud(imgs).then(ci=>
+          db.collection('images').doc(editingId).set(ci)).catch(()=>{});
+      }
       toast('Case updated ✓','success');
       editingId = null;
     } else {
@@ -1220,6 +1273,10 @@ async function saveCase(){
       await db.collection('cases').doc(newId).set(
         {...d, id:newId, createdAt:new Date().toISOString()});
       localStorage.setItem('img_'+newId, JSON.stringify(imgs));
+      if(imgs.pre.length||imgs.intra.length||imgs.post.length){
+        compressAllForCloud(imgs).then(ci=>
+          db.collection('images').doc(newId).set(ci)).catch(()=>{});
+      }
       toast('Case saved ✓','success');
     }
     clearForm(); switchTab('cases');
@@ -1254,6 +1311,7 @@ function deleteCase(id){
   document.getElementById('confirmDel').onclick=async()=>{
     try{
       await db.collection('cases').doc(id).delete();
+      db.collection('images').doc(id).delete().catch(()=>{}); // cleanup images
       localStorage.removeItem('img_'+id);
       document.getElementById('delModal').style.display='none';
       closeModal();
@@ -1388,15 +1446,23 @@ function importJSON(ev){
       const existing=new Set(cases.map(c=>c.id));
       let added=0;
       const batch=db.batch();
+      const imgUploads=[];
       arr.forEach(c=>{
         if(!existing.has(c.id)){
           const {images, ...caseData}=c;
           batch.set(db.collection('cases').doc(c.id), caseData);
-          if(images) localStorage.setItem('img_'+c.id, JSON.stringify(images));
+          if(images){
+            localStorage.setItem('img_'+c.id, JSON.stringify(images));
+            if(images.pre?.length||images.intra?.length||images.post?.length){
+              imgUploads.push(compressAllForCloud(images).then(ci=>
+                db.collection('images').doc(c.id).set(ci)));
+            }
+          }
           added++;
         }
       });
       await batch.commit();
+      if(imgUploads.length) await Promise.all(imgUploads).catch(()=>{});
       toast(`Imported ${added} case${added!==1?'s':''}  ✓`,'success');
     }catch(err){ toast('Import failed: '+err.message,'error'); }
   };
