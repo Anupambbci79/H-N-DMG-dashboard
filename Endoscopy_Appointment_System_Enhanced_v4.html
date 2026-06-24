@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Endoscopy Appointment System v4 | Dr B Borooah Cancer Institute</title>
+
+  <!-- Firebase v10 compat SDK: retained for a single-file, no-build application -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+  <style>
+    :root {
+      --navy:#0f2d5e; --blue:#1d5fad; --blue2:#2563eb; --bg:#eef2f7;
+      --text:#1e293b; --muted:#64748b; --line:#dbe3ee; --white:#fff;
+      --green:#15803d; --red:#b91c1c; --amber:#b45309; --teal:#0f766e;
+      --purple:#6d28d9;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:"Segoe UI",Tahoma,Geneva,Verdana,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    .app-header{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;box-shadow:0 3px 12px #0003}
+    .brand h1{font-size:1.24rem}.brand p{font-size:.78rem;opacity:.88;margin-top:2px}
+    .live-badge{display:flex;align-items:center;gap:7px;border:1px solid #ffffff55;background:#ffffff18;border-radius:999px;padding:6px 11px;font-size:.72rem;font-weight:800;letter-spacing:.05em;white-space:nowrap}
+    .live-dot{height:8px;width:8px;border-radius:50%;background:#4ade80;animation:pulse 1.5s infinite}
+    @keyframes pulse{50%{opacity:.3}}
+    .offline .live-dot{background:#fbbf24}.offline{color:#fff}
+    .setup-notice{display:none;background:#fef3c7;color:#78350f;border-left:5px solid #d97706;padding:11px 18px;font-size:.84rem;line-height:1.5}
+
+    .topbar{background:#fff;border-bottom:1px solid var(--line);padding:10px 18px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+    .topbar label{font-size:.8rem;font-weight:700;color:#475569}
+    input[type=date],input[type=month],.control{border:2px solid #dbeafe;border-radius:8px;padding:7px 10px;color:var(--text);background:#fff;outline:none}
+    input:focus,select:focus,textarea:focus{border-color:var(--blue2)!important;box-shadow:0 0 0 3px #2563eb18}
+    .btn{border:0;border-radius:8px;padding:8px 13px;font-weight:700;font-size:.84rem;transition:.15s;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+    .btn:hover{filter:brightness(.96);transform:translateY(-1px)}
+    .btn:disabled{opacity:.48;cursor:not-allowed;transform:none;filter:none}
+    .btn-blue{background:var(--blue2);color:#fff}.btn-light{background:#e2e8f0;color:#334155}.btn-green{background:var(--green);color:#fff}.btn-red{background:var(--red);color:#fff}.btn-teal{background:var(--teal);color:#fff}.btn-amber{background:var(--amber);color:#fff}.btn-purple{background:var(--purple);color:#fff}.btn-white{background:#fff;color:var(--navy)}
+    .spacer{flex:1}
+
+    .tabs{background:#fff;padding:0 18px;display:flex;border-bottom:1px solid var(--line);gap:4px;overflow:auto}
+    .tab-btn{background:transparent;border:0;padding:12px 16px;font-weight:800;color:#64748b;border-bottom:3px solid transparent;white-space:nowrap}
+    .tab-btn.active{color:var(--blue2);border-bottom-color:var(--blue2)}
+    .tab-panel{display:none}.tab-panel.active{display:block}
+
+    .dashboard{max-width:1180px;margin:0 auto;padding:16px 18px 34px}
+    .date-title{font-size:1rem;font-weight:800;color:#334155;margin-bottom:12px}
+    .summary-grid{display:grid;grid-template-columns:repeat(4,minmax(145px,1fr));gap:10px;margin-bottom:16px}
+    .summary-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 15px;box-shadow:0 2px 8px #0f172a0a}
+    .summary-card .label{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:800}.summary-card .value{font-size:1.35rem;font-weight:900;margin-top:4px}.summary-card .sub{font-size:.72rem;color:var(--muted);margin-top:2px}
+    .value.green{color:var(--green)}.value.blue{color:var(--blue2)}.value.amber{color:var(--amber)}.value.red{color:var(--red)}
+    .schedule-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:13px;align-items:center}
+    .next-note{font-size:.8rem;color:#475569;background:#e0f2fe;border:1px solid #bae6fd;border-radius:8px;padding:8px 11px}
+
+    .timeline{display:block}
+    .timeline-empty{background:#fff;border:2px dashed #bfdbfe;border-radius:14px;padding:42px 20px;text-align:center;color:#64748b}
+    .session-block{margin-top:20px}
+    .session-heading{display:flex;align-items:center;gap:10px;margin:0 0 11px;color:#53657f;font-size:.82rem;font-weight:900;text-transform:uppercase;letter-spacing:.075em}
+    .session-heading::after{content:"";height:1px;background:#d6deea;flex:1}
+    .session-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:12px}
+    .booking-card{min-height:174px;background:#fff1f2;border:2px solid #fca5a5;border-radius:13px;padding:14px 16px;box-shadow:0 2px 8px #0f172a08;transition:.15s;cursor:pointer;display:flex;flex-direction:column}
+    .booking-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px #0f172a16;border-color:#f87171}
+    .booking-card.ipd{border-color:#a78bfa;background:#f5f3ff}
+    .booking-card.ipd:hover{border-color:#8b5cf6}
+    .booking-card.done{border-color:#60a5fa;background:#eff6ff}
+    .booking-card.done:hover{border-color:#2563eb}
+    .booking-card.dna{border-color:#cbd5e1;background:#f8fafc;opacity:.86}
+    .booking-card.emergency{box-shadow:inset 6px 0 0 #dc2626,0 2px 8px #0f172a08}
+    .booking-card.emergency:hover{box-shadow:inset 6px 0 0 #dc2626,0 8px 20px #0f172a16}
+    .card-time{font-size:1.13rem;font-weight:950;color:#0f172a;line-height:1.1}
+    .card-end{font-size:.73rem;font-weight:700;color:#64748b;margin-top:3px}
+    .card-status{margin-top:7px;font-size:.72rem;font-weight:950;text-transform:uppercase;letter-spacing:.04em;color:#dc2626}
+    .booking-card.ipd .card-status{color:#6d28d9}.booking-card.done .card-status{color:#1d4ed8}.booking-card.dna .card-status{color:#64748b}
+    .patient-name{font-size:.98rem;font-weight:900;color:#24324a;margin-top:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .patient-meta{font-size:.74rem;color:#607089;margin-top:4px;display:flex;gap:8px;flex-wrap:wrap}
+    .badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.badge{font-size:.62rem;font-weight:900;text-transform:uppercase;letter-spacing:.04em;border-radius:999px;padding:3px 7px}.badge-ipd{background:#ddd6fe;color:#5b21b6}.badge-opd{background:#dbeafe;color:#1e40af}.badge-pending{background:#fee2e2;color:#991b1b}.badge-done{background:#dbeafe;color:#1e40af}.badge-dna{background:#e2e8f0;color:#475569}.badge-emergency{background:#dc2626;color:#fff}
+    .procedure-row{margin-top:auto;padding-top:10px;display:flex;justify-content:space-between;gap:8px;align-items:end}.procedure{font-size:.8rem;font-weight:850;color:#334155}.duration{font-size:.72rem;font-weight:850;color:#475569;background:#ffffffb8;border:1px solid #dbe3ee;border-radius:7px;padding:5px 7px;white-space:nowrap}
+    .card-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px;border-top:1px solid #dfe7f1;padding-top:8px}.btn-sm{padding:5px 8px;font-size:.68rem;border-radius:7px}
+    .availability-card{min-height:174px;background:#f0fdf4;border:2px solid #6ee7a1;border-radius:13px;padding:14px 16px;cursor:pointer;transition:.15s;display:flex;flex-direction:column}
+    .availability-card:hover{background:#dcfce7;border-color:#22c55e;transform:translateY(-2px);box-shadow:0 8px 20px #16a34a20}
+    .availability-card .card-time{color:#0f172a}.available-label{margin-top:7px;color:#16a34a;font-size:.74rem;font-weight:950;text-transform:uppercase;letter-spacing:.04em}.available-help{font-size:.75rem;color:#15803d;margin-top:9px;line-height:1.45}.available-remaining{margin-top:auto;font-size:.72rem;font-weight:850;color:#166534;background:#dcfce7;border-radius:7px;padding:6px 8px;width:max-content}
+    .lunch-banner{margin:22px 0 4px;background:#fff7ed;border:1px dashed #fb923c;color:#9a3412;border-radius:10px;padding:10px 13px;font-size:.8rem;font-weight:850}
+    .overflow-alert{background:#fee2e2;border:1px solid #fecaca;color:#991b1b;border-radius:10px;padding:11px 13px;margin-bottom:12px;font-size:.84rem;font-weight:700}
+
+    .panel-card{background:#fff;border:1px solid var(--line);border-radius:13px;padding:16px;box-shadow:0 2px 9px #0f172a0b;margin-bottom:14px}
+    .panel-card h2{font-size:1.05rem;color:var(--navy)}.panel-card .help{font-size:.78rem;color:#64748b;margin-top:4px;line-height:1.5}
+    .stats-controls{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:14px 0}.period-toggle{display:flex;background:#e2e8f0;border-radius:8px;padding:3px}.period-toggle button{border:0;background:transparent;border-radius:6px;padding:6px 12px;font-size:.8rem;font-weight:800;color:#475569}.period-toggle button.active{background:#fff;color:var(--blue2);box-shadow:0 1px 4px #0002}
+    .stats-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}.metric{border:1px solid var(--line);border-radius:11px;padding:12px;background:#f8fafc}.metric .m-label{font-size:.7rem;color:#64748b;text-transform:uppercase;font-weight:800}.metric .m-val{font-size:1.55rem;font-weight:900;margin-top:4px}
+    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px;margin-top:12px}table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;border-bottom:1px solid #e2e8f0;text-align:left;font-size:.8rem}th{background:#f1f5f9;color:#475569;text-transform:uppercase;font-size:.68rem;letter-spacing:.04em}tr:last-child td{border-bottom:0}
+    .bar-bg{height:8px;background:#e2e8f0;border-radius:999px;overflow:hidden;min-width:90px}.bar-fill{height:100%;background:var(--blue2);border-radius:999px}
+
+    .overlay{display:none;position:fixed;inset:0;background:#0f172a99;z-index:1000;align-items:center;justify-content:center;padding:14px}.overlay.open{display:flex}
+    .modal{background:#fff;border-radius:14px;width:100%;max-width:560px;max-height:92vh;overflow:auto;padding:23px;box-shadow:0 24px 70px #0005;position:relative}.modal.large{max-width:850px}.modal h2{font-size:1.15rem;color:var(--navy)}.modal .sub{font-size:.8rem;color:#64748b;margin:3px 30px 16px 0;line-height:1.45}.close-x{position:absolute;right:13px;top:12px;background:transparent;border:0;font-size:1.25rem;color:#94a3b8}.close-x:hover{color:#334155}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.fg{margin-bottom:12px}.fg.full{grid-column:1/-1}.fg label{display:block;font-size:.71rem;font-weight:900;text-transform:uppercase;letter-spacing:.04em;color:#475569;margin-bottom:4px}.fg input,.fg select,.fg textarea{width:100%;border:2px solid #e2e8f0;border-radius:8px;padding:8px 10px;outline:none;background:#fff}.fg textarea{min-height:95px;resize:vertical;line-height:1.4}.conditional-field{display:none}.conditional-field.show{display:block}.hint{font-size:.7rem;color:#64748b;margin-top:4px}.modal-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:15px}.error{display:none;background:#fee2e2;color:#991b1b;border-radius:8px;padding:8px 10px;font-size:.8rem;margin-top:7px}.error.show{display:block}
+    .slot-preview{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;border-radius:9px;padding:10px 12px;font-weight:800;font-size:.85rem;margin-bottom:13px}.check-row{display:flex;gap:10px;align-items:flex-start;background:#fff7ed;border:1px solid #fdba74;border-radius:9px;padding:10px 12px}.check-row input{width:auto!important;margin-top:3px;accent-color:#dc2626}.check-row label{margin:0!important;text-transform:none!important;letter-spacing:0!important;font-size:.82rem!important;color:#9a3412!important}.check-row .check-help{display:block;font-size:.72rem;color:#7c2d12;margin-top:3px;line-height:1.35}.settings-proc{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;background:#f8fafc}.settings-proc h3{font-size:.9rem;color:#334155;margin-bottom:9px}.settings-row{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:start}.status-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+
+    #toast{display:none;position:fixed;right:20px;bottom:20px;z-index:3000;background:#166534;color:#fff;border-radius:9px;padding:11px 16px;font-weight:800;font-size:.85rem;box-shadow:0 8px 24px #0004}
+    #loadingOverlay{display:none;position:fixed;inset:0;background:#ffffffcc;z-index:2999;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:var(--blue2);font-weight:800}#loadingOverlay.open{display:flex}.spinner{width:38px;height:38px;border-radius:50%;border:4px solid #dbeafe;border-top-color:var(--blue2);animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+
+    .print-area{display:none}
+    @media(max-width:760px){.summary-grid,.stats-cards{grid-template-columns:repeat(2,1fr)}.form-grid,.settings-row{grid-template-columns:1fr}.session-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}.topbar .spacer{display:none}}
+    @media(max-width:420px){.summary-grid,.stats-cards{grid-template-columns:1fr 1fr}.app-header{align-items:flex-start}.brand h1{font-size:1.02rem}.dashboard{padding:13px 10px 28px}.session-grid{grid-template-columns:1fr}.booking-card,.availability-card{min-height:160px;padding:13px}.btn{padding:8px 10px}}
+
+    @media print{
+      @page{size:A4 portrait;margin:10mm}
+      body{background:#fff;color:#000}
+      body>*:not(.print-area){display:none!important}
+      .print-area.active-print{display:block!important}
+      .print-page{font-family:Arial,Helvetica,sans-serif;color:#000}
+      .print-header{text-align:center;border-bottom:2px solid #000;padding-bottom:7px;margin-bottom:10px}.print-header h1{font-size:15pt;text-transform:uppercase}.print-header p{font-size:9pt;margin-top:2px}.print-title{text-align:center;font-size:13pt;font-weight:bold;margin:8px 0 10px;text-transform:uppercase}
+      .daily-meta{font-size:9pt;display:flex;justify-content:space-between;margin-bottom:8px}.daily-table{width:100%;border-collapse:collapse}.daily-table th,.daily-table td{border:1px solid #000;padding:5px;font-size:8.5pt}.daily-table th{background:#eee;color:#000;text-transform:none;font-size:8.5pt}.daily-footer{font-size:8pt;margin-top:8px;text-align:right}
+      .slip-box{border:1.8px solid #000;padding:12px 14px;font-family:"Courier New",Courier,monospace}.slip-box .print-header{border-bottom:1.5px dashed #000;padding-bottom:6px;margin-bottom:8px}.slip-box .print-header h1{font-family:"Courier New",Courier,monospace;font-size:14pt}.slip-box .print-header p{font-size:9pt}.slip-title{font-size:13pt;text-align:center;font-weight:bold;border:2px solid #000;padding:5px;margin:8px 0;text-transform:uppercase;letter-spacing:.05em}.appt-focus{border:2px solid #000;text-align:center;padding:8px;margin:8px 0}.appt-focus .date{font-size:11pt;font-weight:bold}.appt-focus .time{font-size:22pt;font-weight:900;margin:2px}.appt-focus .proc{font-size:10.5pt;font-weight:bold;text-transform:uppercase}.slip-details{width:100%;border-collapse:collapse;margin:8px 0}.slip-details td{border:0;padding:2px 3px;font-size:9.3pt}.slip-details td:first-child{font-weight:bold;width:30%}.instructions{border-top:1.5px dashed #000;border-bottom:1.5px dashed #000;padding:8px 0 4px;margin-top:8px}.instructions h3{text-align:center;text-transform:uppercase;text-decoration:underline;font-size:11pt;margin-bottom:7px}.instructions ol{padding-left:23px;font-size:9.2pt}.instructions li{margin-bottom:5px;line-height:1.32}.instructions li strong{font-weight:900}.procedure-instructions-title{font-size:9.5pt;font-weight:bold;text-transform:uppercase;text-decoration:underline;margin:8px 0 5px}.print-note{text-align:center;margin-top:8px;font-size:8pt;line-height:1.35}.slip-footer{border-top:1px dashed #000;margin-top:7px;padding-top:6px;text-align:center;font-size:8pt}
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <h1>🔬 Endoscopy Appointment System</h1>
+      <p>Dr B Borooah Cancer Institute</p>
+    </div>
+    <div class="live-badge" id="liveBadge"><span class="live-dot"></span><span id="liveText">CONNECTING</span></div>
+  </header>
+
+  <div class="setup-notice" id="setupNotice"><b>Firebase connection could not be started.</b> The page is in local demo mode; changes will not sync between computers.</div>
+
+  <div class="topbar">
+    <label for="dateInput">📅 Appointment date</label>
+    <input type="date" id="dateInput" />
+    <button class="btn btn-blue" onclick="goToday()">Today</button>
+    <button class="btn btn-light" onclick="shiftDate(-1)">◀ Previous</button>
+    <button class="btn btn-light" onclick="shiftDate(1)">Next ▶</button>
+    <span class="spacer"></span>
+    <button class="btn btn-teal" onclick="printDailyList()">🖨 Daily A4 List</button>
+    <button class="btn btn-light" onclick="openAdminGate()">⚙ Admin Settings</button>
+  </div>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="schedulePanel" onclick="switchTab('schedulePanel',this)">Appointments</button>
+    <button class="tab-btn" data-tab="statsPanel" onclick="switchTab('statsPanel',this)">Statistics</button>
+  </nav>
+
+  <main>
+    <section class="tab-panel active" id="schedulePanel">
+      <div class="dashboard">
+        <div class="date-title" id="dateTitle">—</div>
+        <div class="summary-grid">
+          <div class="summary-card"><div class="label">Appointments</div><div class="value blue" id="sumAppointments">0</div><div class="sub">Booked for the day</div></div>
+          <div class="summary-card"><div class="label">Next available</div><div class="value green" id="sumNext">M 9:00 AM • A 1:30 PM</div><div class="sub">Morning / Afternoon</div></div>
+          <div class="summary-card"><div class="label">Remaining time</div><div class="value amber" id="sumRemaining">390 min</div><div class="sub">Before 4:00 PM</div></div>
+          <div class="summary-card"><div class="label">Status</div><div class="value red" id="sumStatus">0 / 0</div><div class="sub">Done / DNA</div></div>
+        </div>
+
+        <div id="overflowAlert"></div>
+        <div class="schedule-toolbar">
+          <button class="btn btn-green" id="bookNextBtn" onclick="openNewBooking(false,'auto')">＋ Book Appointment</button>
+          <button class="btn btn-red" id="emergencyBtn" onclick="openNewBooking(true)">🚨 Emergency / Add-on</button>
+          <button class="btn btn-light" onclick="loadForDate()">↻ Refresh</button>
+          <span class="next-note" id="nextNote">Appointments run continuously from 9:00 AM, excluding lunch 1:00–1:30 PM.</span>
+        </div>
+        <div class="timeline" id="timeline"><div class="timeline-empty">Loading appointments…</div></div>
+      </div>
+    </section>
+
+    <section class="tab-panel" id="statsPanel">
+      <div class="dashboard">
+        <div class="panel-card">
+          <h2>Weekly and Monthly Statistics</h2>
+          <p class="help">Counts are calculated from Firebase appointments, including Pending, Done and DNA records.</p>
+          <div class="stats-controls">
+            <div class="period-toggle">
+              <button id="weekBtn" class="active" onclick="setStatsPeriod('week')">Weekly</button>
+              <button id="monthBtn" onclick="setStatsPeriod('month')">Monthly</button>
+            </div>
+            <label id="statsDateLabel" for="statsDate">Reference date</label>
+            <input type="date" id="statsDate" />
+            <input type="month" id="statsMonth" style="display:none" />
+            <button class="btn btn-blue" onclick="loadStats()">Update</button>
+          </div>
+          <div id="statsRange" class="date-title">—</div>
+          <div class="stats-cards">
+            <div class="metric"><div class="m-label">Total procedures</div><div class="m-val" id="stTotal">0</div></div>
+            <div class="metric"><div class="m-label">Done</div><div class="m-val" id="stDone">0</div></div>
+            <div class="metric"><div class="m-label">DNA</div><div class="m-val" id="stDna">0</div></div>
+            <div class="metric"><div class="m-label">Pending</div><div class="m-val" id="stPending">0</div></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Procedure</th><th>Count</th><th>Share</th><th></th></tr></thead>
+              <tbody id="procedureStatsBody"><tr><td colspan="4">No data loaded.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Booking / editing modal -->
+  <div class="overlay" id="bookingOverlay">
+    <div class="modal">
+      <button class="close-x" onclick="closeModal('bookingOverlay')">✕</button>
+      <h2 id="bookingTitle">Book Appointment</h2>
+      <p class="sub" id="bookingSub">—</p>
+      <div class="slot-preview" id="slotPreview">—</div>
+      <div class="form-grid">
+        <div class="fg"><label>Patient Name *</label><input id="bName" autocomplete="off" /></div>
+        <div class="fg"><label>Age *</label><input type="number" id="bAge" min="0" max="120" /></div>
+        <div class="fg"><label>Patient ID / Number *</label><input id="bPid" autocomplete="off" /></div>
+        <div class="fg"><label>IPD / OPD *</label><select id="bType" onchange="patientTypeChanged()"><option value="OPD">OPD</option><option value="IPD">IPD</option></select></div>
+        <div class="fg" id="phoneField"><label id="phoneLabel">Phone Number *</label><input id="bPhone" type="tel" autocomplete="tel" /></div>
+        <div class="fg conditional-field" id="wardField"><label>Ward *</label><input id="bWard" autocomplete="off" placeholder="e.g. Ward 3A" /></div>
+        <div class="fg conditional-field" id="bedField"><label>Bed Number *</label><input id="bBed" autocomplete="off" placeholder="e.g. 12" /></div>
+        <div class="fg" id="sessionField"><label>Appointment Session *</label><select id="bSession" onchange="updateSlotPreview()"><option value="morning">Morning (9:00 AM–1:00 PM)</option><option value="afternoon">Afternoon (1:30–4:00 PM)</option></select></div>
+        <div class="fg"><label>Procedure *</label><select id="bProc" onchange="procedureChanged()"></select></div>
+        <div class="fg"><label>Duration (minutes) *</label><input type="number" id="bDuration" min="5" max="180" step="5" oninput="updateSlotPreview()" /></div>
+        <div class="fg"><label>Booked by (Resident) *</label><input id="bResident" autocomplete="off" /></div>
+        <div class="fg full"><div class="check-row"><input type="checkbox" id="bEmergency" onchange="emergencyChanged()" /><label for="bEmergency"><b>Emergency / add-on case</b><span class="check-help">Allows the case to be added even when the regular schedule is full or the procedure will continue after 4:00 PM. It is clearly flagged on screen and printouts.</span></label></div></div>
+        <div class="fg full"><label>Access Password *</label><input type="password" id="bPassword" autocomplete="current-password" /></div>
+      </div>
+      <div class="error" id="bError"></div>
+      <div class="modal-actions">
+        <button class="btn btn-light" onclick="closeModal('bookingOverlay')">Cancel</button>
+        <button class="btn btn-blue" id="bookingSaveBtn" onclick="submitBooking()">Confirm Booking</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- View modal -->
+  <div class="overlay" id="viewOverlay">
+    <div class="modal">
+      <button class="close-x" onclick="closeModal('viewOverlay')">✕</button>
+      <h2>Appointment Details</h2>
+      <p class="sub" id="viewSub">—</p>
+      <div id="viewBody"></div>
+      <div class="status-buttons">
+        <button class="btn btn-amber" onclick="setStatus('Pending')">Pending</button>
+        <button class="btn btn-blue" onclick="setStatus('Done')">Done</button>
+        <button class="btn btn-red" onclick="setStatus('DNA')">DNA</button>
+      </div>
+      <p class="hint">Status can be updated without a password.</p>
+      <div class="modal-actions">
+        <button class="btn btn-light" onclick="closeModal('viewOverlay')">Close</button>
+        <button class="btn btn-teal" onclick="printActiveSlip()">🖨 A4 Slip</button>
+        <button class="btn btn-blue" onclick="openEditBooking()">Edit</button>
+        <button class="btn btn-red" onclick="openCancelGate()">Cancel Booking</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Password gate for cancellation -->
+  <div class="overlay" id="cancelOverlay">
+    <div class="modal" style="max-width:390px">
+      <button class="close-x" onclick="closeModal('cancelOverlay')">✕</button>
+      <h2 style="color:#b91c1c">Cancel Appointment?</h2>
+      <p class="sub">Enter the shared password. Later appointments in the same regular session will automatically move earlier.</p>
+      <div class="fg"><label>Password</label><input type="password" id="cPassword" /></div>
+      <div class="error" id="cError"></div>
+      <div class="modal-actions"><button class="btn btn-light" onclick="closeModal('cancelOverlay')">Back</button><button class="btn btn-red" onclick="submitCancel()">Cancel Appointment</button></div>
+    </div>
+  </div>
+
+  <!-- Admin password gate -->
+  <div class="overlay" id="adminGateOverlay">
+    <div class="modal" style="max-width:390px">
+      <button class="close-x" onclick="closeModal('adminGateOverlay')">✕</button>
+      <h2>Admin Settings</h2>
+      <p class="sub">Procedure durations and patient instructions are shared through Firebase.</p>
+      <div class="fg"><label>Password</label><input type="password" id="aPassword" /></div>
+      <div class="error" id="aError"></div>
+      <div class="modal-actions"><button class="btn btn-light" onclick="closeModal('adminGateOverlay')">Cancel</button><button class="btn btn-blue" onclick="unlockAdmin()">Open Settings</button></div>
+    </div>
+  </div>
+
+  <!-- Settings modal -->
+  <div class="overlay" id="settingsOverlay">
+    <div class="modal large">
+      <button class="close-x" onclick="closeModal('settingsOverlay')">✕</button>
+      <h2>Procedure Settings</h2>
+      <p class="sub">Change default durations and procedure-specific instructions. The common fasting, medication, arrival, escort and safety instructions are added automatically to every printed slip. Enter one procedure-specific instruction per line. Saving updates all connected computers.</p>
+      <div class="next-note" style="margin-bottom:12px">Common instructions are protected from accidental editing; only the additional instructions for each procedure are changed here.</div>
+      <div id="settingsList"></div>
+      <div class="error" id="settingsError"></div>
+      <div class="modal-actions"><button class="btn btn-light" onclick="closeModal('settingsOverlay')">Close</button><button class="btn btn-blue" onclick="saveSettings()">Save to Firebase</button></div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <div id="loadingOverlay"><div class="spinner"></div><div id="loadingText">Saving…</div></div>
+
+  <!-- Print: daily list -->
+  <section class="print-area" id="dailyPrintArea">
+    <div class="print-page">
+      <div class="print-header"><h1>Dr B Borooah Cancer Institute</h1><p>Endoscopy Unit</p></div>
+      <div class="print-title">Daily Endoscopy Appointment List</div>
+      <div class="daily-meta"><span id="dailyPrintDate">—</span><span id="dailyPrintSummary">—</span></div>
+      <table class="daily-table"><thead><tr><th>Time</th><th>Patient Name</th><th>ID</th><th>IPD/OPD</th><th>Phone / Ward–Bed</th><th>Priority</th><th>Procedure</th><th>Duration</th><th>Status</th></tr></thead><tbody id="dailyPrintBody"></tbody></table>
+      <div class="daily-footer" id="dailyPrintedAt">—</div>
+    </div>
+  </section>
+
+  <!-- Print: individual slip -->
+  <section class="print-area" id="slipPrintArea">
+    <div class="print-page slip-box">
+      <div class="print-header"><h1>Dr B Borooah Cancer Institute</h1><p>Endoscopy Unit</p></div>
+      <div class="slip-title">Endoscopy Appointment Slip</div>
+      <div class="slip-emergency" id="slipEmergency">Emergency / Add-on Case</div>
+      <div class="appt-focus"><div class="date" id="slipDate">—</div><div class="time" id="slipTime">—</div><div class="proc" id="slipProcedure">—</div></div>
+      <table class="slip-details">
+        <tr><td>Patient Name</td><td id="slipName">—</td></tr>
+        <tr><td>Age</td><td id="slipAge">—</td></tr>
+        <tr><td>Patient ID / Number</td><td id="slipId">—</td></tr>
+        <tr><td>IPD / OPD</td><td id="slipType">—</td></tr>
+        <tr id="slipPhoneRow"><td>Phone</td><td id="slipPhone">—</td></tr>
+        <tr id="slipWardRow"><td>Ward</td><td id="slipWard">—</td></tr>
+        <tr id="slipBedRow"><td>Bed Number</td><td id="slipBed">—</td></tr>
+        <tr><td>Booked by</td><td id="slipBookedBy">—</td></tr>
+      </table>
+      <div class="instructions">
+        <h3>⚠ Pre-Endoscopy Instructions</h3>
+        <ol id="slipCommonInstructions"></ol>
+        <div class="procedure-instructions-title" id="procedureInstructionsTitle">Procedure-specific instructions</div>
+        <ol id="slipProcedureInstructions"></ol>
+      </div>
+      <div class="slip-footer">Please keep this appointment slip and bring it on the day of the procedure.</div>
+    </div>
+  </section>
+
+<script>
+/* ─────────────────────────────────────────────────────────────
+   Application configuration
+   ───────────────────────────────────────────────────────────── */
+const CONFIG = {
+  hospitalName: "Dr B Borooah Cancer Institute",
+  department: "Endoscopy Unit",
+  password: "Endo@2024",
+  dayStart: "09:00",
+  dayEnd: "16:00",
+  breakStart: "13:00",
+  breakEnd: "13:30"
+};
+
+/* FIREBASE CONFIG — retained exactly from the supplied application */
+const firebaseConfig = {
+  apiKey            : "AIzaSyCrOPSCZtsuWpwxr5tFz1FCcYWVeNoHR0A",
+  authDomain        : "real-time-data-base-e2241.firebaseapp.com",
+  databaseURL       : "https://real-time-data-base-e2241-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId         : "real-time-data-base-e2241",
+  storageBucket     : "real-time-data-base-e2241.firebasestorage.app",
+  messagingSenderId : "992613371239",
+  appId             : "1:992613371239:web:ac60af168b63420c50f3c2"
+};
+
+const COMMON_INSTRUCTIONS = [
+  "FASTING: Do NOT eat or drink anything, including water, for at least 6 hours before your appointment time.",
+  "MEDICATIONS: Continue your regular medicines with a small sip of water. Stop blood thinners such as Aspirin, Clopidogrel or Warfarin 5–7 days before only if specifically instructed by your doctor.",
+  "ARRIVE 15 MINUTES EARLY: Bring this slip and any previous endoscopy, biopsy, imaging or relevant medical reports.",
+  "ESCORT: Bring a family member or friend. You must not drive home after the procedure.",
+  "Remove dentures, jewellery and piercings before entering the procedure room.",
+  "Inform staff about drug allergies, heart conditions or pregnancy."
+];
+
+const DEFAULT_SETTINGS = {
+  procedures: {
+    "OGD": { duration:10, instructions:["Follow any additional instructions given by the treating endoscopy team."] },
+    "Colonoscopy": { duration:20, instructions:["Complete the prescribed bowel preparation exactly as instructed.","Take only clear liquids on the day before the procedure."] },
+    "Bronchoscopy": { duration:15, instructions:["Use the prescribed bronchodilator before the procedure if advised by your doctor."] },
+    "Flexible Sigmoidoscopy": { duration:15, instructions:["Follow the bowel preparation or enema instructions given by your treating team."] },
+    "ERCP": { duration:30, instructions:["Bring previous imaging, laboratory reports and your current medication list.","Follow any additional instructions given by the ERCP team."] },
+    "EUS": { duration:30, instructions:["Bring previous imaging, endoscopy and biopsy reports."] },
+    "Other": { duration:15, instructions:["Follow the additional procedure-specific instructions given by your treating team."] }
+  }
+};
+
+let db = null;
+let fbReady = false;
+let currentDate = localISODate(new Date());
+let rawDayData = {};
+let scheduleItems = [];
+let settings = deepClone(DEFAULT_SETTINGS);
+let dayListenerRef = null;
+let settingsListenerRef = null;
+let activeBookingId = null;
+let editingBookingId = null;
+let statsPeriod = "week";
+let printCleanupTimer = null;
+
+/* ─────────────────────────────────────────────────────────────
+   Startup
+   ───────────────────────────────────────────────────────────── */
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("dateInput").value = currentDate;
+  document.getElementById("statsDate").value = currentDate;
+  document.getElementById("statsMonth").value = currentDate.slice(0,7);
+  document.getElementById("dateInput").addEventListener("change", e => { currentDate = e.target.value; loadForDate(); });
+  document.getElementById("statsDate").addEventListener("change", loadStats);
+  document.getElementById("statsMonth").addEventListener("change", loadStats);
+  document.querySelectorAll(".overlay").forEach(ov => ov.addEventListener("click", e => { if(e.target===ov) ov.classList.remove("open"); }));
+  window.addEventListener("afterprint", clearPrintMode);
+  setInterval(()=>{ if(isToday(currentDate)) renderSchedule(); },60000);
+
+  try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    fbReady = true;
+    setConnectionBadge(true);
+    attachSettingsListener();
+    loadForDate();
+  } catch (err) {
+    console.error(err);
+    fbReady = false;
+    setConnectionBadge(false);
+    document.getElementById("setupNotice").style.display = "block";
+    renderSchedule();
+  }
+});
+
+function setConnectionBadge(connected){
+  const badge=document.getElementById("liveBadge");
+  document.getElementById("liveText").textContent=connected?"LIVE SYNC":"DEMO MODE";
+  badge.classList.toggle("offline",!connected);
+}
+
+function attachSettingsListener(){
+  if(!fbReady) return;
+  settingsListenerRef = db.ref("endoscopy_settings/config");
+  settingsListenerRef.on("value", snap => {
+    const remote=snap.val();
+    settings=mergeSettings(remote);
+    populateProcedureSelect();
+    renderSchedule();
+  }, err => { console.error("Settings listener:",err); settings=deepClone(DEFAULT_SETTINGS); populateProcedureSelect(); });
+}
+
+function mergeSettings(remote){
+  const merged=deepClone(DEFAULT_SETTINGS);
+  if(remote && remote.procedures){
+    Object.keys(merged.procedures).forEach(name=>{
+      const r=remote.procedures[name];
+      if(!r) return;
+      const dur=Number(r.duration);
+      if(Number.isFinite(dur) && dur>=5 && dur<=180) merged.procedures[name].duration=dur;
+      if(Array.isArray(r.instructions)) merged.procedures[name].instructions=r.instructions.map(x=>String(x).trim()).filter(Boolean);
+      else if(typeof r.instructions==="string") merged.procedures[name].instructions=r.instructions.split(/\n+/).map(x=>x.trim()).filter(Boolean);
+    });
+  }
+  return merged;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Date and time helpers
+   ───────────────────────────────────────────────────────────── */
+function pad(n){return String(n).padStart(2,"0")}
+function localISODate(d){return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
+function parseLocalDate(iso){const [y,m,d]=iso.split("-").map(Number);return new Date(y,m-1,d)}
+function addDays(iso,n){const d=parseLocalDate(iso);d.setDate(d.getDate()+n);return localISODate(d)}
+function goToday(){currentDate=localISODate(new Date());document.getElementById("dateInput").value=currentDate;loadForDate()}
+function shiftDate(n){currentDate=addDays(currentDate,n);document.getElementById("dateInput").value=currentDate;loadForDate()}
+function fmtDateLong(iso){return parseLocalDate(iso).toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
+function fmtDateShort(iso){return parseLocalDate(iso).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"})}
+function toMins(t){const [h,m]=String(t||"00:00").split(":").map(Number);return h*60+m}
+function fromMins(n){return `${pad(Math.floor(n/60))}:${pad(n%60)}`}
+function fmt12(t){const [h,m]=t.split(":").map(Number);return `${h%12||12}:${pad(m)} ${h>=12?"PM":"AM"}`}
+function minutesText(n){n=Math.max(0,Math.round(Number(n)||0));if(n<60)return `${n} min`;const h=Math.floor(n/60),m=n%60;return m?`${h} h ${m} min`:`${h} h`}
+function isToday(iso){return iso===localISODate(new Date())}
+function isPastDate(iso){return iso<localISODate(new Date())}
+function roundUpMinutes(n,step=5){return Math.ceil(n/step)*step}
+function currentRoundedMins(){const now=new Date();return roundUpMinutes(now.getHours()*60+now.getMinutes(),5)}
+function sessionBookingFloor(session,iso=currentDate){
+  const morning=session!=="afternoon";
+  const start=toMins(morning?CONFIG.dayStart:CONFIG.breakEnd);
+  const end=toMins(morning?CONFIG.breakStart:CONFIG.dayEnd);
+  if(!isToday(iso)) return start;
+  const now=currentRoundedMins();
+  if(now>=end) return end;
+  return Math.max(start,now);
+}
+function bookingFloorForDate(iso=currentDate){
+  const morning=sessionBookingFloor("morning",iso),afternoon=sessionBookingFloor("afternoon",iso);
+  if(morning<toMins(CONFIG.breakStart)) return morning;
+  return afternoon;
+}
+function defaultBookingSession(){
+  const s=scheduleSummary();
+  if(s.remainingMorning>0) return "morning";
+  return "afternoon";
+}
+function sessionLabel(session){return session==="afternoon"?"Afternoon":"Morning"}
+
+/* ─────────────────────────────────────────────────────────────
+   Firebase day loading and backward-compatible normalization
+   ───────────────────────────────────────────────────────────── */
+function loadForDate(){
+  document.getElementById("dateTitle").textContent=fmtDateLong(currentDate);
+  if(!fbReady){renderSchedule();return}
+  if(dayListenerRef) dayListenerRef.off();
+  dayListenerRef=db.ref(`endoscopy_appointments/${currentDate}`);
+  dayListenerRef.on("value", snap=>{
+    rawDayData=snap.val()||{};
+    scheduleItems=calculateSchedule(normalizeDayData(rawDayData));
+    renderSchedule();
+  },err=>{toast("Could not load appointments: "+err.message,true)});
+}
+
+function normalizeDayData(data){
+  return Object.entries(data||{}).map(([id,b],index)=>{
+    b=b||{};
+    const procedure=canonicalProcedure(b.procedure||"Other");
+    const inferredTime=b.slotTime || (/^\d{2}_\d{2}$/.test(id)?id.replace("_",":"):"");
+    const fallbackOrder=inferredTime?toMins(inferredTime):10000+index;
+    const duration=validDuration(b.duration)?Number(b.duration):getDefaultDuration(procedure);
+    return {
+      id,
+      patientName:b.patientName||b.name||"Unnamed patient",
+      age:b.age??"",
+      patientId:b.patientId||b.pid||"—",
+      phone:b.phone||"",
+      ward:b.ward||b.wardName||"",
+      bedNumber:b.bedNumber||b.bed||"",
+      procedure,
+      duration,
+      patientType:String(b.patientType||b.ipdOpd||b.type||"OPD").toUpperCase()==="IPD"?"IPD":"OPD",
+      bookedBy:b.bookedBy||b.resident||"—",
+      bookedAt:b.bookedAt||"",
+      status:normalizeStatus(b.status),
+      isEmergency:b.isEmergency===true||String(b.isEmergency||"").toLowerCase()==="true"||String(b.priority||"").toLowerCase()==="emergency",
+      session:(()=>{
+        const explicit=String(b.session||b.bookingSession||"").toLowerCase();
+        if(explicit==="morning"||explicit==="afternoon") return explicit;
+        if(b.isEmergency===true||String(b.isEmergency||"").toLowerCase()==="true"||String(b.priority||"").toLowerCase()==="emergency") return "emergency";
+        if(inferredTime&&toMins(inferredTime)>=toMins(CONFIG.breakEnd)) return "afternoon";
+        if(/^\d{2}:\d{2}$/.test(String(b.notBeforeTime||""))&&toMins(String(b.notBeforeTime))>=toMins(CONFIG.breakEnd)) return "afternoon";
+        return "auto";
+      })(),
+      notBeforeTime:/^\d{2}:\d{2}$/.test(String(b.notBeforeTime||""))?String(b.notBeforeTime):"",
+      notBeforeMins:/^\d{2}:\d{2}$/.test(String(b.notBeforeTime||""))?toMins(String(b.notBeforeTime)):null,
+      order:Number.isFinite(Number(b.order))?Number(b.order):fallbackOrder,
+      legacySlotTime:inferredTime,
+      raw:b
+    };
+  }).sort((a,b)=>a.order-b.order || String(a.bookedAt).localeCompare(String(b.bookedAt)) || a.id.localeCompare(b.id));
+}
+
+function calculateSchedule(items){
+  const dayStart=toMins(CONFIG.dayStart),lunchStart=toMins(CONFIG.breakStart),lunchEnd=toMins(CONFIG.breakEnd),dayEnd=toMins(CONFIG.dayEnd);
+  let morningCursor=dayStart,afternoonCursor=lunchEnd;
+  const regular=[],emergencies=[];
+  const ordered=[...items].sort((a,b)=>a.order-b.order || String(a.bookedAt).localeCompare(String(b.bookedAt)) || a.id.localeCompare(b.id));
+
+  function placeRegular(item,session){
+    const dur=Number(item.duration)||15;
+    const sessionStart=session==="afternoon"?lunchEnd:dayStart;
+    const sessionEnd=session==="afternoon"?dayEnd:lunchStart;
+    const floor=Number.isFinite(Number(item.notBeforeMins))?Number(item.notBeforeMins):(item.notBeforeTime?toMins(item.notBeforeTime):sessionStart);
+    let start=session==="afternoon"?afternoonCursor:morningCursor;
+    start=Math.max(start,sessionStart,floor);
+    const end=start+dur;
+    if(session==="afternoon") afternoonCursor=end; else morningCursor=end;
+    regular.push({...item,sessionAssigned:session,startMins:start,endMins:end,startTime:fromMins(start),endTime:fromMins(end),overflowsSession:end>sessionEnd,overflows:end>dayEnd});
+  }
+
+  ordered.forEach(item=>{
+    if(item.isEmergency||item.session==="emergency"){emergencies.push(item);return}
+    if(item.session==="morning"||item.session==="afternoon"){placeRegular(item,item.session);return}
+    const dur=Number(item.duration)||15;
+    const floor=Number.isFinite(Number(item.notBeforeMins))?Number(item.notBeforeMins):(item.notBeforeTime?toMins(item.notBeforeTime):dayStart);
+    if(floor>=lunchEnd){placeRegular(item,"afternoon");return}
+    const morningStart=Math.max(morningCursor,dayStart,floor);
+    if(morningStart+dur<=lunchStart) placeRegular(item,"morning");
+    else placeRegular(item,"afternoon");
+  });
+
+  function earliestGap(floor,duration,intervals){
+    let cursor=Math.max(dayStart,floor);
+    for(const iv of [...intervals].sort((a,b)=>a.startMins-b.startMins)){
+      if(cursor+duration<=iv.startMins) return cursor;
+      if(cursor<iv.endMins) cursor=iv.endMins;
+    }
+    return cursor;
+  }
+
+  const placed=[...regular];
+  emergencies.forEach(item=>{
+    const dur=Number(item.duration)||15;
+    const floor=Number.isFinite(Number(item.notBeforeMins))?Number(item.notBeforeMins):(item.notBeforeTime?toMins(item.notBeforeTime):dayStart);
+    const start=earliestGap(floor,dur,placed),end=start+dur;
+    placed.push({...item,sessionAssigned:"emergency",startMins:start,endMins:end,startTime:fromMins(start),endTime:fromMins(end),overflowsSession:false,overflows:end>dayEnd});
+  });
+
+  return placed.sort((a,b)=>a.startMins-b.startMins || a.order-b.order || a.id.localeCompare(b.id)).map((x,index)=>({...x,index}));
+}
+
+function scheduleSummary(items=scheduleItems){
+  const lunchStart=toMins(CONFIG.breakStart),lunchEnd=toMins(CONFIG.breakEnd),dayEnd=toMins(CONFIG.dayEnd);
+  const morningItems=items.filter(x=>!x.isEmergency&&x.sessionAssigned==="morning");
+  const afternoonItems=items.filter(x=>!x.isEmergency&&x.sessionAssigned==="afternoon");
+  const lastMorning=morningItems.length?Math.max(...morningItems.map(x=>x.endMins)):toMins(CONFIG.dayStart);
+  const lastAfternoon=afternoonItems.length?Math.max(...afternoonItems.map(x=>x.endMins)):lunchEnd;
+  const nextMorning=Math.max(lastMorning,sessionBookingFloor("morning",currentDate));
+  const nextAfternoon=Math.max(lastAfternoon,sessionBookingFloor("afternoon",currentDate));
+  const remainingMorning=isPastDate(currentDate)?0:Math.max(0,lunchStart-nextMorning);
+  const remainingAfternoon=isPastDate(currentDate)?0:Math.max(0,dayEnd-nextAfternoon);
+  const nextEmergency=Math.max(bookingFloorForDate(currentDate),toMins(CONFIG.dayStart));
+  const done=items.filter(x=>x.status==="Done").length,dna=items.filter(x=>x.status==="DNA").length;
+  return {
+    nextMorning,nextAfternoon,nextRegular:remainingMorning>0?nextMorning:nextAfternoon,nextEmergency,
+    remainingMorning,remainingAfternoon,remaining:remainingMorning+remainingAfternoon,done,dna,
+    overflow:items.some(x=>!x.isEmergency&&x.overflowsSession),
+    emergencyAfterHours:items.filter(x=>x.isEmergency&&x.overflows).length,
+    pastDate:isPastDate(currentDate)
+  };
+}
+
+function canonicalProcedure(name){
+  const s=String(name||"").toLowerCase();
+  if(s.includes("bronch"))return "Bronchoscopy";
+  if(s.includes("sigmoid"))return "Flexible Sigmoidoscopy";
+  if(s.includes("colon"))return "Colonoscopy";
+  if(s.includes("ercp"))return "ERCP";
+  if(s.includes("eus")||s.includes("ultrasound"))return "EUS";
+  if(s.includes("ogd")||s.includes("upper gi")||s.includes("gastroscopy"))return "OGD";
+  return settings.procedures[name]?name:"Other";
+}
+function normalizeStatus(s){s=String(s||"Pending").toUpperCase();return s==="DONE"?"Done":s==="DNA"?"DNA":"Pending"}
+function validDuration(n){n=Number(n);return Number.isFinite(n)&&n>=5&&n<=180}
+function getDefaultDuration(proc){return Number(settings.procedures[canonicalProcedure(proc)]?.duration)||15}
+function isCommonInstructionDuplicate(text){
+  const s=String(text||"").toLowerCase();
+  return /do not eat or drink|empty stomach|fasting|regular medicines|blood thinner|arrive 15|arrive at least|family member|escort|must not drive|dentures|jewellery|piercings|drug allergies|heart conditions|pregnancy/.test(s);
+}
+function getProcedureInstructions(proc){
+  const list=settings.procedures[canonicalProcedure(proc)]?.instructions||settings.procedures.Other.instructions||[];
+  return list.map(x=>String(x).trim()).filter(Boolean).filter(x=>!isCommonInstructionDuplicate(x));
+}
+function instructionHTML(text){
+  const safe=esc(text);const i=safe.indexOf(":");
+  return i>0?`<strong>${safe.slice(0,i+1)}</strong>${safe.slice(i+1)}`:safe;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Rendering
+   ───────────────────────────────────────────────────────────── */
+function renderSchedule(){
+  if(!Array.isArray(scheduleItems)) scheduleItems=[];
+  const s=scheduleSummary();
+  const dayEnd=toMins(CONFIG.dayEnd),lunchStart=toMins(CONFIG.breakStart),lunchEnd=toMins(CONFIG.breakEnd);
+  document.getElementById("dateTitle").textContent=fmtDateLong(currentDate);
+  document.getElementById("sumAppointments").textContent=scheduleItems.length;
+  document.getElementById("sumNext").textContent=s.pastDate?"Closed":`M ${s.remainingMorning>0?fmt12(fromMins(s.nextMorning)):"Full"} • A ${s.remainingAfternoon>0?fmt12(fromMins(s.nextAfternoon)):"Full"}`;
+  document.getElementById("sumRemaining").textContent=minutesText(s.remaining);
+  document.getElementById("sumStatus").textContent=`${s.done} / ${s.dna}`;
+
+  const regularBtn=document.getElementById("bookNextBtn"),emergencyBtn=document.getElementById("emergencyBtn");
+  if(regularBtn){regularBtn.disabled=s.pastDate||s.remaining<=0;regularBtn.title=s.pastDate?"Bookings cannot be added to a past date":s.remaining<=0?"Both regular sessions are full; use Emergency / Add-on":"Choose Morning or Afternoon in the booking form"}
+  if(emergencyBtn){emergencyBtn.disabled=s.pastDate;emergencyBtn.title=s.pastDate?"Emergency cases cannot be added retrospectively":""}
+
+  if(s.pastDate)document.getElementById("nextNote").textContent="This is a past date. Existing records can be viewed, but new cases cannot be added.";
+  else document.getElementById("nextNote").textContent=`Morning and afternoon are independent: ${minutesText(s.remainingMorning)} remains before lunch and ${minutesText(s.remainingAfternoon)} remains after 1:30 PM.`;
+
+  const alerts=[];
+  if(s.overflow)alerts.push("⚠ A regular appointment does not fit within its selected session. Reduce its duration, move it to the other session, or mark it as emergency/add-on.");
+  if(s.emergencyAfterHours)alerts.push(`🚨 ${s.emergencyAfterHours} emergency/add-on case${s.emergencyAfterHours>1?"s":""} continue${s.emergencyAfterHours===1?"s":""} after 4:00 PM.`);
+  document.getElementById("overflowAlert").innerHTML=alerts.map(x=>`<div class="overflow-alert">${x}</div>`).join("");
+
+  const timeline=document.getElementById("timeline");
+  const morning=scheduleItems.filter(x=>x.startMins<lunchStart);
+  const lunchCases=scheduleItems.filter(x=>x.startMins>=lunchStart&&x.startMins<lunchEnd);
+  const afternoon=scheduleItems.filter(x=>x.startMins>=lunchEnd&&x.startMins<dayEnd);
+  const afterHours=scheduleItems.filter(x=>x.startMins>=dayEnd);
+
+  function bookingCard(item){
+    const statusClass=item.status.toLowerCase();
+    const statusLabel=item.status==="Pending"?(item.isEmergency?"🚨 Emergency / Add-on":"● Booked"):item.status==="Done"?"✓ Done":"DNA";
+    const location=item.patientType==="IPD"&& (item.ward||item.bedNumber)?`<span>${esc([item.ward,item.bedNumber?"Bed "+item.bedNumber:""].filter(Boolean).join(" • "))}</span>`:"";
+    return `<article class="booking-card ${item.patientType.toLowerCase()} ${statusClass} ${item.isEmergency?"emergency":""}" onclick="viewBooking('${jsq(item.id)}')">
+      <div class="card-time">${fmt12(item.startTime)}</div><div class="card-end">to ${fmt12(item.endTime)}</div>
+      <div class="card-status">${statusLabel}</div>
+      <div class="patient-name">${esc(item.patientName)}</div>
+      <div class="patient-meta"><span>ID: ${esc(item.patientId)}</span><span>Age: ${esc(item.age)}</span>${location}</div>
+      <div class="badges"><span class="badge ${item.patientType==="IPD"?"badge-ipd":"badge-opd"}">${item.patientType}</span><span class="badge badge-${statusClass}">${item.status}</span>${item.isEmergency?'<span class="badge badge-emergency">Emergency</span>':""}${item.overflows?'<span class="badge badge-dna">After 4 PM</span>':""}</div>
+      <div class="procedure-row"><div class="procedure">${esc(item.procedure)}</div><div class="duration">⏱ ${item.duration} min</div></div>
+      <div class="card-actions" onclick="event.stopPropagation()"><button class="btn btn-sm btn-blue" onclick="setStatusFor('${jsq(item.id)}','Done')">✓ Done</button><button class="btn btn-sm btn-red" onclick="setStatusFor('${jsq(item.id)}','DNA')">DNA</button><button class="btn btn-sm btn-light" onclick="viewBooking('${jsq(item.id)}')">Details</button></div>
+    </article>`;
+  }
+  function availabilityCard(session,start,end,help){
+    const left=Math.max(0,end-start);if(left<=0||s.pastDate)return "";
+    return `<article class="availability-card" onclick="openNewBooking(false,'${session}')"><div class="card-time">${fmt12(fromMins(start))}</div><div class="available-label">✓ Next ${session} appointment</div><div class="available-help">${help}</div><div class="available-remaining">${minutesText(left)} in this session</div></article>`;
+  }
+  function session(title,icon,range,items,available=""){
+    const content=items.map(bookingCard).join("")+available;
+    return `<section class="session-block"><div class="session-heading"><span>${icon}</span><span>${title}&nbsp;&nbsp; ${range}</span></div><div class="session-grid">${content||'<div class="timeline-empty" style="grid-column:1/-1">No appointments in this session.</div>'}</div></section>`;
+  }
+
+  const morningAvailable=availabilityCard("morning",s.nextMorning,lunchStart,"Book a morning case. Morning bookings do not affect the afternoon list.");
+  const afternoonAvailable=availabilityCard("afternoon",s.nextAfternoon,dayEnd,"Book an afternoon case now, even while the morning session is still running.");
+  let html=session("Morning","🌅",`${fmt12(CONFIG.dayStart)} – ${fmt12(CONFIG.breakStart)}`,morning,morningAvailable);
+  html+=`<div class="lunch-banner">🍽 Lunch break: ${fmt12(CONFIG.breakStart)} – ${fmt12(CONFIG.breakEnd)}${lunchCases.length?" • Emergency case in progress":""}</div>`;
+  if(lunchCases.length)html+=session("Lunch-time emergency / add-on","🚨",`${fmt12(CONFIG.breakStart)} – ${fmt12(CONFIG.breakEnd)}`,lunchCases);
+  html+=session("Afternoon","☀️",`${fmt12(CONFIG.breakEnd)} – ${fmt12(CONFIG.dayEnd)}`,afternoon,afternoonAvailable);
+  if(afterHours.length)html+=session("After-hours emergency / add-on","🚨",`After ${fmt12(CONFIG.dayEnd)}`,afterHours);
+  timeline.innerHTML=html;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Booking and editing
+   ───────────────────────────────────────────────────────────── */
+function populateProcedureSelect(){
+  const select=document.getElementById("bProc");
+  if(!select) return;
+  const prior=select.value;
+  select.innerHTML=Object.keys(settings.procedures).map(p=>`<option value="${escAttr(p)}">${esc(p)}</option>`).join("");
+  if(settings.procedures[prior]) select.value=prior;
+}
+
+function openNewBooking(forceEmergency=false,preferredSession="auto"){
+  if(isPastDate(currentDate)){toast("New cases cannot be added to a past date.",true);return}
+  editingBookingId=null;
+  activeBookingId=null;
+  populateProcedureSelect();
+  document.getElementById("bookingTitle").textContent=forceEmergency?"Book Emergency / Add-on Case":"Book Appointment";
+  document.getElementById("bookingSub").textContent=forceEmergency?`${fmtDateLong(currentDate)} • earliest available gap; after-hours override permitted`:`${fmtDateLong(currentDate)} • morning and afternoon are booked independently`;
+  ["bName","bAge","bPid","bPhone","bWard","bBed","bResident","bPassword"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("bType").value="OPD";
+  document.getElementById("bSession").value=preferredSession==="morning"||preferredSession==="afternoon"?preferredSession:defaultBookingSession();
+  document.getElementById("bProc").value="OGD";
+  document.getElementById("bDuration").value=getDefaultDuration("OGD");
+  document.getElementById("bEmergency").checked=!!forceEmergency;
+  document.getElementById("bookingSaveBtn").textContent=forceEmergency?"Confirm Emergency Case":"Confirm Booking";
+  patientTypeChanged();emergencyChanged();hideError("bError");updateSlotPreview();openModal("bookingOverlay");setTimeout(()=>document.getElementById("bName").focus(),100);
+}
+
+function procedureChanged(){document.getElementById("bDuration").value=getDefaultDuration(document.getElementById("bProc").value);updateSlotPreview()}
+function patientTypeChanged(){
+  const isIPD=document.getElementById("bType").value==="IPD";
+  document.getElementById("wardField").classList.toggle("show",isIPD);
+  document.getElementById("bedField").classList.toggle("show",isIPD);
+  document.getElementById("phoneLabel").textContent=isIPD?"Phone Number (optional)":"Phone Number *";
+}
+function emergencyChanged(){
+  const emergency=document.getElementById("bEmergency").checked;
+  document.getElementById("sessionField").style.display=emergency?"none":"block";
+  if(editingBookingId){document.getElementById("bookingSaveBtn").textContent="Save Changes"}
+  else document.getElementById("bookingSaveBtn").textContent=emergency?"Confirm Emergency Case":"Confirm Booking";
+  updateSlotPreview();
+}
+
+function previewScheduleForDuration(duration,excludeId=null,emergencyOverride=null,sessionOverride=null){
+  const normalized=normalizeDayData(rawDayData);
+  const originalIndex=excludeId?normalized.findIndex(x=>x.id===excludeId):-1;
+  const base=normalized.filter(x=>x.id!==excludeId);
+  const isEmergency=emergencyOverride===null?!!document.getElementById("bEmergency")?.checked:!!emergencyOverride;
+  const selectedSession=isEmergency?"emergency":(sessionOverride||document.getElementById("bSession")?.value||"morning");
+  if(excludeId){
+    const target=originalIndex>=0?normalized[originalIndex]:null;
+    if(target){base.splice(Math.min(originalIndex,base.length),0,{...target,duration:Number(duration),isEmergency,session:selectedSession})}
+  }else{
+    const maxOrder=base.reduce((m,x)=>Math.max(m,Number(x.order)||0),0);
+    const floor=isEmergency?bookingFloorForDate(currentDate):sessionBookingFloor(selectedSession,currentDate);
+    base.push({id:"preview",patientName:"Preview",age:"",patientId:"",phone:"",ward:"",bedNumber:"",procedure:document.getElementById("bProc").value,duration:Number(duration),patientType:"OPD",bookedBy:"",bookedAt:"",status:"Pending",order:maxOrder+1,isEmergency,session:selectedSession,notBeforeTime:fromMins(floor),notBeforeMins:floor});
+  }
+  return calculateSchedule(base).find(x=>x.id===(excludeId||"preview"));
+}
+
+function updateSlotPreview(){
+  const duration=Number(document.getElementById("bDuration").value)||0;
+  const isEmergency=!!document.getElementById("bEmergency")?.checked;
+  const selectedSession=isEmergency?"emergency":document.getElementById("bSession").value;
+  const preview=previewScheduleForDuration(duration,editingBookingId,isEmergency,selectedSession);
+  const el=document.getElementById("slotPreview");
+  if(isPastDate(currentDate)&&!editingBookingId){el.textContent="New bookings cannot be added to a past date.";return}
+  if(!validDuration(duration)||!preview){el.textContent="Enter a valid duration between 5 and 180 minutes.";return}
+  let note="";
+  if(preview.overflows&&isEmergency)note=' <span style="color:#b91c1c">— emergency/add-on override permits continuation after 4:00 PM</span>';
+  else if(preview.overflowsSession&&!isEmergency)note=` <span style="color:#b91c1c">— does not fit in the selected ${sessionLabel(selectedSession).toLowerCase()} session</span>`;
+  else if(isEmergency)note=' <span style="color:#b91c1c">— flagged as Emergency/Add-on</span>';
+  el.innerHTML=`Calculated time: <b>${fmt12(preview.startTime)} – ${fmt12(preview.endTime)}</b> (${duration} min)${isEmergency?"":` • ${sessionLabel(selectedSession)}`}${note}`;
+}
+
+function collectBookingForm(){
+  return {
+    patientName:document.getElementById("bName").value.trim(),
+    age:document.getElementById("bAge").value.trim(),
+    patientId:document.getElementById("bPid").value.trim(),
+    phone:document.getElementById("bPhone").value.trim(),
+    ward:document.getElementById("bWard").value.trim(),
+    bedNumber:document.getElementById("bBed").value.trim(),
+    patientType:document.getElementById("bType").value,
+    session:document.getElementById("bSession").value,
+    procedure:document.getElementById("bProc").value,
+    duration:Number(document.getElementById("bDuration").value),
+    bookedBy:document.getElementById("bResident").value.trim(),
+    isEmergency:document.getElementById("bEmergency").checked,
+    password:document.getElementById("bPassword").value
+  };
+}
+
+function validateBookingForm(f){
+  if(!f.patientName||f.age===""||!f.patientId||!f.bookedBy) return "Please complete all required fields.";
+  if(Number(f.age)<0||Number(f.age)>120) return "Please enter a valid age.";
+  if(f.patientType==="OPD"&&!f.phone) return "Phone number is required for OPD patients.";
+  if(f.patientType==="IPD"&&(!f.ward||!f.bedNumber)) return "Ward and bed number are required for IPD patients.";
+  if(!f.isEmergency&&f.session!=="morning"&&f.session!=="afternoon") return "Please select Morning or Afternoon session.";
+  if(!validDuration(f.duration)) return "Duration must be between 5 and 180 minutes.";
+  if(f.password!==CONFIG.password) return "Incorrect password.";
+  return "";
+}
+
+function submitBooking(){
+  if(!editingBookingId&&isPastDate(currentDate)){showError("bError","New cases cannot be added to a past date.");return}
+  const f=collectBookingForm(),err=validateBookingForm(f);if(err){showError("bError",err);return}
+  editingBookingId?saveEditedBooking(f):createBookingAtomic(f);
+}
+
+function createBookingAtomic(f){
+  const selectedSession=f.isEmergency?"emergency":f.session;
+  const preview=previewScheduleForDuration(f.duration,null,f.isEmergency,selectedSession);
+  if(preview?.overflowsSession&&!f.isEmergency){showError("bError",`This booking does not fit in the selected ${sessionLabel(f.session).toLowerCase()} session. Reduce the duration or choose the other session.`);return}
+  const bookingRef=db?db.ref(`endoscopy_appointments/${currentDate}`):null;
+  const newKey=bookingRef?bookingRef.push().key:`local_${Date.now()}`;
+  const floor=f.isEmergency?bookingFloorForDate(currentDate):sessionBookingFloor(f.session,currentDate);
+  const booking={patientName:f.patientName,age:Number(f.age),patientId:f.patientId,phone:f.phone||"",ward:f.patientType==="IPD"?f.ward:"",bedNumber:f.patientType==="IPD"?f.bedNumber:"",procedure:f.procedure,duration:f.duration,patientType:f.patientType,session:selectedSession,bookedBy:f.bookedBy,status:"Pending",isEmergency:!!f.isEmergency,notBeforeTime:fromMins(floor),bookedAt:new Date().toISOString(),date:currentDate};
+  if(!fbReady){
+    const existing=normalizeDayData(rawDayData);booking.order=existing.reduce((m,x)=>Math.max(m,Number(x.order)||0),0)+1;rawDayData[newKey]=booking;scheduleItems=calculateSchedule(normalizeDayData(rawDayData));closeModal("bookingOverlay");renderSchedule();toast(f.isEmergency?"🚨 Emergency/add-on case booked in demo mode.":`${sessionLabel(f.session)} appointment booked in demo mode.`);return
+  }
+  showLoading(true,f.isEmergency?"Booking emergency/add-on case…":`Booking ${sessionLabel(f.session).toLowerCase()} appointment…`);
+  let rejection="";
+  bookingRef.transaction(current=>{
+    current=current||{};
+    const items=normalizeDayData(current);
+    const maxOrder=items.reduce((m,x)=>Math.max(m,Number(x.order)||0),0);
+    const liveFloor=f.isEmergency?bookingFloorForDate(currentDate):sessionBookingFloor(f.session,currentDate);
+    const candidate={...booking,notBeforeTime:fromMins(liveFloor),order:maxOrder+1};
+    const scheduled=calculateSchedule([...items,{...candidate,id:newKey,notBeforeMins:liveFloor}]);
+    const placed=scheduled.find(x=>x.id===newKey);
+    if(!placed){rejection="The booking could not be placed.";return}
+    if(placed.overflowsSession&&!candidate.isEmergency){rejection=`The selected ${sessionLabel(f.session).toLowerCase()} session became full because another user booked at the same time. Choose the other session or another date.`;return}
+    current[newKey]=candidate;
+    return current;
+  },(error,committed)=>{
+    showLoading(false);
+    if(error){showError("bError","Firebase error: "+error.message);return}
+    if(!committed){showError("bError",rejection||"Booking could not be completed.");return}
+    closeModal("bookingOverlay");toast(f.isEmergency?"🚨 Emergency/add-on case booked and synced.":`✅ ${sessionLabel(f.session)} appointment booked and synced.`);
+  },false);
+}
+
+function saveEditedBooking(f){
+  const existing=normalizeDayData(rawDayData).find(x=>x.id===editingBookingId);if(!existing){showError("bError","Appointment not found.");return}
+  const selectedSession=f.isEmergency?"emergency":f.session;
+  const preview=previewScheduleForDuration(f.duration,editingBookingId,f.isEmergency,selectedSession);
+  if(preview?.overflowsSession&&!f.isEmergency){showError("bError",`This appointment does not fit in the selected ${sessionLabel(f.session).toLowerCase()} session. Reduce the duration or choose the other session.`);return}
+  const floor=f.isEmergency?bookingFloorForDate(currentDate):sessionBookingFloor(f.session,currentDate);
+  const updates={patientName:f.patientName,age:Number(f.age),patientId:f.patientId,phone:f.phone||"",ward:f.patientType==="IPD"?f.ward:"",bedNumber:f.patientType==="IPD"?f.bedNumber:"",procedure:f.procedure,duration:f.duration,patientType:f.patientType,session:selectedSession,notBeforeTime:fromMins(floor),bookedBy:f.bookedBy,isEmergency:!!f.isEmergency,editedAt:new Date().toISOString()};
+  if(!fbReady){Object.assign(rawDayData[editingBookingId],updates);scheduleItems=calculateSchedule(normalizeDayData(rawDayData));closeModal("bookingOverlay");renderSchedule();toast("Appointment updated in demo mode.");return}
+  showLoading(true,"Updating appointment…");
+  let rejection="";
+  db.ref(`endoscopy_appointments/${currentDate}`).transaction(current=>{
+    current=current||{};
+    if(!current[editingBookingId]){rejection="Appointment not found; it may have been cancelled by another user.";return}
+    current[editingBookingId]={...current[editingBookingId],...updates};
+    const recalculated=calculateSchedule(normalizeDayData(current));
+    if(recalculated.some(x=>!x.isEmergency&&x.overflowsSession)){rejection="The edited schedule would make a regular case exceed its selected session.";return}
+    return current;
+  },(error,committed)=>{
+    showLoading(false);
+    if(error){showError("bError","Firebase error: "+error.message);return}
+    if(!committed){showError("bError",rejection||"The appointment could not be updated.");return}
+    closeModal("bookingOverlay");toast("Appointment updated; only that session's later times were recalculated.");
+  },false);
+}
+
+function openEditBooking(){
+  const item=scheduleItems.find(x=>x.id===activeBookingId);if(!item)return;
+  closeModal("viewOverlay");editingBookingId=item.id;populateProcedureSelect();
+  document.getElementById("bookingTitle").textContent="Edit Appointment";
+  document.getElementById("bookingSub").textContent="Changing the duration shifts later appointments only within the selected regular session.";
+  document.getElementById("bName").value=item.patientName;document.getElementById("bAge").value=item.age;document.getElementById("bPid").value=item.patientId;document.getElementById("bPhone").value=item.phone||"";document.getElementById("bWard").value=item.ward||"";document.getElementById("bBed").value=item.bedNumber||"";document.getElementById("bType").value=item.patientType;document.getElementById("bSession").value=item.sessionAssigned==="afternoon"?"afternoon":"morning";document.getElementById("bProc").value=item.procedure;document.getElementById("bDuration").value=item.duration;document.getElementById("bResident").value=item.bookedBy;document.getElementById("bEmergency").checked=!!item.isEmergency;document.getElementById("bPassword").value="";document.getElementById("bookingSaveBtn").textContent="Save Changes";
+  patientTypeChanged();emergencyChanged();hideError("bError");updateSlotPreview();openModal("bookingOverlay");
+}
+
+/* ─────────────────────────────────────────────────────────────
+   View, status and cancellation
+   ───────────────────────────────────────────────────────────── */
+function viewBooking(id){
+  const item=scheduleItems.find(x=>x.id===id);if(!item)return;activeBookingId=id;
+  document.getElementById("viewSub").textContent=`${fmtDateLong(currentDate)} • ${fmt12(item.startTime)} – ${fmt12(item.endTime)}`;
+  const contact=item.patientType==="IPD"?`${esc(item.ward||"—")} • Bed ${esc(item.bedNumber||"—")}${item.phone?` • ${esc(item.phone)}`:""}`:esc(item.phone||"—");
+  document.getElementById("viewBody").innerHTML=`
+    <div class="table-wrap"><table><tbody>
+      <tr><th>Patient</th><td><b>${esc(item.patientName)}</b>, ${esc(item.age)} years</td></tr>
+      <tr><th>Patient ID</th><td>${esc(item.patientId)}</td></tr>
+      <tr><th>IPD / OPD</th><td>${item.patientType}</td></tr>
+      <tr><th>${item.patientType==="IPD"?"Ward / Bed":"Phone"}</th><td>${contact}</td></tr>
+      <tr><th>Session</th><td>${item.isEmergency?"Emergency / earliest available":sessionLabel(item.sessionAssigned)}</td></tr>
+      <tr><th>Procedure</th><td>${esc(item.procedure)}</td></tr>
+      <tr><th>Duration</th><td>${item.duration} minutes</td></tr>
+      <tr><th>Priority</th><td>${item.isEmergency?'<b style="color:#b91c1c">Emergency / Add-on</b>':"Regular"}</td></tr>
+      <tr><th>Status</th><td>${item.status}</td></tr>
+      <tr><th>Booked by</th><td>${esc(item.bookedBy)}</td></tr>
+    </tbody></table></div>`;
+  openModal("viewOverlay");
+}
+
+function setStatus(status){if(activeBookingId)setStatusFor(activeBookingId,status,true)}
+function setStatusFor(id,status,closeAfter=false){
+  status=normalizeStatus(status);
+  if(!rawDayData[id])return;
+  if(!fbReady){rawDayData[id].status=status;scheduleItems=calculateSchedule(normalizeDayData(rawDayData));renderSchedule();if(closeAfter)closeModal("viewOverlay");toast(`Status changed to ${status}.`);return}
+  db.ref(`endoscopy_appointments/${currentDate}/${id}/status`).set(status).then(()=>{if(closeAfter)closeModal("viewOverlay");toast(`Status changed to ${status}.`)}).catch(e=>toast("Could not update status: "+e.message,true));
+}
+
+function openCancelGate(){closeModal("viewOverlay");document.getElementById("cPassword").value="";hideError("cError");openModal("cancelOverlay")}
+function submitCancel(){
+  if(document.getElementById("cPassword").value!==CONFIG.password){showError("cError","Incorrect password.");return}
+  const id=activeBookingId;if(!id)return;
+  if(!fbReady){delete rawDayData[id];scheduleItems=calculateSchedule(normalizeDayData(rawDayData));closeModal("cancelOverlay");renderSchedule();toast("Appointment cancelled; timeline recalculated.");return}
+  showLoading(true,"Cancelling appointment…");db.ref(`endoscopy_appointments/${currentDate}/${id}`).remove().then(()=>{showLoading(false);closeModal("cancelOverlay");toast("Appointment cancelled; later times in that session shifted earlier.")}).catch(e=>{showLoading(false);showError("cError",e.message)});
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Admin settings
+   ───────────────────────────────────────────────────────────── */
+function openAdminGate(){document.getElementById("aPassword").value="";hideError("aError");openModal("adminGateOverlay");setTimeout(()=>document.getElementById("aPassword").focus(),100)}
+function unlockAdmin(){if(document.getElementById("aPassword").value!==CONFIG.password){showError("aError","Incorrect password.");return}closeModal("adminGateOverlay");renderSettingsForm();openModal("settingsOverlay")}
+function renderSettingsForm(){
+  document.getElementById("settingsList").innerHTML=Object.entries(settings.procedures).map(([name,cfg],i)=>`
+    <div class="settings-proc"><h3>${esc(name)}</h3><div class="settings-row">
+      <div class="fg"><label>Default duration</label><input type="number" min="5" max="180" step="5" id="sd_${i}" value="${Number(cfg.duration)}"><div class="hint">Minutes</div></div>
+      <div class="fg"><label>Procedure-specific instructions</label><textarea id="si_${i}">${esc(cfg.instructions.join("\n"))}</textarea><div class="hint">One additional instruction per line; common safety instructions print automatically</div></div>
+    </div></div>`).join("");hideError("settingsError");
+}
+function saveSettings(){
+  const names=Object.keys(settings.procedures),out={procedures:{}};
+  for(let i=0;i<names.length;i++){
+    const dur=Number(document.getElementById(`sd_${i}`).value);const instructions=document.getElementById(`si_${i}`).value.split(/\n+/).map(x=>x.trim()).filter(Boolean);
+    if(!validDuration(dur)){showError("settingsError",`Enter a valid duration for ${names[i]}.`);return}
+    if(!instructions.length){showError("settingsError",`Enter at least one instruction for ${names[i]}.`);return}
+    out.procedures[names[i]]={duration:dur,instructions};
+  }
+  if(!fbReady){settings=mergeSettings(out);closeModal("settingsOverlay");populateProcedureSelect();renderSchedule();toast("Settings updated in demo mode.");return}
+  showLoading(true,"Saving shared settings…");db.ref("endoscopy_settings/config").set(out).then(()=>{showLoading(false);closeModal("settingsOverlay");toast("Settings saved to Firebase.")}).catch(e=>{showLoading(false);showError("settingsError","Firebase error: "+e.message)});
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Statistics
+   ───────────────────────────────────────────────────────────── */
+function switchTab(panelId,button){document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));document.getElementById(panelId).classList.add("active");button.classList.add("active");if(panelId==="statsPanel")loadStats()}
+function setStatsPeriod(p){statsPeriod=p;document.getElementById("weekBtn").classList.toggle("active",p==="week");document.getElementById("monthBtn").classList.toggle("active",p==="month");document.getElementById("statsDate").style.display=p==="week"?"":"none";document.getElementById("statsMonth").style.display=p==="month"?"":"none";document.getElementById("statsDateLabel").textContent=p==="week"?"Reference date":"Month";loadStats()}
+function getStatsRange(){
+  if(statsPeriod==="month"){
+    const ym=document.getElementById("statsMonth").value||currentDate.slice(0,7);const [y,m]=ym.split("-").map(Number);const start=`${y}-${pad(m)}-01`;const end=localISODate(new Date(y,m,0));return{start,end,label:`${parseLocalDate(start).toLocaleDateString("en-IN",{month:"long",year:"numeric"})}`};
+  }
+  const ref=document.getElementById("statsDate").value||currentDate;const d=parseLocalDate(ref);const diff=(d.getDay()+6)%7;const start=addDays(ref,-diff),end=addDays(start,6);return{start,end,label:`${fmtDateShort(start)} – ${fmtDateShort(end)}`};
+}
+function loadStats(){
+  const range=getStatsRange();document.getElementById("statsRange").textContent=range.label;
+  if(!fbReady){renderStatsFromData({[currentDate]:rawDayData},range);return}
+  showLoading(true,"Loading statistics…");db.ref("endoscopy_appointments").orderByKey().startAt(range.start).endAt(range.end).once("value").then(s=>{showLoading(false);renderStatsFromData(s.val()||{},range)}).catch(e=>{showLoading(false);toast("Statistics could not be loaded: "+e.message,true)});
+}
+function renderStatsFromData(days,range){
+  const all=[];Object.entries(days||{}).forEach(([date,day])=>normalizeDayData(day).forEach(x=>all.push({...x,date})));
+  const counts={};all.forEach(x=>counts[x.procedure]=(counts[x.procedure]||0)+1);
+  const done=all.filter(x=>x.status==="Done").length,dna=all.filter(x=>x.status==="DNA").length,pending=all.length-done-dna;
+  document.getElementById("stTotal").textContent=all.length;document.getElementById("stDone").textContent=done;document.getElementById("stDna").textContent=dna;document.getElementById("stPending").textContent=pending;
+  const rows=Object.keys(settings.procedures).map(name=>({name,count:counts[name]||0})).sort((a,b)=>b.count-a.count);
+  document.getElementById("procedureStatsBody").innerHTML=rows.map(r=>{const pct=all.length?Math.round(r.count*100/all.length):0;return`<tr><td>${esc(r.name)}</td><td><b>${r.count}</b></td><td>${pct}%</td><td><div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div></td></tr>`}).join("")||'<tr><td colspan="4">No appointments in this period.</td></tr>';
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Printing
+   ───────────────────────────────────────────────────────────── */
+function printDailyList(){
+  const body=document.getElementById("dailyPrintBody");
+  body.innerHTML=scheduleItems.length?scheduleItems.map(x=>{
+    const contact=x.patientType==="IPD"?[x.ward,x.bedNumber?"Bed "+x.bedNumber:""].filter(Boolean).join(" – "):(x.phone||"—");
+    return `<tr><td>${fmt12(x.startTime)}–${fmt12(x.endTime)}</td><td>${esc(x.patientName)}</td><td>${esc(x.patientId)}</td><td>${x.patientType}</td><td>${esc(contact||"—")}</td><td>${x.isEmergency?"EMERGENCY":"Regular"}</td><td>${esc(x.procedure)}</td><td>${x.duration} min</td><td>${x.status}</td></tr>`;
+  }).join(""):'<tr><td colspan="9" style="text-align:center">No appointments booked.</td></tr>';
+  document.getElementById("dailyPrintDate").textContent=fmtDateLong(currentDate);
+  const s=scheduleSummary();document.getElementById("dailyPrintSummary").textContent=`Total: ${scheduleItems.length} | Done: ${s.done} | DNA: ${s.dna}`;
+  document.getElementById("dailyPrintedAt").textContent="Printed: "+new Date().toLocaleString("en-IN");activatePrint("dailyPrintArea");
+}
+function printActiveSlip(){
+  const x=scheduleItems.find(i=>i.id===activeBookingId);if(!x)return;
+  document.getElementById("slipDate").textContent=fmtDateLong(currentDate);
+  document.getElementById("slipTime").textContent=fmt12(x.startTime);
+  document.getElementById("slipProcedure").textContent=x.procedure;
+  document.getElementById("slipEmergency").classList.toggle("show",!!x.isEmergency);
+  document.getElementById("slipName").textContent=x.patientName;
+  document.getElementById("slipAge").textContent=x.age+" years";
+  document.getElementById("slipId").textContent=x.patientId;
+  document.getElementById("slipType").textContent=x.patientType;
+  document.getElementById("slipPhone").textContent=x.phone||"—";
+  document.getElementById("slipWard").textContent=x.ward||"—";
+  document.getElementById("slipBed").textContent=x.bedNumber||"—";
+  document.getElementById("slipPhoneRow").style.display=x.patientType==="OPD"||x.phone?"table-row":"none";
+  document.getElementById("slipWardRow").style.display=x.patientType==="IPD"?"table-row":"none";
+  document.getElementById("slipBedRow").style.display=x.patientType==="IPD"?"table-row":"none";
+  document.getElementById("slipBookedBy").textContent=x.bookedBy;
+  document.getElementById("slipCommonInstructions").innerHTML=COMMON_INSTRUCTIONS.map(t=>`<li>${instructionHTML(t)}</li>`).join("");
+  const specific=getProcedureInstructions(x.procedure);
+  document.getElementById("procedureInstructionsTitle").style.display=specific.length?"block":"none";
+  document.getElementById("slipProcedureInstructions").style.display=specific.length?"block":"none";
+  document.getElementById("slipProcedureInstructions").innerHTML=specific.map(t=>`<li>${instructionHTML(t)}</li>`).join("");
+  closeModal("viewOverlay");activatePrint("slipPrintArea");
+}
+function activatePrint(id){clearPrintMode();document.getElementById(id).classList.add("active-print");printCleanupTimer=setTimeout(()=>window.print(),120)}
+function clearPrintMode(){document.querySelectorAll(".print-area").forEach(x=>x.classList.remove("active-print"));if(printCleanupTimer){clearTimeout(printCleanupTimer);printCleanupTimer=null}}
+
+/* ─────────────────────────────────────────────────────────────
+   General utilities
+   ───────────────────────────────────────────────────────────── */
+function deepClone(x){return JSON.parse(JSON.stringify(x))}
+function esc(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}
+function escAttr(v){return esc(v)}
+function jsq(v){return String(v).replace(/\\/g,"\\\\").replace(/'/g,"\\'")}
+function openModal(id){document.getElementById(id).classList.add("open")}
+function closeModal(id){document.getElementById(id).classList.remove("open")}
+function showError(id,msg){const e=document.getElementById(id);e.textContent=msg;e.classList.add("show")}
+function hideError(id){const e=document.getElementById(id);e.textContent="";e.classList.remove("show")}
+function showLoading(on,text="Saving…"){document.getElementById("loadingText").textContent=text;document.getElementById("loadingOverlay").classList.toggle("open",on)}
+function toast(msg,isError=false){const t=document.getElementById("toast");t.textContent=msg;t.style.background=isError?"#991b1b":"#166534";t.style.display="block";clearTimeout(t._timer);t._timer=setTimeout(()=>t.style.display="none",3600)}
+</script>
+</body>
+</html>
