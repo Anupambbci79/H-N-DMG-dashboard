@@ -1258,7 +1258,7 @@ async function saveCase(){
     if(editingId){
       await db.collection('cases').doc(editingId).set(
         {...d, id:editingId, updatedAt:new Date().toISOString()});
-      localStorage.setItem('img_'+editingId, JSON.stringify(imgs));
+      try{ localStorage.setItem('img_'+editingId, JSON.stringify(imgs)); }catch(e){ console.warn('localStorage full, using cloud only'); }
       if(imgs.pre.length||imgs.intra.length||imgs.post.length){
         compressAllForCloud(imgs).then(ci=>
           db.collection('images').doc(editingId).set(ci)).catch(()=>{});
@@ -1272,7 +1272,7 @@ async function saveCase(){
       const newId = uid();
       await db.collection('cases').doc(newId).set(
         {...d, id:newId, createdAt:new Date().toISOString()});
-      localStorage.setItem('img_'+newId, JSON.stringify(imgs));
+      try{ localStorage.setItem('img_'+newId, JSON.stringify(imgs)); }catch(e){ console.warn('localStorage full, using cloud only'); }
       if(imgs.pre.length||imgs.intra.length||imgs.post.length){
         compressAllForCloud(imgs).then(ci=>
           db.collection('images').doc(newId).set(ci)).catch(()=>{});
@@ -1452,7 +1452,7 @@ function importJSON(ev){
           const {images, ...caseData}=c;
           batch.set(db.collection('cases').doc(c.id), caseData);
           if(images){
-            localStorage.setItem('img_'+c.id, JSON.stringify(images));
+            try{ localStorage.setItem('img_'+c.id, JSON.stringify(images)); }catch(e){ console.warn('localStorage full'); }
             if(images.pre?.length||images.intra?.length||images.post?.length){
               imgUploads.push(compressAllForCloud(images).then(ci=>
                 db.collection('images').doc(c.id).set(ci)));
