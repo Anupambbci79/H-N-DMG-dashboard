@@ -722,14 +722,16 @@ function startRec(fieldId){
 
 function _launchSR(fieldId, ta){
   const r = new SR();
-  // Android: non-continuous prevents duplicate result delivery on restart
   r.continuous = !isAndroid;
   r.interimResults = true;
   r.lang = 'en-IN';
   recs[fieldId] = r;
 
-  // Freeze the base at launch time — only new words from this session added on top
-  const launchBase = recFinal[fieldId];
+  // sessionBase = everything confirmed before this session started
+  // sessionNewFinal = finals accumulated within THIS session only
+  // This prevents both duplication AND text loss on pause/restart
+  const sessionBase = recFinal[fieldId];
+  let sessionNewFinal = '';
 
   r.onresult = e => {
     let newFinal='', interim='';
@@ -738,7 +740,8 @@ function _launchSR(fieldId, ta){
       else interim += e.results[i][0].transcript;
     }
     if(newFinal){
-      recFinal[fieldId] = launchBase + newFinal;
+      sessionNewFinal += newFinal;
+      recFinal[fieldId] = sessionBase + sessionNewFinal;
       recBuffers[fieldId] = recFinal[fieldId];
     }
     ta.value = recFinal[fieldId] + interim;
@@ -754,9 +757,9 @@ function _launchSR(fieldId, ta){
   r.onend = () => {
     if(!recActive[fieldId]||recRestarting[fieldId]) return;
     recRestarting[fieldId] = true;
-    // Snapshot confirmed text before restart — this is the key fix
-    // for pause-restart: recFinal is updated HERE so next launchBase is correct
-    recFinal[fieldId] = ta.value.trimEnd() + ' ';
+    // Update recFinal from textarea before restart
+    // so next session's sessionBase includes everything spoken so far
+    recFinal[fieldId] = ta.value.replace(/\s+$/, ' ');
     setTimeout(()=>{
       recRestarting[fieldId] = false;
       if(recActive[fieldId]) _launchSR(fieldId, ta);
@@ -847,10 +850,22 @@ Analyse the history and respond ONLY with valid JSON — no markdown, no backtic
 Select only contextually relevant investigations. Remove empty categories.
 Domains to check: Duration/progression|Pain|Tobacco(quantify)|Betel nut|Alcohol|Dysphagia|Odynophagia|Voice change|Stridor|Neck swelling|Weight loss|Appetite|B symptoms|Otalgia|Hearing/tinnitus/vertigo|Nasal/epistaxis|Trismus|Tongue mobility|Dental|Prior H&N surgery|Prior FNAC/biopsy|Prior radiation|Thyroid|Occupation|Family Hx cancer|TB exposure|HIV risk|Diabetes/comorbidities|Drug Hx/allergies|Geographic origin NE India|Review of systems|Prior chemo`;
   try{
-    const resp=await apiFetch({model:'claude-sonnet-4-6',max_tokens:2000,system:sys,messages:[{role:'user',content:`Chief complaint: ${site||'not specified'}\n\nHistory:\n${transcript}`}]});
-    const m=resp.replace(/```json|```/g,'').trim().match(/\{[\s\S]*\}/);
-    if(!m)throw new Error('Could not parse response');
-    analysisResult=JSON.parse(m[0]);
+    const resp=await apiFetch({model:'claude-sonnet-4-6',max_tokens:3000,system:sys,messages:[{role:'user',content:`Chief complaint: ${site||'not specified'}\n\nHistory:\n${transcript}`}]});
+    const cleaned=resp.replace(/```json|```/g,'').trim();
+    const m=cleaned.match(/\{[\s\S]*\}/);
+    if(!m)throw new Error('Could not parse AI response — please try again');
+    let jsonStr=m[0];
+    // If JSON is truncated, try to close it gracefully
+    try{ analysisResult=JSON.parse(jsonStr); }
+    catch(e){
+      // Try closing unclosed arrays/objects
+      const opens=(jsonStr.match(/\[/g)||[]).length-(jsonStr.match(/\]/g)||[]).length;
+      const openBraces=(jsonStr.match(/\{/g)||[]).length-(jsonStr.match(/\}/g)||[]).length;
+      jsonStr=jsonStr.replace(/,\s*$/,'');
+      for(let i=0;i<opens;i++) jsonStr+=']';
+      for(let i=0;i<openBraces;i++) jsonStr+='}';
+      analysisResult=JSON.parse(jsonStr);
+    }
     renderAnalysis(analysisResult);
     renderInvestigations(analysisResult.investigations||[],(patients[currentIdx]||{}).invChecked||[]);
     el('ai-section').style.display='';
@@ -958,7 +973,7 @@ REVIEW OF SYSTEMS:
 ${addl2?'EXAMINATION FINDINGS:\n':''}${provDx?'PROVISIONAL DIAGNOSIS:\n':''}${stagingText?'STAGING:\n':''}INVESTIGATIONS ADVISED:`;
 
   try{
-    const raw=await apiFetch({model:'claude-sonnet-4-6',max_tokens:2000,messages:[{role:'user',content:prompt}]});
+    const raw=await apiFetch({model:'claude-sonnet-4-6',max_tokens:3000,messages:[{role:'user',content:prompt}]});
     structuredText=raw.trim();
     el('output-text').textContent=structuredText;
     el('output-section').style.display='';
