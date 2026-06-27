@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BBCI H&N Clinical App</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f8f9fa;--surface:#fff;--surface-2:#f1f3f5;
+  --border:#dee2e6;--border-strong:#ced4da;
+  --text-primary:#212529;--text-secondary:#6c757d;--text-muted:#adb5bd;
+  --accent:#1D9E75;--accent-bg:#E1F5EE;--accent-text:#085041;--accent-border:#5DCAA5;
+  --danger:#E24B4A;--danger-bg:#FCEBEB;--danger-text:#A32D2D;
+  --warn:#EF9F27;--warn-bg:#FEF3E2;--warn-text:#7A4D00;
+  --radius:8px;--sidebar:255px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1a1a1a;--surface:#242424;--surface-2:#2e2e2e;--border:#3d3d3d;--border-strong:#555;
+  --text-primary:#f0f0f0;--text-secondary:#aaa;--text-muted:#666;
+  --accent-bg:#04342C;--accent-text:#9FE1CB;--accent-border:#0F6E56;
+}}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;background:var(--accent);display:flex;align-items:center;justify-content:center;z-index:999}
+.login-box{background:#fff;border-radius:16px;padding:2.5rem 2rem;width:340px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+.login-logo{width:56px;height:56px;background:var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:26px;color:#fff}
+.login-box h2{font-size:18px;font-weight:600;color:#212529;margin-bottom:4px}
+.login-box p{font-size:13px;color:#6c757d;margin-bottom:1.5rem}
+.login-box input{width:100%;padding:10px 14px;border:1px solid #dee2e6;border-radius:var(--radius);font-size:14px;margin-bottom:10px;font-family:inherit;color:#212529}
+.login-box input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(29,158,117,0.15)}
+.login-btn{width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.login-btn:hover{background:#0F6E56}
+.login-error{font-size:12px;color:#E24B4A;margin-top:6px;display:none}
+
+/* LAYOUT */
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text-primary);font-size:15px;line-height:1.5;min-height:100vh}
+#app{display:none}
+.topbar{background:var(--accent);color:#fff;padding:10px 16px;display:flex;align-items:center;gap:8px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
+.topbar-title h1{font-size:15px;font-weight:600;margin:0}
+.topbar-title p{font-size:11px;opacity:0.8;margin:0}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.topbar-btn{background:rgba(255,255,255,0.15);border:none;color:#fff;padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px}
+.topbar-btn:hover{background:rgba(255,255,255,0.28)}
+/* MODE TOGGLE */
+.mode-toggle{display:flex;background:rgba(0,0,0,0.2);border-radius:20px;padding:3px;gap:2px}
+.mode-btn{padding:4px 14px;border-radius:16px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:rgba(255,255,255,0.7);background:transparent;transition:all 0.15s}
+.mode-btn.active{background:#fff;color:var(--accent-text)}
+
+/* SIDEBAR */
+.layout{display:flex;min-height:calc(100vh - 52px)}
+.sidebar{width:var(--sidebar);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:52px;height:calc(100vh - 52px);overflow:hidden;flex-shrink:0}
+.sidebar-header{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.sidebar-header span{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted)}
+.add-pt-btn{width:26px;height:26px;border-radius:50%;background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px}
+.add-pt-btn:hover{background:var(--accent);color:#fff}
+.pt-list{flex:1;overflow-y:auto;padding:5px}
+.pt-item{padding:8px 10px;border-radius:var(--radius);cursor:pointer;margin-bottom:3px;border:1px solid transparent;transition:all 0.12s;display:flex;align-items:center;gap:7px}
+.pt-item:hover{background:var(--surface-2)}
+.pt-item.active{background:var(--accent-bg);border-color:var(--accent-border)}
+.pt-num{width:22px;height:22px;border-radius:50%;background:var(--surface-2);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);flex-shrink:0}
+.pt-item.active .pt-num{background:var(--accent);color:#fff}
+.pt-info{flex:1;min-width:0}
+.pt-name-label{font-size:13px;font-weight:500;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pt-status-label{font-size:11px;color:var(--text-muted);margin-top:1px}
+.pt-del{opacity:0;font-size:13px;color:var(--text-muted);border:none;background:none;cursor:pointer;padding:2px;border-radius:4px;flex-shrink:0}
+.pt-item:hover .pt-del{opacity:1}
+.pt-del:hover{color:var(--danger)}
+.status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px}
+.dot-blank{background:var(--border-strong)}.dot-progress{background:var(--warn)}.dot-done{background:var(--accent)}
+.sidebar-footer{padding:10px 12px;border-top:1px solid var(--border);font-size:11px;color:var(--text-muted);text-align:center}
+.end-session-btn{width:100%;padding:7px;background:var(--danger-bg);color:var(--danger-text);border:1px solid #F09595;border-radius:var(--radius);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;margin-top:7px}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;padding-bottom:3rem}
+.container{max-width:700px;margin:0 auto;padding:1.1rem 1rem}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem 1.2rem;margin-bottom:1.1rem}
+.card-title{font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.card-title i{font-size:15px;color:var(--accent)}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:600px){.grid-3{grid-template-columns:1fr 1fr}.grid-2{grid-template-columns:1fr}.sidebar{width:200px}}
+@media(max-width:440px){.grid-3{grid-template-columns:1fr}.sidebar{display:none}}
+input,select,textarea{width:100%;font-size:14px;font-family:inherit;padding:8px 11px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-2);color:var(--text-primary);transition:border-color 0.15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(29,158,117,0.12)}
+input::placeholder,textarea::placeholder{color:var(--text-muted)}
+
+/* VOICE */
+.voice-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;padding:8px 12px;background:var(--surface-2);border-radius:var(--radius);border:1px solid var(--border)}
+.mic-btn{width:40px;height:40px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;transition:all 0.2s;background:var(--accent-bg);color:var(--accent)}
+.mic-btn.lg{width:46px;height:46px;font-size:20px}
+.mic-btn:hover{filter:brightness(0.92)}
+.mic-btn.recording{background:var(--danger);color:#fff;animation:pulse 1.2s infinite}
+.mic-btn.unsupported{background:var(--surface-2);color:var(--text-muted);cursor:not-allowed}
+@keyframes pulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(226,75,74,0.4)}50%{transform:scale(1.06);box-shadow:0 0 0 8px rgba(226,75,74,0)}}
+.voice-info{flex:1}
+.voice-status{font-size:14px;font-weight:500}
+.voice-status.recording{color:var(--danger)}
+.voice-sub{font-size:12px;color:var(--text-muted);margin-top:2px}
+.rec-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--danger);margin-right:5px;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+textarea.transcript{min-height:115px;resize:vertical;line-height:1.65}
+textarea.field-ta{min-height:72px;resize:vertical;line-height:1.6}
+.word-count{text-align:right;font-size:12px;color:var(--text-muted);margin-top:4px}
+.mini-mic-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.mini-mic-row label{font-size:12px;color:var(--text-muted);flex:1}
+.mic-status{font-size:11px;color:var(--text-muted)}
+.mic-status.recording{color:var(--danger);font-weight:500}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 16px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;border:1px solid;transition:all 0.15s;font-family:inherit}
+.btn:disabled{opacity:0.4;cursor:not-allowed}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover:not(:disabled){background:#0F6E56}
+.btn-outline{background:var(--accent-bg);color:var(--accent);border-color:var(--accent-border)}
+.btn-outline:hover:not(:disabled){background:var(--accent);color:#fff}
+.btn-warn{background:#25D366;color:#fff;border-color:#1da851}
+.btn-warn:hover:not(:disabled){background:#1da851}
+.btn-pdf{background:#E24B4A;color:#fff;border-color:#c73c3b}
+.btn-pdf:hover:not(:disabled){background:#c73c3b}
+.btn-full{width:100%;margin-top:10px}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.35);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0}
+.spinner-dark{border-color:rgba(29,158,117,0.25);border-top-color:var(--accent)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* CHIPS */
+.chips-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:20px;font-size:12px;border:1px solid var(--border-strong);color:var(--text-secondary);background:var(--surface);cursor:pointer;transition:all 0.15s}
+.chip:hover,.chip.covered,.chip.answered{background:var(--accent-bg);border-color:var(--accent-border);color:var(--accent-text)}
+.chip i{font-size:12px}
+.missing-list{list-style:none;margin-top:6px}
+.missing-list li{display:flex;align-items:flex-start;gap:9px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-secondary);line-height:1.5}
+.missing-list li:last-child{border-bottom:none}
+.missing-list li i{color:var(--danger);margin-top:2px;flex-shrink:0}
+.priority-high{font-size:10px;padding:1px 6px;background:var(--danger-bg);color:var(--danger-text);border-radius:10px;margin-left:4px;vertical-align:middle;font-weight:600}
+.section-hint{font-size:12px;color:var(--text-muted);margin-bottom:8px;display:flex;align-items:center;gap:5px}
+
+/* INVESTIGATIONS */
+.inv-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+@media(max-width:480px){.inv-grid{grid-template-columns:1fr}}
+.inv-item{display:flex;align-items:flex-start;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-2);cursor:pointer;transition:all 0.15s;font-size:13px;color:var(--text-secondary)}
+.inv-item.selected{border-color:var(--accent);background:var(--accent-bg);color:var(--accent-text)}
+.inv-item input[type=checkbox]{width:14px;height:14px;flex-shrink:0;margin-top:2px;accent-color:var(--accent)}
+.inv-item label{cursor:pointer;line-height:1.4}
+.inv-category{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin:8px 0 3px;grid-column:1/-1}
+
+/* TNM */
+.stage-result-box{display:none;padding:10px 14px;border-radius:var(--radius);border:1px solid var(--accent-border);background:var(--accent-bg);align-items:center;gap:10px;margin-top:6px}
+
+/* OUTPUT */
+.output-container{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:1.1rem}
+.output-text{padding:14px 16px;font-size:13px;line-height:1.8;color:var(--text-primary);min-height:180px;white-space:pre-wrap;font-family:'Courier New',Courier,monospace;max-height:420px;overflow-y:auto}
+.action-bar{display:flex;flex-wrap:wrap;gap:7px;padding:10px 14px;border-top:1px solid var(--border);background:var(--surface-2)}
+.grammar-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 9px;border-radius:20px;background:var(--accent-bg);color:var(--accent-text);border:1px solid var(--accent-border)}
+
+/* ROUND MODE SPECIFIC */
+.round-banner{background:var(--warn-bg);border:1px solid #FAC775;border-radius:var(--radius);padding:8px 12px;font-size:12px;color:var(--warn-text);margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+
+/* SETTINGS */
+.settings-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center}
+.settings-overlay.open{display:flex}
+.settings-box{background:var(--surface);border-radius:14px;padding:1.5rem;width:360px;max-width:90vw}
+.settings-box h3{font-size:15px;font-weight:600;margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.fac-item{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+.fac-item input{flex:1}
+.fac-del-btn{width:32px;height:32px;border-radius:50%;background:var(--danger-bg);color:var(--danger-text);border:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+.hidden{display:none}
+@media print{.topbar,.sidebar,.mic-btn,.btn,.voice-row,.action-bar,.mini-mic-row,.mode-toggle,.topbar-btn{display:none!important}.output-text{max-height:none;font-family:serif;font-size:13px}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo"><i class="ti ti-stethoscope"></i></div>
+    <h2>BBCI H&amp;N Clinical App</h2>
+    <p>Dr. B. Borooah Cancer Institute, Guwahati</p>
+    <input type="password" id="login-pw" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <div class="login-error" id="login-error">Incorrect password. Please try again.</div>
+    <button class="login-btn" onclick="doLogin()">Sign in</button>
+  </div>
+</div>
+
+<!-- SETTINGS OVERLAY -->
+<div class="settings-overlay" id="settings-overlay" onclick="if(event.target===this)closeSettings()">
+  <div class="settings-box">
+    <h3><i class="ti ti-settings" style="color:var(--accent)"></i> Faculty WhatsApp Numbers</h3>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Add faculty names and WhatsApp numbers (with country code, e.g. 919876543210). These are saved on this computer.</p>
+    <div id="fac-list"></div>
+    <button class="btn btn-outline" style="width:100%;margin-top:8px" onclick="addFaculty()"><i class="ti ti-plus"></i> Add faculty</button>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-primary" style="flex:1" onclick="saveSettings()"><i class="ti ti-check"></i> Save</button>
+      <button class="btn btn-outline" style="flex:1" onclick="closeSettings()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <i class="ti ti-stethoscope"></i>
+    <div class="topbar-title">
+      <h1>BBCI H&amp;N Clinical App</h1>
+      <p id="topbar-sub">OPD History Mode</p>
+    </div>
+    <div class="topbar-right">
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="btn-opd" onclick="setMode('opd')">OPD</button>
+        <button class="mode-btn" id="btn-round" onclick="setMode('round')">Rounds</button>
+      </div>
+      <button class="topbar-btn" onclick="openSettings()"><i class="ti ti-settings"></i></button>
+      <button class="topbar-btn" onclick="doLogout()"><i class="ti ti-logout"></i></button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <span id="sidebar-mode-label">OPD Patients</span>
+        <button class="add-pt-btn" onclick="addPatient()" title="Add patient"><i class="ti ti-plus"></i></button>
+      </div>
+      <div class="pt-list" id="pt-list"></div>
+      <div class="sidebar-footer">
+        <div id="sidebar-footer">0 patients</div>
+        <div id="last-saved" style="font-size:10px;color:var(--text-muted);margin:4px 0 6px"></div>
+        <button class="btn btn-outline" style="width:100%;font-size:12px;padding:6px;margin-bottom:6px" onclick="exportAllPDF()" id="bulk-pdf-btn">
+          <i class="ti ti-file-download"></i> Download all notes PDF
+        </button>
+        <button class="end-session-btn" onclick="endSession()">
+          <i class="ti ti-trash" style="font-size:12px;vertical-align:-1px"></i> End session &amp; clear
+        </button>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main" id="main-area">
+      <div class="container" id="main-container">
+        <!-- Content injected by JS based on mode -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════
+const PASSWORD   = 'bbcihn123*';
+const API_KEY    = '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';
+const LS_SESSION = 'bbci_hn_session_v3';
+const LS_FACULTY = 'bbci_faculty_list';
+const DEFAULT_FACULTY = [{name:'Dr. Anupam Das', number:'919876543210'}];
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let appMode      = 'opd';   // 'opd' | 'round'
+let patients     = [];
+let currentIdx   = -1;
+let structuredText = '';
+let analysisResult = null;
+let answeredChips  = new Set();
+let facultyList  = [];
+
+// Speech
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recs = {};   // keyed by field id
+let recBuffers = {};
+let recActive  = {};
+
+// ═══════════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════════
+function doLogin(){
+  if(document.getElementById('login-pw').value === PASSWORD){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+    initApp();
+  } else {
+    document.getElementById('login-error').style.display='block';
+    document.getElementById('login-pw').value='';
+    document.getElementById('login-pw').focus();
+  }
+}
+function doLogout(){
+  if(confirm('Sign out? Session will be saved and restored when you log in again today.')){
+    saveCurrentPatient(); persistSession(); location.reload();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// MODE
+// ═══════════════════════════════════════════════════════════
+function setMode(m){
+  saveCurrentPatient(); persistSession();
+  appMode = m;
+  document.getElementById('btn-opd').classList.toggle('active', m==='opd');
+  document.getElementById('btn-round').classList.toggle('active', m==='round');
+  document.getElementById('topbar-sub').textContent = m==='opd'?'OPD History Mode':'Ward Round Mode';
+  document.getElementById('sidebar-mode-label').textContent = m==='opd'?'OPD Patients':'Round Patients';
+  patients=[]; currentIdx=-1;
+  const saved=loadSession();
+  const key=m+'_patients';
+  if(saved&&saved[key]&&saved[key].length>0){
+    const today=new Date().toLocaleDateString('en-IN');
+    if(saved.savedDate===today){
+      const n=saved[key].length, done=saved[key].filter(p=>p.status==='done').length;
+      if(confirm(`A ${m==='opd'?'OPD':'round'} session from today was found:\n${n} patient${n!==1?'s':''}, ${done} note${done!==1?'s':''} generated.\n\nOK = resume | Cancel = fresh start`)){
+        patients=saved[key]; currentIdx=saved[m+'_idx']>=0?saved[m+'_idx']:0;
+        renderSidebar(); loadPatient(currentIdx); return;
+      }
+    }
+  }
+  addPatient();
+}
+
+// ═══════════════════════════════════════════════════════════
+// PATIENT DATA
+// ═══════════════════════════════════════════════════════════
+function mkPatient(){
+  const base={name:'',age:'',id:'',date:new Date().toISOString().split('T')[0],reg:'',status:'blank',structuredText:'',analysisResult:null,answeredChips:[]};
+  if(appMode==='opd') return {...base,site:'',transcript:'',addl1:'',addl2:'',provDx:'',invCustom:'',invChecked:[],stagingSite:'',tStage:'',nStage:'',mStage:''};
+  return {...base,roundType:'Morning round',bedNo:'',update:'',examToday:'',facultyAdvice:'',plan:''};
+}
+
+function addPatient(){
+  saveCurrentPatient();
+  patients.push(mkPatient());
+  currentIdx=patients.length-1;
+  renderSidebar(); renderMainArea(); persistSession();
+}
+
+function switchPatient(idx){
+  saveCurrentPatient();
+  currentIdx=idx;
+  renderSidebar(); loadPatient(idx);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function deletePatient(idx,e){
+  e.stopPropagation();
+  if(patients.length===1){alert('At least one patient must remain.');return;}
+  if(!confirm('Remove this patient?'))return;
+  patients.splice(idx,1);
+  if(currentIdx>=patients.length)currentIdx=patients.length-1;
+  renderSidebar(); loadPatient(currentIdx); persistSession();
+}
+
+function saveCurrentPatient(){
+  if(currentIdx<0)return;
+  const p=patients[currentIdx];
+  p.name=v('pt-name'); p.age=v('pt-age'); p.id=v('pt-id');
+  p.date=v('pt-date'); p.reg=v('pt-reg');
+  p.structuredText=structuredText;
+  p.analysisResult=analysisResult;
+  p.answeredChips=[...answeredChips];
+  if(appMode==='opd'){
+    p.site=v('pt-site'); p.transcript=v('transcript');
+    p.addl1=v('addl-1'); p.addl2=v('addl-2'); p.provDx=v('prov-dx');
+    p.invCustom=v('inv-custom');
+    p.stagingSite=v('staging-site'); p.tStage=v('t-stage'); p.nStage=v('n-stage'); p.mStage=v('m-stage');
+    p.invChecked=[...document.querySelectorAll('#inv-grid input[type=checkbox]')].map(cb=>cb.checked);
+  } else {
+    p.roundType=v('round-type'); p.bedNo=v('bed-no');
+    p.update=v('round-update'); p.examToday=v('round-exam');
+    p.facultyAdvice=v('round-advice'); p.plan=v('round-plan');
+  }
+  p.status=p.structuredText?'done':((appMode==='opd'?p.transcript:p.update)||'').trim().length>5?'progress':'blank';
+}
+
+function loadPatient(idx){
+  const p=patients[idx];
+  renderMainArea();
+  sv('pt-name',p.name); sv('pt-age',p.age); sv('pt-id',p.id);
+  sv('pt-date',p.date||new Date().toISOString().split('T')[0]); sv('pt-reg',p.reg);
+  structuredText=p.structuredText||''; analysisResult=p.analysisResult||null;
+  answeredChips=new Set(p.answeredChips||[]);
+  if(appMode==='opd'){
+    sv('pt-site',p.site); sv('transcript',p.transcript||'');
+    sv('addl-1',p.addl1||''); sv('addl-2',p.addl2||''); sv('prov-dx',p.provDx||'');
+    sv('inv-custom',p.invCustom||'');
+    recBuffers['transcript']=p.transcript||''; recBuffers['addl-1']=p.addl1||'';
+    recBuffers['addl-2']=p.addl2||''; recBuffers['prov-dx']=p.provDx||'';
+    updateWordCount();
+    sv('staging-site',p.stagingSite||'');
+    if(p.stagingSite)updateStagingOptions(true);
+    sv('t-stage',p.tStage||''); sv('n-stage',p.nStage||''); sv('m-stage',p.mStage||'');
+    if(p.tStage&&p.nStage&&p.mStage)computeStage();
+    else hide('stage-result');
+    if(p.analysisResult){show('ai-section');renderAnalysis(p.analysisResult);renderInvestigations(p.analysisResult.investigations||[],p.invChecked||[]);}
+    else{hide('ai-section');show('inv-loading');hide('inv-grid');}
+    if(p.structuredText){el('output-text').textContent=p.structuredText;show('output-section');}else hide('output-section');
+  } else {
+    sv('round-type',p.roundType||'Morning round'); sv('bed-no',p.bedNo||'');
+    sv('round-update',p.update||''); sv('round-exam',p.examToday||'');
+    sv('round-advice',p.facultyAdvice||''); sv('round-plan',p.plan||'');
+    ['round-update','round-exam','round-advice','round-plan'].forEach(id=>recBuffers[id]=v(id));
+    if(p.structuredText){el('output-text').textContent=p.structuredText;show('output-section');}else hide('output-section');
+  }
+}
+
+function autosave(){
+  if(currentIdx<0)return;
+  saveCurrentPatient(); renderSidebar(); persistSession();
+}
+function v(id){const e=document.getElementById(id);return e?e.value:'';}
+function sv(id,val){const e=document.getElementById(id);if(e)e.value=val;}
+function el(id){return document.getElementById(id);}
+function show(id){const e=el(id);if(e)e.style.display='';}
+function hide(id){const e=el(id);if(e)e.style.display='none';}
+function showFlex(id){const e=el(id);if(e)e.style.display='flex';}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER SIDEBAR
+// ═══════════════════════════════════════════════════════════
+function renderSidebar(){
+  const list=el('pt-list'); list.innerHTML='';
+  patients.forEach((p,i)=>{
+    const div=document.createElement('div');
+    div.className='pt-item'+(i===currentIdx?' active':'');
+    const dc=p.status==='done'?'dot-done':p.status==='progress'?'dot-progress':'dot-blank';
+    const st=p.status==='done'?'Note done':p.status==='progress'?'In progress':'Not started';
+    const label=appMode==='round'&&p.bedNo?`Bed ${p.bedNo} — ${p.name||'Patient'}`:(p.name||'New patient');
+    div.innerHTML=`<div class="pt-num">${i+1}</div><div class="pt-info"><div class="pt-name-label">${label}</div><div class="pt-status-label"><span class="status-dot ${dc}"></span>${st}</div></div><button class="pt-del" onclick="deletePatient(${i},event)"><i class="ti ti-x"></i></button>`;
+    div.addEventListener('click',()=>switchPatient(i));
+    list.appendChild(div);
+  });
+  el('sidebar-footer').textContent=`${patients.length} patient${patients.length!==1?'s':''} this session`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER MAIN AREA (mode-aware)
+// ═══════════════════════════════════════════════════════════
+function renderMainArea(){
+  el('main-container').innerHTML = appMode==='opd' ? opdHTML() : roundHTML();
+  initMics();
+  if(appMode==='opd') updateWordCount();
+}
+
+function opdHTML(){
+  return `
+  <!-- Patient Details -->
+  <div class="card">
+    <div class="card-title"><i class="ti ti-user-circle"></i> Patient details</div>
+    <div class="grid-3" style="margin-bottom:8px">
+      <input id="pt-name" placeholder="Patient name" oninput="autosave()"/>
+      <input id="pt-age" placeholder="Age / Sex (e.g. 52 M)" oninput="autosave()"/>
+      <input id="pt-id" placeholder="IP/OP number" oninput="autosave()"/>
+    </div>
+    <div class="grid-3">
+      <input id="pt-date" type="date" oninput="autosave()"/>
+      <input id="pt-reg" placeholder="Resident's name" oninput="autosave()"/>
+      <select id="pt-site" onchange="autosave()">
+        <option value="">-- Chief complaint --</option>
+        <option>Neck swelling</option><option>Hoarseness / voice change</option>
+        <option>Dysphagia</option><option>Oral / lip lesion</option>
+        <option>Ear complaint</option><option>Thyroid swelling</option>
+        <option>Nasal / sinus complaint</option><option>Salivary gland swelling</option>
+        <option>Post-treatment follow-up</option><option>Other</option>
+      </select>
+    </div>
+  </div>
+  <!-- Step 1 -->
+  <div class="card">
+    <div class="card-title"><i class="ti ti-microphone-2"></i> Step 1 — dictate or type the history</div>
+    <div class="voice-row">
+      <button class="mic-btn lg" id="mic-transcript" aria-label="Record history"><i class="ti ti-microphone" id="mic-transcript-icon"></i></button>
+      <div class="voice-info">
+        <div class="voice-status" id="voice-status-transcript">Tap mic to start dictating</div>
+        <div class="voice-sub">Chrome / Edge on Android &amp; desktop. Or type directly.</div>
+      </div>
+    </div>
+    <textarea class="transcript" id="transcript" oninput="updateWordCount();autosave()" placeholder="Speak freely or type the history here..."></textarea>
+    <div class="word-count" id="word-count">0 words</div>
+    <button class="btn btn-outline btn-full" id="analyze-btn" disabled onclick="analyseHistory()">
+      <i class="ti ti-brain"></i> Analyse history &amp; predict missing questions
+    </button>
+  </div>
+  <!-- Step 2 AI -->
+  <div id="ai-section" style="display:none">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-checks" style="color:var(--accent)"></i> Step 2 — AI analysis</div>
+      <div style="margin-bottom:12px">
+        <div class="section-hint"><i class="ti ti-check-circle" style="color:var(--accent)"></i> Covered</div>
+        <div class="chips-wrap" id="covered-chips"></div>
+      </div>
+      <div>
+        <div class="section-hint"><i class="ti ti-alert-triangle" style="color:var(--danger)"></i> Likely missing — ask before submitting</div>
+        <ul class="missing-list" id="missing-list"></ul>
+        <div style="margin-top:10px"><div class="section-hint" style="margin-bottom:5px">Tap to mark as enquired:</div><div class="chips-wrap" id="missing-chips"></div></div>
+      </div>
+    </div>
+    <!-- Step 3 Supplemental -->
+    <div class="card">
+      <div class="card-title"><i class="ti ti-notes"></i> Step 3 — supplemental notes</div>
+      <div class="grid-2">
+        <div>
+          <div class="mini-mic-row"><label>Answers / additional PMH</label><button class="mic-btn" id="mic-addl-1"><i class="ti ti-microphone" id="mic-addl-1-icon"></i></button><span class="mic-status" id="mic-status-addl-1"></span></div>
+          <textarea class="field-ta" id="addl-1" oninput="autosave()" placeholder="e.g. No TB contact. Non-diabetic."></textarea>
+        </div>
+        <div>
+          <div class="mini-mic-row"><label>Examination findings</label><button class="mic-btn" id="mic-addl-2"><i class="ti ti-microphone" id="mic-addl-2-icon"></i></button><span class="mic-status" id="mic-status-addl-2"></span></div>
+          <textarea class="field-ta" id="addl-2" oninput="autosave()" placeholder="e.g. 4×3 cm firm right level II node..."></textarea>
+        </div>
+      </div>
+    </div>
+    <!-- Step 4 Investigations -->
+    <div class="card">
+      <div class="card-title"><i class="ti ti-flask"></i> Step 4 — suggested investigations</div>
+      <div class="section-hint"><i class="ti ti-info-circle"></i> AI-suggested. Tick what to include in the final note.</div>
+      <div id="inv-loading" style="text-align:center;padding:1rem;color:var(--text-muted);font-size:13px"><span class="spinner spinner-dark" style="vertical-align:middle;margin-right:6px"></span> Loading...</div>
+      <div id="inv-grid" class="inv-grid" style="display:none"></div>
+      <div style="margin-top:8px"><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Additional</label><input type="text" id="inv-custom" oninput="autosave()" placeholder="e.g. PET-CT, MRI orbit..."/></div>
+    </div>
+    <!-- Step 5 Dx -->
+    <div class="card">
+      <div class="card-title"><i class="ti ti-stethoscope"></i> Step 5 — provisional diagnosis</div>
+      <div class="mini-mic-row"><label>Dictate or type</label><button class="mic-btn" id="mic-prov-dx"><i class="ti ti-microphone" id="mic-prov-dx-icon"></i></button><span class="mic-status" id="mic-status-prov-dx"></span></div>
+      <textarea class="field-ta" id="prov-dx" rows="2" oninput="autosave()" placeholder="e.g. Ca right tonsil cT2N2bM0 Stage IVA&#10;e.g. Suspected Hodgkin lymphoma with B symptoms"></textarea>
+    </div>
+    <!-- Step 6 TNM -->
+    <div class="card">
+      <div class="card-title"><i class="ti ti-hierarchy-2"></i> Step 6 — TNM staging (AJCC 8th edition)</div>
+      <div style="margin-bottom:10px"><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:5px">Primary site</label>
+        <select id="staging-site" onchange="updateStagingOptions();autosave()">
+          <option value="">-- Select primary site --</option>
+          <option value="oral">Oral cavity</option><option value="oropharynx_hpv">Oropharynx (HPV+)</option>
+          <option value="oropharynx_hpvn">Oropharynx (HPV−)</option><option value="hypopharynx">Hypopharynx</option>
+          <option value="larynx_glottic">Larynx — glottic</option><option value="larynx_supraglottic">Larynx — supraglottic</option>
+          <option value="nasopharynx">Nasopharynx</option><option value="thyroid_diff">Thyroid — differentiated</option>
+          <option value="salivary">Major salivary gland</option><option value="skin">Cutaneous (H&N)</option>
+          <option value="lymphoma">Lymphoma (Ann Arbor)</option>
+        </select>
+      </div>
+      <div class="grid-3" style="margin-bottom:10px">
+        <div><label id="label-t" style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">T — Primary tumour</label><select id="t-stage" onchange="computeStage();autosave()"><option value="">T—</option></select></div>
+        <div><label id="label-n" style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">N — Regional nodes</label><select id="n-stage" onchange="computeStage();autosave()"><option value="">N—</option></select></div>
+        <div><label id="label-m" style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">M — Distant metastasis</label><select id="m-stage" onchange="computeStage();autosave()"><option value="">M—</option></select></div>
+      </div>
+      <div id="stage-result" class="stage-result-box">
+        <i class="ti ti-award" style="font-size:18px;color:var(--accent)"></i>
+        <div><div style="font-size:11px;color:var(--accent-text);font-weight:600;text-transform:uppercase;letter-spacing:0.05em">Overall stage</div><div id="stage-label" style="font-size:18px;font-weight:500;color:var(--accent-text)"></div></div>
+        <div style="margin-left:auto;font-size:13px;color:var(--accent-text)" id="tnm-summary"></div>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-full" id="generate-btn" onclick="generateNote()">
+      <i class="ti ti-file-text"></i> Generate &amp; grammar-check final EMR note
+    </button>
+  </div>
+  <!-- Output -->
+  <div id="output-section" style="display:none;margin-top:1rem">
+    <div style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;display:flex;align-items:center">
+      Final note <span class="grammar-badge" style="margin-left:8px"><i class="ti ti-check"></i> Grammar checked</span>
+    </div>
+    <div class="output-container">
+      <div class="output-text" id="output-text"></div>
+      <div class="action-bar">
+        <button class="btn btn-primary" onclick="copyOutput()"><i class="ti ti-copy"></i> Copy</button>
+        <button class="btn btn-warn" onclick="sendWhatsApp('single')"><i class="ti ti-brand-whatsapp"></i> WhatsApp faculty</button>
+        <button class="btn btn-pdf" onclick="exportSinglePDF()"><i class="ti ti-file-type-pdf"></i> PDF</button>
+        <button class="btn btn-outline" onclick="window.print()"><i class="ti ti-printer"></i> Print</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function roundHTML(){
+  return `
+  <div class="round-banner"><i class="ti ti-clipboard-list" style="font-size:16px"></i> <strong>Ward Round Mode</strong> — dictate findings and faculty advice at the bedside. Generate a note and send to faculty via WhatsApp.</div>
+  <!-- Patient -->
+  <div class="card">
+    <div class="card-title"><i class="ti ti-user-circle"></i> Patient details</div>
+    <div class="grid-3" style="margin-bottom:8px">
+      <input id="pt-name" placeholder="Patient name" oninput="autosave()"/>
+      <input id="pt-age" placeholder="Age / Sex" oninput="autosave()"/>
+      <input id="pt-id" placeholder="IP number" oninput="autosave()"/>
+    </div>
+    <div class="grid-3">
+      <input id="pt-date" type="date" oninput="autosave()"/>
+      <input id="pt-reg" placeholder="Resident's name" oninput="autosave()"/>
+      <input id="bed-no" placeholder="Bed / Ward" oninput="autosave()"/>
+    </div>
+    <div style="margin-top:8px">
+      <select id="round-type" onchange="autosave()">
+        <option>Morning round</option><option>Faculty round</option>
+        <option>Post-op round</option><option>Evening round</option><option>Emergency review</option>
+      </select>
+    </div>
+  </div>
+  <!-- Clinical update -->
+  <div class="card">
+    <div class="card-title"><i class="ti ti-activity"></i> Clinical update</div>
+    <div class="mini-mic-row"><label>Clinical update today</label><button class="mic-btn" id="mic-round-update"><i class="ti ti-microphone" id="mic-round-update-icon"></i></button><span class="mic-status" id="mic-status-round-update"></span></div>
+    <textarea class="field-ta" id="round-update" oninput="autosave()" placeholder="e.g. Day 3 post total laryngectomy. Afebrile. Tolerating tube feeds. Stoma patent and clean..."></textarea>
+    <div class="mini-mic-row" style="margin-top:10px"><label>Examination findings today</label><button class="mic-btn" id="mic-round-exam"><i class="ti ti-microphone" id="mic-round-exam-icon"></i></button><span class="mic-status" id="mic-status-round-exam"></span></div>
+    <textarea class="field-ta" id="round-exam" oninput="autosave()" placeholder="e.g. Wound clean, no discharge. Flap warm and viable. Drain output 20 ml serous..."></textarea>
+  </div>
+  <!-- Faculty advice -->
+  <div class="card">
+    <div class="card-title"><i class="ti ti-message-2"></i> Faculty advice &amp; plan</div>
+    <div class="mini-mic-row"><label>Faculty advice</label><button class="mic-btn" id="mic-round-advice"><i class="ti ti-microphone" id="mic-round-advice-icon"></i></button><span class="mic-status" id="mic-status-round-advice"></span></div>
+    <textarea class="field-ta" id="round-advice" oninput="autosave()" placeholder="e.g. Continue current management. Review histology in OPD. Start secondary suturing tomorrow under LA..."></textarea>
+    <div class="mini-mic-row" style="margin-top:10px"><label>Plan / orders</label><button class="mic-btn" id="mic-round-plan"><i class="ti ti-microphone" id="mic-round-plan-icon"></i></button><span class="mic-status" id="mic-status-round-plan"></span></div>
+    <textarea class="field-ta" id="round-plan" oninput="autosave()" placeholder="e.g. Continue IV antibiotics. Suture removal on Day 10. OPD review with histology report..."></textarea>
+  </div>
+  <button class="btn btn-primary btn-full" id="generate-btn" onclick="generateRoundNote()">
+    <i class="ti ti-file-text"></i> Generate round note
+  </button>
+  <!-- Output -->
+  <div id="output-section" style="display:none;margin-top:1rem">
+    <div style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Round note</div>
+    <div class="output-container">
+      <div class="output-text" id="output-text"></div>
+      <div class="action-bar">
+        <button class="btn btn-primary" onclick="copyOutput()"><i class="ti ti-copy"></i> Copy</button>
+        <button class="btn btn-warn" onclick="sendWhatsApp('single')"><i class="ti ti-brand-whatsapp"></i> Send to faculty</button>
+        <button class="btn btn-pdf" onclick="exportSinglePDF()"><i class="ti ti-file-type-pdf"></i> PDF</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// SPEECH
+// ═══════════════════════════════════════════════════════════
+function makeSR(){if(!SR)return null;const r=new SR();r.continuous=true;r.interimResults=true;r.lang='en-IN';return r;}
+
+// Per-field finalised text — Android fix: we accumulate only truly new final segments
+let recFinal={};   // fieldId -> confirmed final text so far this session
+let recRestarting={}; // fieldId -> true during the brief onend→start gap
+
+function initMics(){
+  if(!SR){document.querySelectorAll('.mic-btn').forEach(b=>{b.classList.add('unsupported');b.disabled=true;});return;}
+  document.querySelectorAll('.mic-btn').forEach(btn=>{
+    const fieldId=btn.id.replace('mic-','');
+    if(!recBuffers[fieldId])recBuffers[fieldId]='';
+    btn.onclick=()=>{ if(recActive[fieldId])stopRec(fieldId); else startRec(fieldId); };
+  });
+}
+
+function startRec(fieldId){
+  const ta=el(fieldId); if(!ta)return;
+  // Seed the buffer with whatever is already in the textarea
+  recBuffers[fieldId]=ta.value;
+  recFinal[fieldId]=ta.value;   // track confirmed finals separately
+  recRestarting[fieldId]=false;
+
+  const r=makeSR();
+
+  r.onresult=e=>{
+    // Only process results from e.resultIndex onward to avoid re-processing
+    let newFinal='';
+    let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal) newFinal+=e.results[i][0].transcript+' ';
+      else interim+=e.results[i][0].transcript;
+    }
+    if(newFinal){
+      recFinal[fieldId]+=newFinal;
+      recBuffers[fieldId]=recFinal[fieldId];
+    }
+    // Show confirmed finals + current interim
+    ta.value=recFinal[fieldId]+interim;
+    if(fieldId==='transcript')updateWordCount();
+    autosave();
+  };
+
+  r.onerror=e=>{
+    if(e.error==='no-speech') return; // ignore silence, let onend restart
+    if(e.error==='aborted') return;   // ignore aborts during restart
+    stopRec(fieldId);
+  };
+
+  r.onend=()=>{
+    if(recActive[fieldId]&&!recRestarting[fieldId]){
+      // Android: brief pause before restart to avoid duplicate result delivery
+      recRestarting[fieldId]=true;
+      setTimeout(()=>{
+        recRestarting[fieldId]=false;
+        if(recActive[fieldId]){
+          // Reseed final buffer from textarea before restart
+          recFinal[fieldId]=ta.value.replace(/\s*$/, ' ').trimStart();
+          r.start();
+        }
+      }, 250);
+    }
+  };
+
+  r.start();
+  recs[fieldId]=r; recActive[fieldId]=true;
+  const btn=el('mic-'+fieldId);
+  if(btn){btn.classList.add('recording');const ic=el('mic-'+fieldId+'-icon');if(ic)ic.className='ti ti-player-stop';}
+  const st=el('mic-status-'+fieldId)||el('voice-status-transcript');
+  if(st){st.innerHTML='<span class="rec-dot"></span>Recording';st.classList.add('recording');}
+}
+
+function stopRec(fieldId){
+  recActive[fieldId]=false;
+  recRestarting[fieldId]=false;
+  if(recs[fieldId]){try{recs[fieldId].stop();}catch(e){}}
+  recBuffers[fieldId]=(el(fieldId)||{}).value||'';
+  recFinal[fieldId]=recBuffers[fieldId];
+  const btn=el('mic-'+fieldId);
+  if(btn){btn.classList.remove('recording');const ic=el('mic-'+fieldId+'-icon');if(ic)ic.className='ti ti-microphone';}
+  const st=el('mic-status-'+fieldId)||el('voice-status-transcript');
+  if(st){st.textContent=fieldId==='transcript'?'Recording stopped':'';st.classList.remove('recording');}
+}
+
+function updateWordCount(){
+  const w=(v('transcript')||'').trim().split(/\s+/).filter(x=>x.length>0).length;
+  const wc=el('word-count');if(wc)wc.textContent=w+' words';
+  const ab=el('analyze-btn');if(ab)ab.disabled=w<5;
+}
+
+// ═══════════════════════════════════════════════════════════
+// TNM
+// ═══════════════════════════════════════════════════════════
+const TNM={
+  oral:{T:['Tx','T0','Tis','T1','T2','T3','T4a','T4b'],N:['Nx','N0','N1','N2a','N2b','N2c','N3a','N3b'],M:['M0','M1'],s:(t,n,m)=>{if(m==='M1')return'Stage IVC';if(t==='T4b'||n==='N3a'||n==='N3b')return'Stage IVB';if(t==='T4a'||n==='N2a'||n==='N2b'||n==='N2c')return'Stage IVA';if(n==='N1'||t==='T3')return'Stage III';if(t==='T2')return'Stage II';if(t==='T1'||t==='Tis')return'Stage I';return'—';}},
+  oropharynx_hpv:{T:['Tx','T0','T1','T2','T3','T4'],N:['Nx','N0','N1','N2','N3'],M:['M0','M1'],s:(t,n,m)=>{if(m==='M1')return'Stage IV';if(t==='T4'||n==='N3')return'Stage III';if(n==='N2'||t==='T3')return'Stage II';if(n==='N1'||t==='T1'||t==='T2')return'Stage I';return'—';}},
+  oropharynx_hpvn:{T:['Tx','T0','Tis','T1','T2','T3','T4a','T4b'],N:['Nx','N0','N1','N2a','N2b','N2c','N3a','N3b'],M:['M0','M1'],s:(t,n,m)=>{if(m==='M1')return'Stage IVC';if(t==='T4b'||n==='N3a'||n==='N3b')return'Stage IVB';if(t==='T4a'||n==='N2a'||n==='N2b'||n==='N2c')return'Stage IVA';if(t==='T3'||n==='N1')return'Stage III';if(t==='T2')return'Stage II';if(t==='T1'||t==='Tis')return'Stage I';return'—';}},
+  hypopharynx:{T:['Tx','T0','Tis','T1','T2','T3','T4a','T4b'],N:['Nx','N0','N1','N2a','N2b','N2c','N3a','N3b'],M:['M0','M1'],s:(t,n,m)=>{if(m==='M1')return'Stage IVC';if(t==='T4b'||n==='N3a'||n==='N3b')return'Stage IVB';if(t==='T4a'||n==='N2a'||n==='N2b'||n==='N2c')return'Stage IVA';if(t==='T3'||n==='N1')return'Stage III';if(t==='T2')return'Stage II';if(t==='T1'||t==='Tis')return'Stage I';return'—';}},
+  larynx_glottic:{T:['Tx','T0','Tis','T1a','T1b','T2','T3','T4a','T4b'],N:['Nx','N0','N1','N2a','N2b','N2c','N3a','N3b'],M:['M0','M1'],s:(t,n,m)=>{if(m==='M1')return'Stage IVC';if(t==='T4b'||n==='N3a'||n==='N3b')return'Stage IVB';if(t==='T4a'||n==='N2a'||n==='N2b'||n==='N2c')return'Stage IVA';if(t==='T3'||n==='N1')return'Stage III';if(t==='T2')return'Stage II';if(t==='T1a'||t==='T1b'||t==='Tis')return'Stage I';return'—';}},
+  larynx_supraglottic:{T:['Tx','T0','Tis','T1','T2','T3','T4a','T4b'],N:['Nx','N0','N1','N2a','N2b','N2c','N3a','N3b'],M:['M0','M1'],s:(t,n,m)=>{if(m==='M1')return'Stage IVC';if(t==='T4b'||n==='N3a'||n==='N3b')return'Stage IVB';if(t==='T4a'||n==='N2a'||n==='N2b'||n==='N2c')return'Stage IVA';if(t==='T3'||n==='N1')return'Stage III';if(t==='T2')return'Stage II';if(t==='T1'||t==='Tis')return'Stage I';return'—';}},
+  nasopharynx:{T:['Tx','T0','T1','T2','T3','T4'],N:['Nx','N0','N1','N2','N3'],M:['M0','M1'],s:(t,n,m)=>{if(m==='M1')return'Stage IVB';if(n==='N3'||t==='T4')return'Stage IVA';if(t==='T3'||n==='N2')return'Stage III';if(t==='T2'||n==='N1')return'Stage II';if(t==='T1'&&n==='N0')return'Stage I';return'—';}},
+  thyroid_diff:{T:['Tx','T1a','T1b','T2','T3a','T3b','T4a','T4b'],N:['Nx','N0','N1a','N1b'],M:['M0','M1'],s:(t,n,m,age)=>{if(!age)return'Enter age';const a=parseInt(age);if(a<55)return m==='M1'?'Stage II (age <55)':'Stage I (age <55)';if(m==='M1')return'Stage IVB';if(t==='T4b')return'Stage IVA';if(t==='T4a'||n==='N1b'||n==='N1a')return'Stage III';if(t==='T3a'||t==='T3b')return'Stage II';return'Stage I';}},
+  salivary:{T:['Tx','T0','T1','T2','T3','T4a','T4b'],N:['Nx','N0','N1','N2a','N2b','N2c','N3a','N3b'],M:['M0','M1'],s:(t,n,m)=>{if(m==='M1')return'Stage IVC';if(t==='T4b'||n==='N3a'||n==='N3b')return'Stage IVB';if(t==='T4a'||n==='N2a'||n==='N2b'||n==='N2c')return'Stage IVA';if(t==='T3'||n==='N1')return'Stage III';if(t==='T2')return'Stage II';if(t==='T1')return'Stage I';return'—';}},
+  skin:{T:['Tx','T0','Tis','T1','T2','T3','T4a','T4b'],N:['Nx','N0','N1','N2a','N2b','N3'],M:['M0','M1'],s:(t,n,m)=>{if(m==='M1'||n==='N3'||t==='T4b')return'Stage IV';if(n==='N2a'||n==='N2b'||t==='T4a'||n==='N1')return'Stage III';if(t==='T3'||t==='T2')return'Stage II';if(t==='T1'||t==='Tis')return'Stage I';return'—';}},
+  lymphoma:{T:['I','II','III','IV'],N:['A (no B symptoms)','B (with B symptoms)'],M:['No bulky disease','E (extranodal)','S (splenic)','X (bulky)'],s:(t,n,m)=>{if(!t||!n)return'—';return`Ann Arbor Stage ${t}${n.charAt(0)}${m&&m!=='No bulky disease'?' + '+m.split(' ')[0]:''}`; }}
+};
+
+function updateStagingOptions(skipReset){
+  const site=v('staging-site');
+  const tS=el('t-stage'),nS=el('n-stage'),mS=el('m-stage');
+  if(!tS)return;
+  if(!skipReset)hide('stage-result');
+  const isL=site==='lymphoma';
+  el('label-t').textContent=isL?'Stage':'T — Primary tumour';
+  el('label-n').textContent=isL?'B symptoms':'N — Regional nodes';
+  el('label-m').textContent=isL?'Modifiers':'M — Distant metastasis';
+  tS.innerHTML=`<option value="">${isL?'Stage—':'T—'}</option>`;
+  nS.innerHTML=`<option value="">${isL?'Symptoms—':'N—'}</option>`;
+  mS.innerHTML=`<option value="">${isL?'Modifier—':'M—'}</option>`;
+  if(!site)return;
+  const d=TNM[site];if(!d)return;
+  d.T.forEach(v=>tS.appendChild(new Option(v,v)));
+  d.N.forEach(v=>nS.appendChild(new Option(v,v)));
+  d.M.forEach(v=>mS.appendChild(new Option(v,v)));
+}
+
+function computeStage(){
+  const site=v('staging-site'),t=v('t-stage'),n=v('n-stage'),m=v('m-stage');
+  if(!site||!t||!n||!m)return;
+  const d=TNM[site];if(!d)return;
+  const age=v('pt-age').replace(/\D.*$/,'');
+  const s=d.s(t,n,m,age);
+  el('stage-label').textContent=s; el('tnm-summary').textContent=`${t}  ${n}  ${m}`;
+  el('stage-result').style.display='flex';
+}
+
+// ═══════════════════════════════════════════════════════════
+// AI — OPD ANALYSIS
+// ═══════════════════════════════════════════════════════════
+async function analyseHistory(){
+  const transcript=v('transcript').trim();
+  if(!transcript){alert('Please enter the history first.');return;}
+  const site=v('pt-site');
+  const btn=el('analyze-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner spinner-dark"></span> Analysing...';
+  const sys=`You are an expert Head and Neck Surgery clinical assistant at BBCI, Guwahati, NE India.
+Analyse the history and respond ONLY with valid JSON — no markdown, no backticks:
+{"detected_complaint":"","covered":[],"missing":[{"domain":"","question":"","priority":"high"}],"investigations":[{"category":"Blood tests","items":[]},{"category":"Imaging","items":[]},{"category":"Biopsy / pathology","items":[]},{"category":"Endoscopy","items":[]},{"category":"Other","items":[]}]}
+Select only contextually relevant investigations. Remove empty categories.
+Domains to check: Duration/progression|Pain|Tobacco(quantify)|Betel nut|Alcohol|Dysphagia|Odynophagia|Voice change|Stridor|Neck swelling|Weight loss|Appetite|B symptoms|Otalgia|Hearing/tinnitus/vertigo|Nasal/epistaxis|Trismus|Tongue mobility|Dental|Prior H&N surgery|Prior FNAC/biopsy|Prior radiation|Thyroid|Occupation|Family Hx cancer|TB exposure|HIV risk|Diabetes/comorbidities|Drug Hx/allergies|Geographic origin NE India|Review of systems|Prior chemo`;
+  try{
+    const resp=await apiFetch({model:'claude-sonnet-4-6',max_tokens:2000,system:sys,messages:[{role:'user',content:`Chief complaint: ${site||'not specified'}\n\nHistory:\n${transcript}`}]});
+    const m=resp.replace(/```json|```/g,'').trim().match(/\{[\s\S]*\}/);
+    if(!m)throw new Error('Could not parse response');
+    analysisResult=JSON.parse(m[0]);
+    renderAnalysis(analysisResult);
+    renderInvestigations(analysisResult.investigations||[],(patients[currentIdx]||{}).invChecked||[]);
+    el('ai-section').style.display='';
+    el('ai-section').scrollIntoView({behavior:'smooth',block:'start'});
+    btn.innerHTML='<i class="ti ti-refresh"></i> Re-analyse';
+    autosave();
+  }catch(err){alert('Analysis error: '+err.message);btn.innerHTML='<i class="ti ti-brain"></i> Analyse history & predict missing questions';}
+  finally{btn.disabled=false;}
+}
+
+function renderAnalysis(result){
+  const covEl=el('covered-chips'),misList=el('missing-list'),misChips=el('missing-chips');
+  if(!covEl)return;
+  covEl.innerHTML='';misList.innerHTML='';misChips.innerHTML='';
+  answeredChips=new Set((patients[currentIdx]||{}).answeredChips||[]);
+  (result.covered||[]).forEach(d=>{const c=document.createElement('span');c.className='chip covered';c.innerHTML=`<i class="ti ti-check"></i>${d}`;covEl.appendChild(c);});
+  if(!covEl.children.length)covEl.innerHTML='<span style="font-size:13px;color:var(--text-muted)">Nothing clearly documented yet.</span>';
+  const missing=result.missing||[];
+  if(!missing.length){misList.innerHTML='<li><i class="ti ti-circle-check" style="color:var(--accent)"></i><span>History appears comprehensive!</span></li>';}
+  else{missing.forEach((m,i)=>{const li=document.createElement('li');li.innerHTML=`<i class="ti ti-point-filled"></i><span><strong>${m.domain}</strong>${m.priority==='high'?'<span class="priority-high">HIGH</span>':''} — ${m.question}</span>`;misList.appendChild(li);const chip=document.createElement('button');chip.className='chip'+(answeredChips.has(i)?' answered':'');chip.innerHTML=`<i class="ti ${answeredChips.has(i)?'ti-check':'ti-circle'}" id="chip-icon-${i}"></i>${m.domain}`;chip.onclick=()=>toggleChip(chip,i);misChips.appendChild(chip);});}
+}
+
+function renderInvestigations(investigations,savedChecked){
+  const grid=el('inv-grid'),loading=el('inv-loading');
+  if(!grid)return;
+  grid.innerHTML='';loading.style.display='none';grid.style.display='grid';
+  if(!investigations||!investigations.length){grid.innerHTML='<p style="font-size:13px;color:var(--text-muted)">No investigations suggested.</p>';return;}
+  let ci=0;
+  investigations.forEach(cat=>{
+    if(!cat.items||!cat.items.length)return;
+    const lbl=document.createElement('div');lbl.className='inv-category';lbl.textContent=cat.category;grid.appendChild(lbl);
+    cat.items.forEach((item,idx)=>{
+      const id=`inv_${cat.category.replace(/\W/g,'_')}_${idx}`;
+      const div=document.createElement('div');div.className='inv-item';
+      const chk=savedChecked.length>0?(savedChecked[ci]!==false):true;
+      div.innerHTML=`<input type="checkbox" id="${id}" ${chk?'checked':''}/><label for="${id}">${item}</label>`;
+      if(chk)div.classList.add('selected');
+      div.querySelector('input').addEventListener('change',e=>{div.classList.toggle('selected',e.target.checked);autosave();});
+      div.addEventListener('click',e=>{if(e.target.tagName!=='INPUT'){const cb=div.querySelector('input');cb.checked=!cb.checked;div.classList.toggle('selected',cb.checked);autosave();}});
+      grid.appendChild(div);ci++;
+    });
+  });
+}
+
+function getSelectedInv(){
+  const checked=[...document.querySelectorAll('#inv-grid input[type=checkbox]:checked')].map(cb=>cb.nextElementSibling.textContent);
+  const custom=v('inv-custom').trim();
+  if(custom)checked.push(...custom.split(',').map(s=>s.trim()).filter(Boolean));
+  return checked;
+}
+
+function toggleChip(chip,idx){
+  if(answeredChips.has(idx)){answeredChips.delete(idx);chip.classList.remove('answered');chip.querySelector('i').className='ti ti-circle';}
+  else{answeredChips.add(idx);chip.classList.add('answered');chip.querySelector('i').className='ti ti-check';}
+  autosave();
+}
+
+// ═══════════════════════════════════════════════════════════
+// GENERATE — OPD NOTE
+// ═══════════════════════════════════════════════════════════
+async function generateNote(){
+  const transcript=v('transcript').trim();
+  const addl1=v('addl-1').trim(),addl2=v('addl-2').trim(),provDx=v('prov-dx').trim();
+  const tStage=v('t-stage'),nStage=v('n-stage'),mStage=v('m-stage');
+  const stageLabel=el('stage-label')?el('stage-label').textContent:'';
+  const stagingSiteEl=el('staging-site');
+  const stagingSiteText=stagingSiteEl?stagingSiteEl.options[stagingSiteEl.selectedIndex]?.text||'':'';
+  const stagingText=(tStage&&nStage&&mStage)?`${stagingSiteText}: ${tStage} ${nStage} ${mStage} — ${stageLabel}`:'';
+  const invText=getSelectedInv().join('\n- ')||'None selected';
+  const hdr=buildHeader();
+  const btn=el('generate-btn');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Generating...';
+  const prompt=`You are a senior Head and Neck Surgical Oncologist at Dr. B. Borooah Cancer Institute, Guwahati.
+
+PATIENT: ${hdr}
+
+TRANSCRIPT:
+${transcript}
+${addl1?'\nSUPPLEMENTAL HISTORY:\n'+addl1:''}
+${addl2?'\nEXAMINATION FINDINGS:\n'+addl2:''}
+${provDx?'\nPROVISIONAL DIAGNOSIS:\n'+provDx:''}
+${stagingText?'\nSTAGING (AJCC 8th ed.):\n'+stagingText:''}
+
+INVESTIGATIONS SELECTED:
+- ${invText}
+
+RULES:
+- Write ONLY what is provided. Do not invent or add absent information.
+- Do NOT write "[not documented]" — simply omit absent sections.
+- Correct all grammar, spelling and medical terminology from the voice transcript.
+- Use proper clinical language. Quantify where stated.
+- List investigations as plain bullet points — NO explanations or reasons after each item.
+- Include NE India context where mentioned (betel nut, bidi, Ayushman Bharat etc.).
+
+Write a structured clinical history note with these sections (include only sections with data):
+CHIEF COMPLAINT:
+HISTORY OF PRESENTING ILLNESS:
+TOBACCO / SUBSTANCE HISTORY:
+PAST MEDICAL HISTORY:
+PAST SURGICAL HISTORY:
+DRUG HISTORY / ALLERGIES:
+FAMILY HISTORY:
+SOCIAL / OCCUPATIONAL HISTORY:
+REVIEW OF SYSTEMS:
+${addl2?'EXAMINATION FINDINGS:\n':''}${provDx?'PROVISIONAL DIAGNOSIS:\n':''}${stagingText?'STAGING:\n':''}INVESTIGATIONS ADVISED:`;
+
+  try{
+    const raw=await apiFetch({model:'claude-sonnet-4-6',max_tokens:2000,messages:[{role:'user',content:prompt}]});
+    structuredText=raw.trim();
+    el('output-text').textContent=structuredText;
+    el('output-section').style.display='';
+    el('output-section').scrollIntoView({behavior:'smooth',block:'start'});
+    autosave();
+  }catch(err){alert('Generation error: '+err.message);}
+  finally{btn.disabled=false;btn.innerHTML='<i class="ti ti-refresh"></i> Re-generate note';}
+}
+
+// ═══════════════════════════════════════════════════════════
+// GENERATE — ROUND NOTE
+// ═══════════════════════════════════════════════════════════
+async function generateRoundNote(){
+  const update=v('round-update').trim(),advice=v('round-advice').trim();
+  if(!update&&!advice){alert('Please dictate at least the clinical update or faculty advice.');return;}
+  const btn=el('generate-btn');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Generating...';
+  const hdr=buildHeader();
+  const prompt=`You are a senior Head and Neck Surgical Oncologist at BBCI, Guwahati.
+Clean up and format the following ward round notes into a professional, concise clinical note. Correct grammar and medical terminology. Write in past tense. Be brief and factual.
+
+PATIENT: ${hdr}
+ROUND TYPE: ${v('round-type')}
+BED/WARD: ${v('bed-no')||'Not specified'}
+
+CLINICAL UPDATE:
+${update||'Not provided'}
+
+EXAMINATION TODAY:
+${v('round-exam').trim()||'Not provided'}
+
+FACULTY ADVICE:
+${advice||'Not provided'}
+
+PLAN / ORDERS:
+${v('round-plan').trim()||'Not provided'}
+
+Format as:
+WARD ROUND NOTE — [Round type] | [Date]
+PATIENT: [name, age, IP]
+BED: [bed/ward]
+
+CLINICAL UPDATE:
+[update]
+
+EXAMINATION:
+[findings]
+
+FACULTY ADVICE:
+[advice]
+
+PLAN:
+[plan]
+
+Signed: ${v('pt-reg')||'[Resident]'} | ${v('pt-date')||new Date().toLocaleDateString('en-IN')}`;
+
+  try{
+    const raw=await apiFetch({model:'claude-sonnet-4-6',max_tokens:800,messages:[{role:'user',content:prompt}]});
+    structuredText=raw.trim();
+    el('output-text').textContent=structuredText;
+    el('output-section').style.display='';
+    el('output-section').scrollIntoView({behavior:'smooth',block:'start'});
+    autosave();
+  }catch(err){alert('Generation error: '+err.message);}
+  finally{btn.disabled=false;btn.innerHTML='<i class="ti ti-refresh"></i> Re-generate';}
+}
+
+// ═══════════════════════════════════════════════════════════
+// API HELPER
+// ═══════════════════════════════════════════════════════════
+async function apiFetch(body){
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)});
+  if(!resp.ok){const e=await resp.json();throw new Error(e.error?.message||'API error '+resp.status);}
+  const data=await resp.json();
+  return data.content.map(b=>b.text||'').join('');
+}
+
+function buildHeader(){
+  return `${v('pt-name')||'[Name]'} | ${v('pt-age')||'[Age/Sex]'} | IP/OP: ${v('pt-id')||'[ID]'} | Date: ${v('pt-date')||new Date().toLocaleDateString('en-IN')} | Resident: ${v('pt-reg')||'[Resident]'}`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// OUTPUT ACTIONS
+// ═══════════════════════════════════════════════════════════
+function copyOutput(){
+  navigator.clipboard.writeText(structuredText).then(()=>{
+    const btn=event.currentTarget;btn.innerHTML='<i class="ti ti-check"></i> Copied!';btn.style.background='#0F6E56';
+    setTimeout(()=>{btn.innerHTML='<i class="ti ti-copy"></i> Copy';btn.style.background='';},2500);
+  }).catch(()=>{const ta=document.createElement('textarea');ta.value=structuredText;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);alert('Copied!');});
+}
+
+// ─── WhatsApp ───────────────────────────────────────────────
+function sendWhatsApp(mode){
+  const facs=getFacultyList();
+  if(!facs.length){alert('No faculty numbers saved.\n\nPlease add faculty numbers in Settings (gear icon in top bar).');openSettings();return;}
+  let target;
+  if(facs.length===1){target=facs[0];}
+  else{
+    const opts=facs.map((f,i)=>`${i+1}. ${f.name}`).join('\n');
+    const choice=prompt(`Send to which faculty?\n\n${opts}\n\nEnter number (1-${facs.length}):`);
+    const idx=parseInt(choice)-1;
+    if(isNaN(idx)||idx<0||idx>=facs.length){return;}
+    target=facs[idx];
+  }
+  if(mode==='single'){
+    const text=structuredText;
+    const chunk=text.length>1800?text.substring(0,1800)+'...\n[Note truncated — send PDF for full version]':text;
+    window.open(`https://wa.me/${target.number}?text=${encodeURIComponent('📋 *BBCI H&N Note*\n\n'+chunk)}`,'_blank');
+  } else {
+    // bulk round — all notes
+    const all=patients.filter(p=>p.structuredText).map((p,i)=>`*${i+1}. ${p.name||'Patient'}*${p.bedNo?' | Bed '+p.bedNo:''}\n${p.structuredText.substring(0,400)}...`).join('\n\n---\n\n');
+    if(!all){alert('No notes generated yet.');return;}
+    const header=`📋 *BBCI Ward Round — ${new Date().toLocaleDateString('en-IN')}*\n${patients.filter(p=>p.structuredText).length} patients\n\n`;
+    window.open(`https://wa.me/${target.number}?text=${encodeURIComponent(header+all)}`,'_blank');
+  }
+}
+
+// ─── PDF — single ────────────────────────────────────────────
+function exportSinglePDF(){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  addPDFHeader(doc);
+  const lines=doc.splitTextToSize(structuredText,175);
+  doc.setFont('Courier','normal');doc.setFontSize(10);
+  doc.text(lines,17,50);
+  const name=(v('pt-name')||'note').replace(/\s+/g,'_');
+  doc.save(`BBCI_${name}_${new Date().toLocaleDateString('en-IN').replace(/\//g,'-')}.pdf`);
+}
+
+// ─── PDF — bulk (all patients) ────────────────────────────────
+function exportAllPDF(){
+  const done=patients.filter(p=>p.structuredText);
+  if(!done.length){alert('No notes generated yet. Generate at least one note first.');return;}
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  const modeLabel=appMode==='opd'?'OPD History Notes':'Ward Round Notes';
+  done.forEach((p,i)=>{
+    if(i>0)doc.addPage();
+    addPDFHeader(doc,modeLabel);
+    const note=p.structuredText||'No note generated.';
+    const lines=doc.splitTextToSize(note,175);
+    doc.setFont('Courier','normal');doc.setFontSize(10);
+    doc.text(lines,17,50);
+    // Page number
+    doc.setFont('Helvetica','normal');doc.setFontSize(9);doc.setTextColor(150);
+    doc.text(`Patient ${i+1} of ${done.length}`,17,285);
+    doc.setTextColor(0);
+  });
+  const d=new Date().toLocaleDateString('en-IN').replace(/\//g,'-');
+  doc.save(`BBCI_${appMode==='opd'?'OPD':'Round'}_Notes_${d}.pdf`);
+}
+
+function addPDFHeader(doc,subtitle){
+  // Green header bar
+  doc.setFillColor(29,158,117);doc.rect(0,0,210,20,'F');
+  doc.setFont('Helvetica','bold');doc.setFontSize(13);doc.setTextColor(255,255,255);
+  doc.text('Dr. B. Borooah Cancer Institute',17,9);
+  doc.setFontSize(9);doc.setFont('Helvetica','normal');
+  doc.text(subtitle||'Head & Neck Surgery — Clinical Note',17,15);
+  doc.text(new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}),193,15,{align:'right'});
+  doc.setTextColor(0);
+  // Divider
+  doc.setDrawColor(29,158,117);doc.setLineWidth(0.5);doc.line(17,22,193,22);
+  // Patient sub-header
+  doc.setFont('Helvetica','bold');doc.setFontSize(10);
+  doc.text(`${v('pt-name')||'[Name]'}   ${v('pt-age')||'[Age/Sex]'}   IP/OP: ${v('pt-id')||'[ID]'}`,17,30);
+  doc.setFont('Helvetica','normal');doc.setFontSize(9);doc.setTextColor(100);
+  doc.text(`Resident: ${v('pt-reg')||'—'}   Date: ${v('pt-date')||'—'}`,17,36);
+  doc.setTextColor(0);
+}
+
+// ─── WhatsApp bulk from sidebar ──────────────────────────────
+function exportAllWhatsApp(){sendWhatsApp('bulk');}
+
+// ═══════════════════════════════════════════════════════════
+// FACULTY SETTINGS
+// ═══════════════════════════════════════════════════════════
+function getFacultyList(){
+  try{const s=localStorage.getItem(LS_FACULTY);return s?JSON.parse(s):DEFAULT_FACULTY;}catch(e){return DEFAULT_FACULTY;}
+}
+function saveFacultyList(list){localStorage.setItem(LS_FACULTY,JSON.stringify(list));}
+
+function openSettings(){
+  facultyList=getFacultyList();
+  renderFacultyList();
+  el('settings-overlay').classList.add('open');
+}
+function closeSettings(){el('settings-overlay').classList.remove('open');}
+
+function renderFacultyList(){
+  const cont=el('fac-list');cont.innerHTML='';
+  facultyList.forEach((f,i)=>{
+    const div=document.createElement('div');div.className='fac-item';
+    div.innerHTML=`<input type="text" placeholder="Faculty name" value="${f.name}" oninput="facultyList[${i}].name=this.value"/>
+    <input type="text" placeholder="Number (with country code)" value="${f.number}" oninput="facultyList[${i}].number=this.value" style="max-width:160px"/>
+    <button class="fac-del-btn" onclick="removeFaculty(${i})"><i class="ti ti-x"></i></button>`;
+    cont.appendChild(div);
+  });
+}
+function addFaculty(){facultyList.push({name:'',number:''});renderFacultyList();}
+function removeFaculty(i){facultyList.splice(i,1);renderFacultyList();}
+function saveSettings(){
+  const valid=facultyList.filter(f=>f.name.trim()&&f.number.trim());
+  saveFacultyList(valid);closeSettings();
+  alert(`Saved ${valid.length} faculty number${valid.length!==1?'s':''}. You can now send WhatsApp messages.`);
+}
+
+// ═══════════════════════════════════════════════════════════
+// LOCAL STORAGE
+// ═══════════════════════════════════════════════════════════
+function persistSession(){
+  try{
+    saveCurrentPatient();
+    const existing=loadSession()||{};
+    existing[appMode+'_patients']=patients;
+    existing[appMode+'_idx']=currentIdx;
+    existing.savedAt=new Date().toISOString();
+    existing.savedDate=new Date().toLocaleDateString('en-IN');
+    localStorage.setItem(LS_SESSION,JSON.stringify(existing));
+    const t=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    const ls=el('last-saved');if(ls)ls.textContent='Saved '+t;
+  }catch(e){console.warn('localStorage failed:',e);}
+}
+function loadSession(){try{const r=localStorage.getItem(LS_SESSION);return r?JSON.parse(r):null;}catch(e){return null;}}
+function endSession(){
+  if(!confirm('End session and clear all patient data from this computer?\n\nMake sure you have copied or downloaded all notes first.'))return;
+  const existing=loadSession()||{};
+  delete existing[appMode+'_patients']; delete existing[appMode+'_idx'];
+  localStorage.setItem(LS_SESSION,JSON.stringify(existing));
+  patients=[];currentIdx=-1;addPatient();
+  const ls=el('last-saved');if(ls)ls.textContent='Session cleared';
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+function initApp(){
+  // Load faculty
+  facultyList=getFacultyList();
+  // Try restore OPD session
+  const saved=loadSession();
+  const today=new Date().toLocaleDateString('en-IN');
+  if(saved&&saved.opd_patients&&saved.opd_patients.length>0&&saved.savedDate===today){
+    const n=saved.opd_patients.length,done=saved.opd_patients.filter(p=>p.status==='done').length;
+    if(confirm(`OPD session from today found on this computer:\n${n} patient${n!==1?'s':''}, ${done} note${done!==1?'s':''} generated.\n\nOK = resume | Cancel = fresh start`)){
+      patients=saved.opd_patients; currentIdx=saved.opd_idx>=0?saved.opd_idx:0;
+      renderSidebar(); renderMainArea(); loadPatient(currentIdx);
+      const t=new Date(saved.savedAt).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+      const ls=el('last-saved');if(ls)ls.textContent='Restored from '+t;
+      return;
+    }
+  } else if(saved&&saved.savedDate!==today){
+    // Stale — clear old data
+    localStorage.removeItem(LS_SESSION);
+  }
+  addPatient();
+}
+</script>
+</body>
+</html>
