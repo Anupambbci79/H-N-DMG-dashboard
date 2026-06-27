@@ -10,7 +10,6 @@
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#f8f9fa;--surface:#fff;--surface-2:#f1f3f5;
-  
   --border:#dee2e6;--border-strong:#ced4da;
   --text-primary:#212529;--text-secondary:#6c757d;--text-muted:#adb5bd;
   --accent:#1D9E75;--accent-bg:#E1F5EE;--accent-text:#085041;--accent-border:#5DCAA5;
@@ -172,13 +171,39 @@ textarea.field-ta{min-height:72px;resize:vertical;line-height:1.6}
 .fac-del-btn{width:32px;height:32px;border-radius:50%;background:var(--danger-bg);color:var(--danger-text);border:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 
 .hidden{display:none}
+/* API KEY SETUP */
+#apikey-screen{position:fixed;inset:0;background:var(--accent);display:flex;align-items:center;justify-content:center;z-index:998}
+.apikey-box{background:#fff;border-radius:16px;padding:2.5rem 2rem;width:360px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+.apikey-box h2{font-size:17px;font-weight:600;color:#212529;margin-bottom:6px}
+.apikey-box p{font-size:13px;color:#6c757d;margin-bottom:1.2rem;line-height:1.5}
+.apikey-box input{width:100%;padding:10px 14px;border:1px solid #dee2e6;border-radius:var(--radius);font-size:13px;margin-bottom:10px;font-family:monospace;color:#212529;background:#f8f9fa}
+.apikey-box input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(29,158,117,0.15)}
+.apikey-btn{width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.apikey-btn:hover{background:#0F6E56}
+.apikey-error{font-size:12px;color:#E24B4A;margin-top:6px;display:none}
+.apikey-note{font-size:11px;color:#adb5bd;margin-top:10px;line-height:1.5}
 @media print{.topbar,.sidebar,.mic-btn,.btn,.voice-row,.action-bar,.mini-mic-row,.mode-toggle,.topbar-btn{display:none!important}.output-text{max-height:none;font-family:serif;font-size:13px}}
 </style>
 </head>
 <body>
+<script>
+// On page load — decide which screen to show first
+(function(){
+  const hasKey = !!localStorage.getItem('bbci_hn_apikey');
+  window.addEventListener('DOMContentLoaded',()=>{
+    if(!hasKey){
+      document.getElementById('apikey-screen').style.display='flex';
+      document.getElementById('login-screen').style.display='none';
+    } else {
+      document.getElementById('apikey-screen').style.display='none';
+      document.getElementById('login-screen').style.display='flex';
+    }
+  });
+})();
+</script>
 
 <!-- LOGIN -->
-<div id="login-screen">
+<div id="login-screen" style="display:none">
   <div class="login-box">
     <div class="login-logo"><i class="ti ti-stethoscope"></i></div>
     <h2>BBCI H&amp;N Clinical App</h2>
@@ -200,6 +225,19 @@ textarea.field-ta{min-height:72px;resize:vertical;line-height:1.6}
       <button class="btn btn-primary" style="flex:1" onclick="saveSettings()"><i class="ti ti-check"></i> Save</button>
       <button class="btn btn-outline" style="flex:1" onclick="closeSettings()">Cancel</button>
     </div>
+  </div>
+</div>
+
+<!-- API KEY SETUP (shown only once per device) -->
+<div id="apikey-screen" style="display:none">
+  <div class="apikey-box">
+    <div class="login-logo" style="margin-bottom:1rem"><i class="ti ti-key"></i></div>
+    <h2>One-time API Key Setup</h2>
+    <p>Enter your Anthropic API key. It will be saved on this device only and never shared anywhere.</p>
+    <input type="password" id="apikey-input" placeholder="sk-ant-api03-..." onkeydown="if(event.key==='Enter')saveApiKey()"/>
+    <div class="apikey-error" id="apikey-error">Please enter a valid API key starting with sk-ant-</div>
+    <button class="apikey-btn" onclick="saveApiKey()">Save &amp; continue</button>
+    <div class="apikey-note">This key is stored only in your browser&#39;s local storage.<br/>Never entered again on this device unless you clear browser data.</div>
   </div>
 </div>
 
@@ -255,10 +293,23 @@ textarea.field-ta{min-height:72px;resize:vertical;line-height:1.6}
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════
 const PASSWORD   = 'bbcihn123*';
-const API_KEY    = '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';
+const LS_APIKEY  = 'bbci_hn_apikey';
 const LS_SESSION = 'bbci_hn_session_v3';
 const LS_FACULTY = 'bbci_faculty_list';
 const DEFAULT_FACULTY = [{name:'Dr. Anupam Das', number:'919876543210'}];
+
+function getKey(){ return localStorage.getItem(LS_APIKEY)||''; }
+
+function saveApiKey(){
+  const k=document.getElementById('apikey-input').value.trim();
+  if(!k.startsWith('sk-ant-')){
+    document.getElementById('apikey-error').style.display='block';
+    return;
+  }
+  localStorage.setItem(LS_APIKEY,k);
+  document.getElementById('apikey-screen').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+}
 
 // ═══════════════════════════════════════════════════════════
 // STATE
@@ -289,6 +340,13 @@ function doLogin(){
     document.getElementById('login-error').style.display='block';
     document.getElementById('login-pw').value='';
     document.getElementById('login-pw').focus();
+  }
+}
+function doLogoutKey(){
+  // Allow key reset from settings
+  if(confirm('Reset API key? You will need to enter a new key on next login.')){
+    localStorage.removeItem(LS_APIKEY);
+    alert('API key cleared. Please refresh the page.');
   }
 }
 function doLogout(){
@@ -630,23 +688,11 @@ function roundHTML(){
 }
 
 // ═══════════════════════════════════════════════════════════
-// SPEECH
+// SPEECH — Android-safe implementation
 // ═══════════════════════════════════════════════════════════
 const isAndroid = /Android/i.test(navigator.userAgent);
-
-function makeSR(){
-  if(!SR)return null;
-  const r=new SR();
-  // Android: don't use continuous mode — it causes duplicate results on restart
-  // Instead we restart manually with a fresh instance each time
-  r.continuous = !isAndroid;
-  r.interimResults=true;
-  r.lang='en-IN';
-  return r;
-}
-
-let recFinal={};
-let recRestarting={};
+let recFinal={};      // confirmed text per field
+let recRestarting={}; // restart lock per field
 
 function initMics(){
   if(!SR){document.querySelectorAll('.mic-btn').forEach(b=>{b.classList.add('unsupported');b.disabled=true;});return;}
@@ -659,11 +705,14 @@ function initMics(){
 
 function startRec(fieldId){
   const ta=el(fieldId); if(!ta)return;
-  // Snapshot what's already in the box — this is our confirmed base
-  recFinal[fieldId]=ta.value;
-  recBuffers[fieldId]=ta.value;
-  recRestarting[fieldId]=false;
-  recActive[fieldId]=true;
+  // CRITICAL FIX for pause-restart text loss:
+  // Always read current textarea value as the confirmed base
+  // This preserves text from previous recording segments
+  const currentText = ta.value;
+  recFinal[fieldId] = currentText;
+  recBuffers[fieldId] = currentText;
+  recRestarting[fieldId] = false;
+  recActive[fieldId] = true;
   _launchSR(fieldId, ta);
   const btn=el('mic-'+fieldId);
   if(btn){btn.classList.add('recording');const ic=el('mic-'+fieldId+'-icon');if(ic)ic.className='ti ti-player-stop';}
@@ -672,51 +721,49 @@ function startRec(fieldId){
 }
 
 function _launchSR(fieldId, ta){
-  // Always create a FRESH instance — never reuse on Android
-  const r=makeSR();
-  recs[fieldId]=r;
+  const r = new SR();
+  // Android: non-continuous prevents duplicate result delivery on restart
+  r.continuous = !isAndroid;
+  r.interimResults = true;
+  r.lang = 'en-IN';
+  recs[fieldId] = r;
 
-  // Snapshot the confirmed text at the moment this session starts
-  const sessionBase = recFinal[fieldId];
+  // Freeze the base at launch time — only new words from this session added on top
+  const launchBase = recFinal[fieldId];
 
-  r.onresult=e=>{
-    let newFinal='';
-    let interim='';
-    // Only process from e.resultIndex — truly new results only
-    for(let i=e.resultIndex;i<e.results.length;i++){
-      if(e.results[i].isFinal) newFinal+=e.results[i][0].transcript+' ';
-      else interim+=e.results[i][0].transcript;
+  r.onresult = e => {
+    let newFinal='', interim='';
+    for(let i=e.resultIndex; i<e.results.length; i++){
+      if(e.results[i].isFinal) newFinal += e.results[i][0].transcript + ' ';
+      else interim += e.results[i][0].transcript;
     }
     if(newFinal){
-      // Append to sessionBase (not to recFinal which may have grown)
-      // to avoid double-counting from previous restart deliveries
-      recFinal[fieldId]=sessionBase+newFinal;
-      recBuffers[fieldId]=recFinal[fieldId];
+      recFinal[fieldId] = launchBase + newFinal;
+      recBuffers[fieldId] = recFinal[fieldId];
     }
-    ta.value=recFinal[fieldId]+interim;
-    if(fieldId==='transcript')updateWordCount();
+    ta.value = recFinal[fieldId] + interim;
+    if(fieldId==='transcript') updateWordCount();
     autosave();
   };
 
-  r.onerror=e=>{
-    if(e.error==='no-speech'||e.error==='aborted')return;
+  r.onerror = e => {
+    if(e.error==='no-speech'||e.error==='aborted') return;
     stopRec(fieldId);
   };
 
-  r.onend=()=>{
-    if(!recActive[fieldId]||recRestarting[fieldId])return;
-    recRestarting[fieldId]=true;
-    // Update confirmed base from what's actually in the box right now
-    recFinal[fieldId]=ta.value;
+  r.onend = () => {
+    if(!recActive[fieldId]||recRestarting[fieldId]) return;
+    recRestarting[fieldId] = true;
+    // Snapshot confirmed text before restart — this is the key fix
+    // for pause-restart: recFinal is updated HERE so next launchBase is correct
+    recFinal[fieldId] = ta.value.trimEnd() + ' ';
     setTimeout(()=>{
-      recRestarting[fieldId]=false;
-      if(recActive[fieldId]){
-        _launchSR(fieldId, ta); // fresh instance, fresh session
-      }
+      recRestarting[fieldId] = false;
+      if(recActive[fieldId]) _launchSR(fieldId, ta);
     }, 300);
   };
 
-  try{ r.start(); } catch(e){ console.warn('SR start error:',e); }
+  try{ r.start(); } catch(e){ console.warn('SR start:',e); }
 }
 
 function stopRec(fieldId){
@@ -724,12 +771,13 @@ function stopRec(fieldId){
   recRestarting[fieldId]=false;
   if(recs[fieldId]){try{recs[fieldId].stop();}catch(e){}}
   recs[fieldId]=null;
-  recFinal[fieldId]=(el(fieldId)||{}).value||'';
-  recBuffers[fieldId]=recFinal[fieldId];
+  // Preserve whatever is in the textarea as the final confirmed text
+  const ta=el(fieldId);
+  if(ta){ recFinal[fieldId]=ta.value; recBuffers[fieldId]=ta.value; }
   const btn=el('mic-'+fieldId);
   if(btn){btn.classList.remove('recording');const ic=el('mic-'+fieldId+'-icon');if(ic)ic.className='ti ti-microphone';}
   const st=el('mic-status-'+fieldId)||el('voice-status-transcript');
-  if(st){st.textContent=fieldId==='transcript'?'Recording stopped':'';st.classList.remove('recording');}
+  if(st){st.textContent=fieldId==='transcript'?'Recording stopped — tap mic to continue':'';st.classList.remove('recording');}
 }
 
 function updateWordCount(){
@@ -982,7 +1030,7 @@ Signed: ${v('pt-reg')||'[Resident]'} | ${v('pt-date')||new Date().toLocaleDateSt
 // API HELPER
 // ═══════════════════════════════════════════════════════════
 async function apiFetch(body){
-  const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)});
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':getKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)});
   if(!resp.ok){const e=await resp.json();throw new Error(e.error?.message||'API error '+resp.status);}
   const data=await resp.json();
   return data.content.map(b=>b.text||'').join('');
@@ -1150,6 +1198,10 @@ function endSession(){
 function initApp(){
   // Load faculty
   facultyList=getFacultyList();
+  // Check API key
+  if(!getKey()){
+    alert('API key not set. Please ask your administrator to set it up on this device.');
+  }
   // Try restore OPD session
   const saved=loadSession();
   const today=new Date().toLocaleDateString('en-IN');
