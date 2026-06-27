@@ -1092,57 +1092,101 @@ function sendWhatsApp(mode){
 }
 
 // ─── PDF — single ────────────────────────────────────────────
+// ─── Clean markdown from AI output ─────────────────────────────
+function stripMarkdown(text){
+  return text
+    .replace(/^#{1,3}\s+/gm,'')
+    .replace(/\*\*(.+?)\*\*/g,'$1')
+    .replace(/\*(.+?)\*/g,'$1')
+    .replace(/^---+$/gm,'')
+    .replace(/^-{3,}\s*$/gm,'')
+    .trim();
+}
+
+// ─── Render note into PDF with proper formatting ─────────────────
+function renderNoteToPDF(doc, text, startY, ptData){
+  const pageH=297, marginB=18, maxW=176, x=17;
+  let y=startY;
+  const lines=text.split('\n');
+  lines.forEach(raw=>{
+    const line=raw.trimEnd();
+    const isHeading=/^[A-Z][A-Z\s\/&\(\)\-]{3,}:?\s*$/.test(line)||/^[A-Z][A-Z\s\/&\(\)\-]+:$/.test(line);
+    const isDivider=/^-{2,}$/.test(line.trim());
+    const isEmpty=line.trim()==='';
+    const isBullet=/^[\-\u2022]\s/.test(line);
+    if(isEmpty){y+=3;return;}
+    if(isDivider){y+=2;return;}
+    if(y>pageH-marginB){doc.addPage();addPDFHeader(doc,'',ptData);y=50;}
+    if(isHeading){
+      y+=4;
+      doc.setFont('Helvetica','bold');doc.setFontSize(9);doc.setTextColor(8,80,65);
+      const ht=line.replace(/:$/,'').replace(/\*\*/g,'').trim().toUpperCase();
+      doc.text(ht,x,y);
+      doc.setDrawColor(29,158,117);doc.setLineWidth(0.3);
+      doc.line(x,y+1,x+doc.getTextWidth(ht),y+1);
+      doc.setDrawColor(0);doc.setLineWidth(0.2);
+      y+=6;doc.setTextColor(0);
+    } else {
+      doc.setFont('Helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(30,30,30);
+      let cl=line.replace(/\*\*(.+?)\*\*/g,'$1').replace(/\*(.+?)\*/g,'$1');
+      const indent=isBullet?4:0;
+      if(isBullet)cl='\u2022 '+cl.replace(/^[\-\u2022]\s/,'');
+      const wrapped=doc.splitTextToSize(cl,maxW-indent);
+      wrapped.forEach(wl=>{
+        if(y>pageH-marginB){doc.addPage();addPDFHeader(doc,'',ptData);y=50;}
+        doc.text(wl,x+indent,y);y+=5;
+      });
+    }
+  });
+  return y;
+}
+
 function exportSinglePDF(){
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({unit:'mm',format:'a4'});
   addPDFHeader(doc);
-  const lines=doc.splitTextToSize(structuredText,175);
-  doc.setFont('Courier','normal');doc.setFontSize(10);
-  doc.text(lines,17,50);
+  renderNoteToPDF(doc,structuredText,50);
   const name=(v('pt-name')||'note').replace(/\s+/g,'_');
   doc.save(`BBCI_${name}_${new Date().toLocaleDateString('en-IN').replace(/\//g,'-')}.pdf`);
 }
 
-// ─── PDF — bulk (all patients) ────────────────────────────────
 function exportAllPDF(){
   const done=patients.filter(p=>p.structuredText);
-  if(!done.length){alert('No notes generated yet. Generate at least one note first.');return;}
+  if(!done.length){alert('No notes generated yet.');return;}
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({unit:'mm',format:'a4'});
   const modeLabel=appMode==='opd'?'OPD History Notes':'Ward Round Notes';
   done.forEach((p,i)=>{
     if(i>0)doc.addPage();
-    addPDFHeader(doc,modeLabel);
-    const note=p.structuredText||'No note generated.';
-    const lines=doc.splitTextToSize(note,175);
-    doc.setFont('Courier','normal');doc.setFontSize(10);
-    doc.text(lines,17,50);
-    // Page number
-    doc.setFont('Helvetica','normal');doc.setFontSize(9);doc.setTextColor(150);
-    doc.text(`Patient ${i+1} of ${done.length}`,17,285);
+    addPDFHeader(doc,modeLabel,p);
+    renderNoteToPDF(doc,p.structuredText||'No note.',50,p);
+    doc.setFont('Helvetica','normal');doc.setFontSize(8);doc.setTextColor(150);
+    doc.text(`Patient ${i+1} of ${done.length}`,17,290);
     doc.setTextColor(0);
   });
   const d=new Date().toLocaleDateString('en-IN').replace(/\//g,'-');
   doc.save(`BBCI_${appMode==='opd'?'OPD':'Round'}_Notes_${d}.pdf`);
 }
 
-function addPDFHeader(doc,subtitle){
-  // Green header bar
+function addPDFHeader(doc,subtitle,ptData){
   doc.setFillColor(29,158,117);doc.rect(0,0,210,20,'F');
   doc.setFont('Helvetica','bold');doc.setFontSize(13);doc.setTextColor(255,255,255);
   doc.text('Dr. B. Borooah Cancer Institute',17,9);
   doc.setFontSize(9);doc.setFont('Helvetica','normal');
-  doc.text(subtitle||'Head & Neck Surgery — Clinical Note',17,15);
+  doc.text(subtitle||'Head & Neck Surgery \u2014 Clinical Note',17,15);
   doc.text(new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}),193,15,{align:'right'});
   doc.setTextColor(0);
-  // Divider
-  doc.setDrawColor(29,158,117);doc.setLineWidth(0.5);doc.line(17,22,193,22);
-  // Patient sub-header
-  doc.setFont('Helvetica','bold');doc.setFontSize(10);
-  doc.text(`${v('pt-name')||'[Name]'}   ${v('pt-age')||'[Age/Sex]'}   IP/OP: ${v('pt-id')||'[ID]'}`,17,30);
+  doc.setDrawColor(29,158,117);doc.setLineWidth(0.4);doc.line(17,22,193,22);
+  const nm=(ptData?ptData.name:v('pt-name'))||'[Name]';
+  const age=(ptData?ptData.age:v('pt-age'))||'[Age/Sex]';
+  const pid=(ptData?ptData.id:v('pt-id'))||'[ID]';
+  const reg=(ptData?ptData.reg:v('pt-reg'))||'\u2014';
+  const dt=(ptData?ptData.date:v('pt-date'))||'\u2014';
+  doc.setFont('Helvetica','bold');doc.setFontSize(10);doc.setTextColor(13,33,55);
+  doc.text(`${nm}   ${age}   IP/OP: ${pid}`,17,30);
   doc.setFont('Helvetica','normal');doc.setFontSize(9);doc.setTextColor(100);
-  doc.text(`Resident: ${v('pt-reg')||'—'}   Date: ${v('pt-date')||'—'}`,17,36);
-  doc.setTextColor(0);
+  doc.text(`Resident: ${reg}   Date: ${dt}`,17,36);
+  doc.setTextColor(0);doc.setDrawColor(0);doc.setLineWidth(0.2);
 }
 
 // ─── WhatsApp bulk from sidebar ──────────────────────────────
