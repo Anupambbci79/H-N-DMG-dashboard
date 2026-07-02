@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>OT Note Dictation — BBCI Head & Neck</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pine:#0E3B34;
+    --scrub:#2E6B5E;
+    --mint:#EAF3F0;
+    --paper:#F7FAF9;
+    --ink:#12211E;
+    --muted:#5C736D;
+    --line:#CFE0DB;
+    --rec:#B3442E;
+    --rec-soft:#F6E4DF;
+    --amber:#C98A2D;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:'IBM Plex Sans',-apple-system,'Segoe UI',Roboto,sans-serif;
+    background:var(--paper);color:var(--ink);
+    min-height:100vh;font-size:16px;line-height:1.5;
+  }
+
+  header{
+    background:var(--pine);color:#fff;
+    padding:14px 16px;display:flex;align-items:center;gap:12px;
+    position:sticky;top:0;z-index:50;
+  }
+  #backBtn{
+    display:none;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
+    color:#fff;border-radius:8px;padding:8px 12px;font-size:16px;cursor:pointer;line-height:1;
+  }
+  header .brand{display:flex;flex-direction:column;gap:1px;flex:1;min-width:0}
+  header .brand .eyebrow{font-size:10px;letter-spacing:.16em;text-transform:uppercase;opacity:.75}
+  header .brand h1{font-size:17px;font-weight:600;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #keyBtn{
+    background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
+    color:#fff;border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;
+  }
+  main{max-width:760px;margin:0 auto;padding:16px 16px 120px}
+
+  .card{
+    background:#fff;border:1px solid var(--line);border-radius:14px;
+    padding:16px;margin-bottom:14px;
+  }
+  .card h2{
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--scrub);font-weight:700;margin-bottom:12px;
+  }
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .field{display:flex;flex-direction:column;gap:4px}
+  .field label{font-size:12px;color:var(--muted);font-weight:500}
+  .field input{
+    border:1px solid var(--line);border-radius:8px;padding:10px 12px;
+    font-size:15px;font-family:inherit;background:var(--paper);color:var(--ink);
+    width:100%;
+  }
+  .field input:focus,textarea:focus{outline:2px solid var(--scrub);outline-offset:1px;border-color:var(--scrub)}
+  .input-mic{display:flex;gap:6px;align-items:stretch}
+  .input-mic input{flex:1;min-width:0}
+  .mini-mic{
+    flex-shrink:0;width:42px;border:1px solid var(--line);border-radius:8px;
+    background:var(--mint);color:var(--scrub);font-size:16px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .mini-mic.listening{
+    background:var(--rec);border-color:var(--rec);color:#fff;
+    animation:micblink 1s ease-in-out infinite;
+  }
+  @keyframes micblink{50%{opacity:.55}}
+  @media (prefers-reduced-motion:reduce){.mini-mic.listening{animation:none}}
+  .ns-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px}
+  .ns-head .mini-mic{width:34px;height:28px;font-size:13px;border-radius:6px}
+
+  /* ---- Case list ---- */
+  #newCaseBtn{
+    width:100%;border:2px dashed var(--scrub);background:var(--mint);color:var(--pine);
+    border-radius:14px;padding:16px;font-size:16px;font-weight:600;font-family:inherit;
+    cursor:pointer;margin-bottom:14px;
+  }
+  .case-card{
+    background:#fff;border:1px solid var(--line);border-radius:14px;
+    padding:14px 16px;margin-bottom:10px;cursor:pointer;
+    display:flex;align-items:center;gap:12px;
+  }
+  .case-card:active{background:var(--mint)}
+  .case-info{flex:1;min-width:0}
+  .case-info .cname{font-weight:600;font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .case-info .cmeta{font-size:12.5px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .case-info .csnippet{font-size:12.5px;color:var(--muted);margin-top:3px;font-family:'IBM Plex Mono',monospace;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .badge{
+    font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    border-radius:6px;padding:4px 8px;flex-shrink:0;
+  }
+  .badge.draft{background:#FBF1DE;color:#8A5F16}
+  .badge.generated{background:var(--mint);color:var(--scrub)}
+  .del-btn{
+    flex-shrink:0;background:none;border:none;color:var(--muted);font-size:18px;
+    cursor:pointer;padding:8px;border-radius:8px;line-height:1;
+  }
+  .del-btn:active{background:var(--rec-soft);color:var(--rec)}
+  .empty-state{
+    text-align:center;color:var(--muted);font-size:14px;padding:30px 20px;
+  }
+  .retention-note{
+    text-align:center;font-size:12px;color:var(--muted);margin-top:16px;line-height:1.6;
+  }
+
+  /* ---- Recorder ---- */
+  .recorder{display:flex;flex-direction:column;align-items:center;gap:10px;padding:8px 0 4px}
+  .rec-btn{
+    width:96px;height:96px;border-radius:50%;border:none;cursor:pointer;
+    background:var(--scrub);color:#fff;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:4px;
+    font-family:inherit;font-size:12px;font-weight:600;letter-spacing:.06em;
+    box-shadow:0 4px 14px rgba(14,59,52,.25);
+    transition:background .2s, transform .1s;
+    position:relative;
+  }
+  .rec-btn:active{transform:scale(.96)}
+  .rec-btn svg{width:30px;height:30px}
+  .rec-btn.recording{background:var(--rec)}
+  .rec-btn.recording::before,.rec-btn.recording::after{
+    content:'';position:absolute;inset:-8px;border-radius:50%;
+    border:2px solid var(--rec);opacity:0;animation:pulse 1.6s ease-out infinite;
+  }
+  .rec-btn.recording::after{animation-delay:.8s}
+  @keyframes pulse{0%{transform:scale(.9);opacity:.7}100%{transform:scale(1.35);opacity:0}}
+  @media (prefers-reduced-motion:reduce){
+    .rec-btn.recording::before,.rec-btn.recording::after{animation:none;opacity:.4}
+  }
+  .rec-status{font-size:13px;color:var(--muted);min-height:20px;text-align:center}
+  .rec-status.live{color:var(--rec);font-weight:600}
+  .save-indicator{
+    font-size:11.5px;color:var(--muted);text-align:right;margin-top:6px;min-height:16px;
+    transition:opacity .4s;
+  }
+
+  textarea{
+    width:100%;border:1px solid var(--line);border-radius:10px;
+    padding:12px;font-size:14.5px;line-height:1.65;color:var(--ink);
+    background:var(--mint);resize:vertical;
+    font-family:'IBM Plex Mono','Courier New',monospace;
+  }
+  #transcript{min-height:170px}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px}
+
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .btn{
+    flex:1;min-width:130px;border:none;border-radius:10px;padding:13px 16px;
+    font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .btn-primary{background:var(--pine);color:#fff}
+  .btn-primary:disabled{background:#9AB5AF;cursor:not-allowed}
+  .btn-ghost{background:var(--mint);color:var(--pine);border:1px solid var(--line)}
+  .btn-wa{background:#1FA855;color:#fff}
+  .btn-pdf{background:var(--amber);color:#fff}
+
+  /* ---- Output note ---- */
+  #noteCard{display:none}
+  .note-section{margin-bottom:14px}
+  .note-section .ns-label{
+    font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--scrub);font-weight:700;margin-bottom:3px;
+  }
+  .note-section .ns-body{
+    font-size:15px;white-space:pre-wrap;
+    border-left:3px solid var(--line);padding:2px 0 2px 10px;
+  }
+  .note-section .ns-body[contenteditable]:focus{outline:2px solid var(--scrub);border-radius:4px}
+  .missing-flag{
+    background:var(--rec-soft);color:var(--rec);border-radius:8px;
+    padding:10px 12px;font-size:13.5px;margin-bottom:12px;
+  }
+  .gaps-flag{
+    background:#FBF1DE;color:#8A5F16;border-radius:8px;
+    padding:10px 12px;font-size:13.5px;margin-bottom:12px;
+  }
+  .gaps-flag .gaps-title{font-weight:700;margin-bottom:5px;font-size:12px;
+    letter-spacing:.06em;text-transform:uppercase}
+  .gaps-flag ul{margin:0;padding-left:18px}
+  .gaps-flag li{margin-bottom:3px}
+  .additions-block{
+    border-top:1px solid var(--line);margin-top:16px;padding-top:14px;
+  }
+  .additions-block .add-title{
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--scrub);font-weight:700;margin-bottom:6px;
+  }
+  .additions-block .btn{width:100%}
+  #addRecBtn.recording{
+    background:var(--rec);color:#fff;border-color:var(--rec);
+    animation:micblink 1.2s ease-in-out infinite;
+  }
+  #additions{min-height:100px}
+
+  .spinner{
+    width:18px;height:18px;border:2.5px solid rgba(255,255,255,.35);
+    border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ---- Modal ---- */
+  .modal-bg{
+    display:none;position:fixed;inset:0;background:rgba(14,33,30,.55);
+    z-index:100;align-items:center;justify-content:center;padding:20px;
+  }
+  .modal-bg.open{display:flex}
+  .modal{background:#fff;border-radius:14px;padding:20px;max-width:420px;width:100%}
+  .modal h3{font-size:16px;margin-bottom:8px;color:var(--pine)}
+  .modal p{font-size:13px;color:var(--muted);margin-bottom:12px}
+  .modal input{
+    width:100%;border:1px solid var(--line);border-radius:8px;
+    padding:11px 12px;font-size:14px;margin-bottom:12px;font-family:'IBM Plex Mono',monospace;
+  }
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:var(--pine);color:#fff;padding:11px 18px;border-radius:10px;
+    font-size:14px;z-index:200;display:none;box-shadow:0 4px 16px rgba(0,0,0,.25);
+    max-width:90vw;text-align:center;
+  }
+  @media(max-width:480px){
+    .grid2{grid-template-columns:1fr}
+    header .brand h1{font-size:15px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <button id="backBtn" onclick="goToList()" aria-label="Back to case list">←</button>
+  <div class="brand">
+    <span class="eyebrow">BBCI · Head & Neck Surgery</span>
+    <h1 id="headerTitle">OT Note Dictation</h1>
+  </div>
+  <button id="keyBtn" onclick="openKeyModal()" aria-label="API key settings">⚙ Key</button>
+</header>
+
+<main>
+
+  <!-- ============ CASE LIST VIEW ============ -->
+  <div id="listView">
+    <button id="newCaseBtn" onclick="newCase()">＋ New Case</button>
+    <div id="caseList"></div>
+    <div class="retention-note">
+      Cases are stored only on this device.<br>
+      Each case auto-deletes 15 days after its last edit.
+    </div>
+  </div>
+
+  <!-- ============ CASE VIEW ============ -->
+  <div id="caseView" style="display:none">
+
+    <div class="card">
+      <h2>Patient & Case Details</h2>
+      <div class="grid2">
+        <div class="field"><label for="pName">Patient name</label>
+          <div class="input-mic"><input id="pName" autocomplete="off"><button class="mini-mic" data-target="pName" aria-label="Dictate patient name">🎙</button></div></div>
+        <div class="field"><label for="pHosp">Hospital / Reg. no.</label>
+          <div class="input-mic"><input id="pHosp" autocomplete="off"><button class="mini-mic" data-target="pHosp" aria-label="Dictate hospital number">🎙</button></div></div>
+        <div class="field"><label for="pAgeSex">Age / Sex</label>
+          <div class="input-mic"><input id="pAgeSex" placeholder="e.g. 54/M" autocomplete="off"><button class="mini-mic" data-target="pAgeSex" aria-label="Dictate age and sex">🎙</button></div></div>
+        <div class="field"><label for="pDate">Date of surgery</label><input id="pDate" type="date"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Dictation</h2>
+      <div class="recorder">
+        <button id="recBtn" class="rec-btn" onclick="toggleRecording()" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>
+          <span id="recLabel">START</span>
+        </button>
+        <div id="recStatus" class="rec-status">Tap to dictate — in one go or in fragments through the day</div>
+      </div>
+      <textarea id="transcript" placeholder="Your dictation appears here. Dictate in bursts — after each case, during a break, or in the evening. Everything is saved automatically and appends to this case. You can also type or edit directly."></textarea>
+      <div class="save-indicator" id="saveIndicator"></div>
+      <div class="hint">Dictate freely in any order — the AI will organise everything into a structured operative note when you're ready.</div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="clearTranscript()">Clear Dictation</button>
+        <button id="genBtn" class="btn btn-primary" onclick="generateNote()">Generate OT Note</button>
+      </div>
+    </div>
+
+    <div class="card" id="noteCard">
+      <h2>Operative Note</h2>
+      <div id="missingBox" class="missing-flag" style="display:none"></div>
+      <div id="gapsBox" class="gaps-flag" style="display:none"></div>
+      <div id="noteBody"></div>
+      <div class="hint">Tap any section to edit — edits save automatically.</div>
+
+      <div class="additions-block">
+        <div class="add-title">Additions & corrections</div>
+        <div class="hint" style="margin:0 0 8px">Dictate everything the checklist flagged (or anything else) in one go, in any order — the AI will weave each item into the correct section and step.</div>
+        <button id="addRecBtn" class="btn btn-ghost" onclick="toggleRecording('additions')">🎙 Dictate additions</button>
+        <textarea id="additions" style="display:none;margin-top:10px" placeholder="Additions appear here — you can also type or edit directly."></textarea>
+        <button id="updateBtn" class="btn btn-primary" style="display:none;margin-top:10px;width:100%" onclick="updateNote()">Update Note</button>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="copyNote()">Copy</button>
+        <button class="btn btn-pdf" onclick="exportPDF()">PDF</button>
+        <button class="btn btn-wa" onclick="sendWhatsApp()">WhatsApp</button>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- API key modal -->
+<div class="modal-bg" id="keyModal">
+  <div class="modal">
+    <h3>Claude API Key</h3>
+    <p>Stored only on this device (localStorage). Entered once per device. This uses the same key as the OPD dictation app.</p>
+    <input id="keyInput" type="password" placeholder="sk-ant-...">
+    <div class="btn-row" style="margin-top:0">
+      <button class="btn btn-ghost" onclick="closeKeyModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveKey()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= CONFIG ================= */
+const API_KEY_STORAGE = 'bbci_hn_apikey';   // shared with hn-dictation app — same origin, same key
+const CASES_STORAGE   = 'bbci_ot_cases';
+const MODEL = 'claude-sonnet-4-6';
+const RETENTION_DAYS = 15;
+
+/* ================= CASE STORE ================= */
+function loadCases(){
+  let arr = [];
+  try{ arr = JSON.parse(localStorage.getItem(CASES_STORAGE)) || []; }catch(e){ arr = []; }
+  // 15-day auto-purge, measured from last edit
+  const cutoff = Date.now() - RETENTION_DAYS*24*60*60*1000;
+  const kept = arr.filter(c => (c.updatedAt || c.createdAt || 0) > cutoff);
+  if(kept.length !== arr.length) persistCases(kept);
+  return kept;
+}
+function persistCases(arr){
+  try{ localStorage.setItem(CASES_STORAGE, JSON.stringify(arr)); }
+  catch(e){ toast('Storage full — export and delete old cases'); }
+}
+function getCase(id){ return loadCases().find(c => c.id === id) || null; }
+function upsertCase(c){
+  const arr = loadCases();
+  const i = arr.findIndex(x => x.id === c.id);
+  c.updatedAt = Date.now();
+  if(i >= 0) arr[i] = c; else arr.unshift(c);
+  persistCases(arr);
+}
+function deleteCase(id){
+  persistCases(loadCases().filter(c => c.id !== id));
+}
+
+/* ================= STATE ================= */
+let currentCase = null;        // full case object being edited
+let recognition = null;
+let isRecording = false;
+let recTarget = 'main';        // 'main' = case transcript, 'additions' = post-generation additions
+let acceptResults = false;     // gate against stale results after a stop/target-switch
+let finalTranscript = '';
+let sessionFinal = '';
+let restartTimer = null;
+let watchdogTimer = null;
+let lastActivity = 0;
+let saveTimer = null;
+
+/* ================= VIEWS ================= */
+function goToList(){
+  stopRecording();
+  flushSave();
+  currentCase = null;
+  document.getElementById('caseView').style.display = 'none';
+  document.getElementById('listView').style.display = 'block';
+  document.getElementById('backBtn').style.display = 'none';
+  document.getElementById('headerTitle').textContent = 'OT Note Dictation';
+  renderCaseList();
+  window.scrollTo(0,0);
+}
+
+function openCase(id){
+  const c = getCase(id);
+  if(!c){ toast('Case not found'); renderCaseList(); return; }
+  currentCase = c;
+  // Populate fields
+  document.getElementById('pName').value  = c.name || '';
+  document.getElementById('pHosp').value  = c.hosp || '';
+  document.getElementById('pAgeSex').value= c.ageSex || '';
+  document.getElementById('pDate').value  = c.date || '';
+  document.getElementById('transcript').value = c.transcript || '';
+  finalTranscript = c.transcript ? c.transcript.trim() + ' ' : '';
+  sessionFinal = '';
+  recTarget = 'main';
+  // Additions draft
+  const add = document.getElementById('additions');
+  add.value = c.additions || '';
+  const hasAdd = !!add.value.trim();
+  add.style.display = hasAdd ? 'block' : 'none';
+  document.getElementById('updateBtn').style.display = hasAdd ? 'block' : 'none';
+  // Note
+  if(c.note){ renderNote(c.note, false); }
+  else{
+    document.getElementById('noteCard').style.display = 'none';
+    document.getElementById('noteBody').innerHTML = '';
+  }
+  setStatus('Tap to dictate — in one go or in fragments through the day', false);
+  document.getElementById('saveIndicator').textContent = '';
+  // Switch view
+  document.getElementById('listView').style.display = 'none';
+  document.getElementById('caseView').style.display = 'block';
+  document.getElementById('backBtn').style.display = 'block';
+  document.getElementById('headerTitle').textContent = c.name || 'Unnamed case';
+  window.scrollTo(0,0);
+}
+
+function newCase(){
+  const c = {
+    id: 'c' + Date.now() + Math.random().toString(36).slice(2,7),
+    name:'', hosp:'', ageSex:'',
+    date: new Date().toISOString().slice(0,10),
+    transcript:'', note:null, status:'draft',
+    createdAt: Date.now(), updatedAt: Date.now()
+  };
+  upsertCase(c);
+  openCase(c.id);
+}
+
+function renderCaseList(){
+  const cases = loadCases().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  const el = document.getElementById('caseList');
+  if(!cases.length){
+    el.innerHTML = '<div class="empty-state">No cases yet.<br>Tap “＋ New Case” to set up today’s OT list.</div>';
+    return;
+  }
+  el.innerHTML = '';
+  cases.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'case-card';
+    card.onclick = () => openCase(c.id);
+
+    const info = document.createElement('div');
+    info.className = 'case-info';
+    const proc = c.note && c.note.procedure ? c.note.procedure
+               : (c.transcript ? c.transcript.slice(0,70) : '');
+    info.innerHTML =
+      '<div class="cname">' + esc(c.name || 'Unnamed case') + '</div>' +
+      '<div class="cmeta">' + esc([c.hosp, c.ageSex, formatDate(c.date)].filter(Boolean).join(' · ') || '—') + '</div>' +
+      (proc ? '<div class="csnippet">' + esc(proc) + '</div>' : '');
+
+    const badge = document.createElement('span');
+    badge.className = 'badge ' + (c.status === 'generated' ? 'generated' : 'draft');
+    badge.textContent = c.status === 'generated' ? 'Note ready' : 'Draft';
+
+    const del = document.createElement('button');
+    del.className = 'del-btn';
+    del.setAttribute('aria-label','Delete case');
+    del.innerHTML = '🗑';
+    del.onclick = (e) => {
+      e.stopPropagation();
+      if(confirm('Delete this case permanently?\n\n' + (c.name || 'Unnamed case'))){
+        deleteCase(c.id);
+        renderCaseList();
+        toast('Case deleted');
+      }
+    };
+
+    card.appendChild(info);
+    card.appendChild(badge);
+    card.appendChild(del);
+    el.appendChild(card);
+  });
+}
+
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+function formatDate(iso){
+  if(!iso) return '';
+  const [y,m,d] = iso.split('-');
+  return d + '/' + m + '/' + y;
+}
+
+/* ================= AUTO-SAVE ================= */
+function collectCurrentIntoCase(){
+  if(!currentCase) return;
+  currentCase.name   = document.getElementById('pName').value.trim();
+  currentCase.hosp   = document.getElementById('pHosp').value.trim();
+  currentCase.ageSex = document.getElementById('pAgeSex').value.trim();
+  currentCase.date   = document.getElementById('pDate').value;
+  currentCase.transcript = document.getElementById('transcript').value.trim();
+  currentCase.additions = document.getElementById('additions').value.trim();
+  document.getElementById('headerTitle').textContent = currentCase.name || 'Unnamed case';
+}
+function scheduleSave(){
+  if(!currentCase) return;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(flushSave, 900);
+}
+function flushSave(){
+  clearTimeout(saveTimer);
+  if(!currentCase) return;
+  collectCurrentIntoCase();
+  upsertCase(currentCase);
+  const si = document.getElementById('saveIndicator');
+  si.textContent = 'Saved · ' + new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+}
+/* Save on any typing in fields, transcript, or additions */
+['pName','pHosp','pAgeSex','pDate','transcript','additions'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', ()=>{
+    if((id === 'transcript' || id === 'additions') && !isRecording){
+      // keep resume-point in sync with manual edits
+      if((id === 'transcript' && recTarget === 'main') ||
+         (id === 'additions'  && recTarget === 'additions')){
+        finalTranscript = document.getElementById(id).value;
+      }
+    }
+    if(id === 'additions'){
+      document.getElementById('updateBtn').style.display =
+        document.getElementById('additions').value.trim() ? 'block' : 'none';
+    }
+    scheduleSave();
+  });
+});
+/* Save when leaving/closing the page */
+window.addEventListener('visibilitychange', ()=>{ if(document.hidden) flushSave(); });
+window.addEventListener('pagehide', flushSave);
+
+/* ================= SPEECH RECOGNITION =================
+   Android Chrome duplication fix: rebuild the session transcript from
+   event.results on every event; commit to finalTranscript on session end. */
+function startWatchdog(){
+  clearInterval(watchdogTimer);
+  lastActivity = Date.now();
+  watchdogTimer = setInterval(()=>{
+    if(!isRecording){ clearInterval(watchdogTimer); return; }
+    if(Date.now() - lastActivity > 8000){
+      lastActivity = Date.now();
+      try{ recognition.stop(); }catch(e){}  // onend restarts it
+    }
+  }, 2000);
+}
+
+function initRecognition(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){
+    setStatus('Speech recognition not supported. Use Chrome on Android or desktop.', false);
+    return null;
+  }
+  const r = new SR();
+  r.lang = 'en-IN';
+  r.continuous = true;
+  r.interimResults = true;
+
+  r.onresult = (event) => {
+    if(!acceptResults) return;
+    lastActivity = Date.now();
+    let interim = '';
+    let sf = '';
+    for(let i = 0; i < event.results.length; i++){
+      const t = event.results[i][0].transcript;
+      if(event.results[i].isFinal) sf += t + ' ';
+      else interim += t;
+    }
+    sessionFinal = sf;
+    renderTranscript(interim);
+  };
+
+  r.onend = () => {
+    if(sessionFinal.trim()){
+      finalTranscript = (finalTranscript + ' ' + sessionFinal).replace(/\s+/g,' ').trim() + ' ';
+      sessionFinal = '';
+      scheduleSave();
+    }
+    if(isRecording){
+      clearTimeout(restartTimer);
+      restartTimer = setTimeout(()=>{
+        if(!isRecording) return;
+        lastActivity = Date.now();
+        try{ r.start(); }
+        catch(e){
+          restartTimer = setTimeout(()=>{ if(isRecording){ try{ r.start(); }catch(_){} } }, 700);
+        }
+      }, 250);
+      setStatus('● Listening… (paused, still recording)', true);
+    }else{
+      renderTranscript('');
+      flushSave();
+      if(recTarget === 'main') setStatus('Recording stopped — saved. Continue anytime, even later today.', false);
+    }
+  };
+
+  r.onstart = () => {
+    if(isRecording) setStatus('● Listening… speak your operative note', true);
+  };
+
+  r.onerror = (e) => {
+    if(e.error === 'not-allowed'){
+      isRecording = false;
+      updateRecUI();
+      setStatus('Microphone permission denied. Allow mic access in browser settings.', false);
+    } else if(e.error === 'no-speech'){
+      // benign; onend restarts
+    } else {
+      setStatus('Mic error: ' + e.error, false);
+    }
+  };
+  return r;
+}
+
+function stopRecording(){
+  if(!isRecording) return;
+  isRecording = false;
+  acceptResults = false;                 // drop any late results from this session
+  clearTimeout(restartTimer);
+  clearInterval(watchdogTimer);
+  // Commit any uncommitted tail into the CURRENT target before anything else
+  if(sessionFinal.trim()){
+    finalTranscript = (finalTranscript + ' ' + sessionFinal).replace(/\s+/g,' ').trim() + ' ';
+    sessionFinal = '';
+    renderTranscript('');
+    scheduleSave();
+  }
+  if(recognition){ try{ recognition.stop(); }catch(e){} }
+  updateRecUI();
+}
+
+function toggleRecording(target){
+  target = target || 'main';
+  if(isRecording){
+    const same = (recTarget === target);
+    stopRecording();
+    if(same) return;                     // tapped the active button → just stop
+    // Tapped the other mic → let the old session close, then start fresh
+    setTimeout(()=>toggleRecording(target), 400);
+    return;
+  }
+  if(!recognition) recognition = initRecognition();
+  if(!recognition) return;
+  stopFieldDictation();
+  recTarget = target;
+  // Resume: preserve saved text and manual edits, then append new dictation
+  const existing = recTargetEl().value.trim();
+  finalTranscript = existing ? existing + ' ' : '';
+  sessionFinal = '';
+  acceptResults = true;
+  try{ recognition.start(); }catch(e){}
+  isRecording = true;
+  startWatchdog();
+  updateRecUI();
+  setStatus('● Listening… speak your operative note', true);
+}
+
+function recTargetEl(){
+  return document.getElementById(recTarget === 'additions' ? 'additions' : 'transcript');
+}
+
+function updateRecUI(){
+  const mainOn = isRecording && recTarget === 'main';
+  const addOn  = isRecording && recTarget === 'additions';
+  const btn = document.getElementById('recBtn');
+  btn.classList.toggle('recording', mainOn);
+  btn.setAttribute('aria-pressed', String(mainOn));
+  document.getElementById('recLabel').textContent = mainOn ? 'STOP' : 'START';
+  const ab = document.getElementById('addRecBtn');
+  if(ab){
+    ab.classList.toggle('recording', addOn);
+    ab.innerHTML = addOn ? '■ Stop — listening…' : '🎙 Dictate additions';
+  }
+  if(addOn){
+    document.getElementById('additions').style.display = 'block';
+    document.getElementById('updateBtn').style.display = 'block';
+  }
+}
+
+function renderTranscript(interim){
+  const ta = recTargetEl();
+  ta.value = (finalTranscript + sessionFinal + (interim || '')).replace(/\s+/g,' ').trimStart();
+  ta.scrollTop = ta.scrollHeight;
+}
+
+function setStatus(msg, live){
+  const el = document.getElementById('recStatus');
+  el.textContent = msg;
+  el.classList.toggle('live', !!live);
+}
+
+function clearTranscript(){
+  stopRecording();
+  if(document.getElementById('transcript').value.trim() &&
+     !confirm('Clear all dictated text for this case?')) return;
+  finalTranscript = ''; sessionFinal = '';
+  document.getElementById('transcript').value = '';
+  scheduleSave();
+  setStatus('Cleared. Tap to start dictating.', false);
+}
+
+/* ================= FIELD-LEVEL DICTATION =================
+   Small mic on each field: single-utterance recognition that stops
+   automatically when you finish speaking. Tap again to stop early.
+   Patient fields REPLACE their content; note sections APPEND. */
+let fieldRec = null;
+let fieldRecBtn = null;
+
+function stopFieldDictation(){
+  if(fieldRec){ try{ fieldRec.stop(); }catch(e){} }
+}
+
+function startFieldDictation(btn, targetEl, mode, onCommit){
+  // Toggle off if this same button is active
+  if(fieldRecBtn === btn){ stopFieldDictation(); return; }
+  stopFieldDictation();
+  // Field dictation and the main recorder can't share the mic
+  stopRecording();
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ toast('Speech recognition not supported in this browser'); return; }
+
+  const r = new SR();
+  r.lang = 'en-IN';
+  r.continuous = false;        // auto-stop after the utterance
+  r.interimResults = true;
+
+  const original = mode === 'append'
+    ? (targetEl.tagName === 'INPUT' ? targetEl.value : targetEl.textContent)
+    : '';
+  const base = (mode === 'append' && original.trim() && original.trim() !== '—')
+    ? original.replace(/\s+$/,'') + ' ' : '';
+
+  let finalText = '';
+
+  const setVal = (v)=>{
+    if(targetEl.tagName === 'INPUT') targetEl.value = v;
+    else targetEl.textContent = v;
+  };
+
+  r.onresult = (event)=>{
+    let interim = '', sf = '';
+    for(let i = 0; i < event.results.length; i++){
+      const t = event.results[i][0].transcript;
+      if(event.results[i].isFinal) sf += t + ' ';
+      else interim += t;
+    }
+    finalText = sf;
+    setVal((base + finalText + interim).replace(/\s+/g,' ').trimStart());
+  };
+
+  r.onend = ()=>{
+    btn.classList.remove('listening');
+    fieldRec = null; fieldRecBtn = null;
+    const committed = (base + finalText).replace(/\s+/g,' ').trim();
+    setVal(committed || (mode === 'append' && !base ? '—' : committed));
+    if(onCommit) onCommit(committed);
+    scheduleSave();
+  };
+
+  r.onerror = (e)=>{
+    if(e.error === 'not-allowed'){
+      toast('Microphone permission denied — allow mic access in Chrome');
+    }
+    btn.classList.remove('listening');
+  };
+
+  fieldRec = r; fieldRecBtn = btn;
+  btn.classList.add('listening');
+  try{ r.start(); }catch(e){}
+}
+
+/* Wire the three patient-field mics (dictating replaces the field) */
+document.querySelectorAll('.grid2 .mini-mic').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const input = document.getElementById(btn.dataset.target);
+    input.value = '';                    // replace mode: start fresh
+    startFieldDictation(btn, input, 'replace', ()=>{
+      // Post-process Age/Sex: "54 male" → "54/M"
+      if(btn.dataset.target === 'pAgeSex'){
+        input.value = input.value
+          .replace(/\s*(years?|yrs?)\s*(old)?\s*/gi,' ')
+          .replace(/\b(male)\b/gi,'M').replace(/\b(female)\b/gi,'F')
+          .replace(/(\d+)\s*[\/ ]?\s*\b([MF])\b/i,'$1/$2')
+          .replace(/\s+/g,' ').trim();
+      }
+      collectCurrentIntoCase();
+    });
+  });
+});
+
+/* ================= API KEY ================= */
+function getKey(){ return localStorage.getItem(API_KEY_STORAGE) || ''; }
+function openKeyModal(){
+  document.getElementById('keyInput').value = getKey();
+  document.getElementById('keyModal').classList.add('open');
+}
+function closeKeyModal(){ document.getElementById('keyModal').classList.remove('open'); }
+function saveKey(){
+  const v = document.getElementById('keyInput').value.trim();
+  if(v) localStorage.setItem(API_KEY_STORAGE, v);
+  closeKeyModal();
+  toast(v ? 'API key saved on this device' : 'No key entered');
+}
+
+/* ================= NOTE SECTIONS ================= */
+const SECTIONS = [
+  ['preop_diagnosis',  'Pre-operative Diagnosis'],
+  ['postop_diagnosis', 'Post-operative Diagnosis'],
+  ['procedure',        'Procedure Performed'],
+  ['surgeon',          'Surgeon'],
+  ['assistants',       'Assistant(s)'],
+  ['anaesthetist',     'Anaesthetist'],
+  ['anaesthesia',      'Anaesthesia'],
+  ['position',         'Position'],
+  ['findings',         'Operative Findings'],
+  ['steps',            'Procedure in Detail'],
+  ['blood_loss',       'Estimated Blood Loss'],
+  ['specimens',        'Specimens Sent (HPE)'],
+  ['drains',           'Drains / Tubes'],
+  ['complications',    'Intra-operative Complications'],
+  ['postop_plan',      'Post-operative Plan']
+];
+
+/* ================= GENERATE via CLAUDE ================= */
+async function generateNote(){
+  const raw = document.getElementById('transcript').value.trim();
+  if(!raw){ toast('Nothing to structure — dictate or type first'); return; }
+  if(!getKey()){ openKeyModal(); return; }
+  stopRecording();
+  flushSave();
+
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Structuring…';
+
+  const sys = `You are a surgical documentation assistant for the Head & Neck Surgery department of a cancer institute in India. Convert the surgeon's free-form dictation into a structured operative note. The dictation may have been recorded in several fragments at different times of day and may repeat or correct itself — merge it into one coherent note, with later statements overriding earlier ones where they conflict.
+
+Return ONLY a raw JSON object — no markdown fences, no preamble, no explanation. Keys:
+${SECTIONS.map(s=>'"'+s[0]+'"').join(', ')}, "missing" (array of strings), "guideline_gaps" (array of strings).
+
+Rules:
+- Use the dictation content faithfully. Correct obvious speech-to-text errors in medical terms (Indian English accent), expand common abbreviations sensibly, but NEVER invent clinical facts that were not dictated.
+- "steps" should be a clear, numbered, paragraph-per-step narrative of the procedure in professional operative-note language.
+- If a field was not mentioned, set its value to "" and add a short human-readable description of it to the "missing" array.
+- Keep terminology consistent with head & neck surgical oncology usage (AJCC staging terms, neck dissection levels, flap nomenclature) when dictated.
+- Values must be plain text (use \\n for line breaks inside "steps" if needed). No markdown.
+
+COMPLETENESS AUDIT ("guideline_gaps"):
+First identify the procedure performed. Then audit the dictation against standard operative documentation requirements and list in "guideline_gaps" every expected element that was NOT documented, phrased briefly (e.g. "Facial nerve: identification and functional status at closure not documented"). Do NOT fill these into the note yourself — only flag them. Audit at two levels:
+
+1. Universal standards (per Royal College of Surgeons Good Surgical Practice / NABH documentation norms): antibiotic prophylaxis, DVT/pressure-point precautions if relevant, tourniquet/prep details where applicable, wound closure technique and suture materials, swab/instrument count confirmation, and clear post-operative instructions.
+
+2. Procedure-specific critical elements for the identified surgery. Examples of the expected standard:
+- Neck dissection: type (RND/MRND/SND) and levels dissected; status of spinal accessory nerve, IJV, SCM; marginal mandibular, hypoglossal, vagus, phrenic nerve handling; thoracic duct (left level IV).
+- Parotidectomy: facial nerve trunk identification method, branches dissected, nerve integrity/stimulation at closure.
+- Thyroidectomy: RLN identification bilaterally, EBSLN handling, parathyroid glands identified/preserved/autotransplanted.
+- Oral cavity resections: margins taken (frozen section sent/results), mandible handling (marginal/segmental), tracheostomy details.
+- Total/partial laryngectomy: pharyngeal closure technique, TEP/prosthesis, stoma creation, NG/feeding tube placement.
+- Free/pedicled flap reconstruction: flap type, pedicle vessels, recipient vessels, anastomosis technique, ischaemia time, flap monitoring plan.
+- Tracheostomy (as part of any case): tube type/size, cuff status.
+If the procedure is not in these examples, apply the equivalent standard documentation elements for that operation from head & neck surgical practice.
+
+Order "guideline_gaps" by clinical importance, most critical first. If nothing is missing, return an empty array.`;
+
+  try{
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': getKey(),
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 4000,
+        system: sys,
+        messages:[{role:'user', content:'Dictation:\n\n' + raw}]
+      })
+    });
+    if(!res.ok){
+      throw new Error(res.status === 401 ? 'Invalid API key — tap ⚙ Key to re-enter.' : 'API error ' + res.status);
+    }
+    const data = await res.json();
+    let text = (data.content||[]).map(c=>c.text||'').join('');
+    text = text.replace(/```json/gi,'').replace(/```/g,'').trim();
+    const first = text.indexOf('{'); const last = text.lastIndexOf('}');
+    if(first === -1 || last === -1) throw new Error('Could not parse AI response — try again.');
+    const noteData = JSON.parse(text.slice(first, last+1));
+
+    currentCase.note = noteData;
+    currentCase.status = 'generated';
+    flushSave();
+    renderNote(noteData, true);
+    toast('Operative note generated — review and edit');
+  }catch(e){
+    toast(e.message || 'Failed to generate note');
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Generate OT Note';
+  }
+}
+
+function renderNote(noteData, scroll){
+  const body = document.getElementById('noteBody');
+  body.innerHTML = '';
+  SECTIONS.forEach(([key,label])=>{
+    const val = (noteData[key]||'').trim();
+    const sec = document.createElement('div');
+    sec.className = 'note-section';
+
+    const head = document.createElement('div');
+    head.className = 'ns-head';
+    const lab = document.createElement('div');
+    lab.className = 'ns-label';
+    lab.textContent = label;
+    const mic = document.createElement('button');
+    mic.className = 'mini-mic';
+    mic.innerHTML = '🎙';
+    mic.setAttribute('aria-label','Dictate into ' + label);
+    head.appendChild(lab);
+    head.appendChild(mic);
+    sec.appendChild(head);
+
+    const b = document.createElement('div');
+    b.className = 'ns-body';
+    b.contentEditable = 'true';
+    b.dataset.key = key;
+    b.textContent = val || '—';
+    // Auto-save section edits back into the case
+    b.addEventListener('input', ()=>{
+      if(currentCase && currentCase.note){
+        currentCase.note[key] = b.textContent.trim() === '—' ? '' : b.textContent;
+        scheduleSave();
+      }
+    });
+    // Section mic → jump to Additions and start the full dictation there,
+    // pre-tagged with this section so the AI knows the intended placement
+    mic.addEventListener('click', ()=>{
+      dictateAdditionFor(label);
+    });
+    sec.appendChild(b);
+    body.appendChild(sec);
+  });
+  const miss = document.getElementById('missingBox');
+  if(noteData.missing && noteData.missing.length){
+    miss.style.display = 'block';
+    miss.textContent = 'Not mentioned in dictation: ' + noteData.missing.join(', ') + '. Tap sections below to fill in.';
+  }else{
+    miss.style.display = 'none';
+  }
+  const gaps = document.getElementById('gapsBox');
+  if(noteData.guideline_gaps && noteData.guideline_gaps.length){
+    gaps.style.display = 'block';
+    gaps.innerHTML = '<div class="gaps-title">Documentation checklist — per standard operative guidelines</div><ul>' +
+      noteData.guideline_gaps.map(g=>'<li>'+esc(g)+'</li>').join('') + '</ul>';
+  }else{
+    gaps.style.display = 'none';
+  }
+  document.getElementById('noteCard').style.display = 'block';
+  if(scroll) document.getElementById('noteCard').scrollIntoView({behavior:'smooth'});
+}
+
+/* ================= UPDATE NOTE with additions ================= */
+function dictateAdditionFor(sectionLabel){
+  const add = document.getElementById('additions');
+  add.style.display = 'block';
+  document.getElementById('updateBtn').style.display = 'block';
+  // Seed a section tag so the AI knows where this was aimed
+  const tag = 'Regarding ' + sectionLabel + ': ';
+  const cur = add.value.trim();
+  if(!cur.endsWith(':')){          // don't stack tags if user taps twice
+    add.value = cur ? cur.replace(/\s+$/,'') + '\n' + tag : tag;
+  }
+  document.querySelector('.additions-block').scrollIntoView({behavior:'smooth', block:'center'});
+  if(!(isRecording && recTarget === 'additions')){
+    toggleRecording('additions');
+  }
+  scheduleSave();
+}
+
+async function updateNote(){
+  const additions = document.getElementById('additions').value.trim();
+  if(!additions){ toast('No additions to integrate — dictate or type them first'); return; }
+  if(!currentCase || !currentCase.note){ toast('Generate the note first'); return; }
+  if(!getKey()){ openKeyModal(); return; }
+  stopRecording();
+  flushSave();
+
+  const btn = document.getElementById('updateBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Integrating…';
+
+  const sys = `You are a surgical documentation assistant for the Head & Neck Surgery department of a cancer institute in India. You will receive an existing structured operative note (JSON) and the surgeon's dictated ADDITIONS/CORRECTIONS.
+
+Integrate every item from the additions into the note, placing each in its correct section AND, within "steps", at the chronologically correct point of the procedure (e.g. facial nerve identification belongs at the dissection stage, not appended at the end). The additions may contain markers like "Regarding <Section Name>:" — treat these as the surgeon's placement hint for the text that follows, but still apply correct clinical placement (e.g. content hinted at one section may also belong in "steps"). Correct obvious speech-to-text errors in medical terms (Indian English accent). If an addition contradicts the existing note, the ADDITION wins. Preserve all existing content that was not corrected. NEVER invent clinical facts that appear in neither input.
+
+Return ONLY a raw JSON object — no markdown fences, no preamble — with the same keys as the input note: ${SECTIONS.map(s=>'"'+s[0]+'"').join(', ')}, "missing" (array), "guideline_gaps" (array).
+
+Re-run the completeness audit on the UPDATED note: "missing" lists structural fields still empty; "guideline_gaps" lists remaining undocumented elements per Royal College of Surgeons Good Surgical Practice / NABH norms and the procedure-specific standards for the identified operation (nerve identification and status, margins/frozen section, closure and drains, counts, antibiotic prophylaxis, flap/pedicle details, etc.), ordered most critical first. Items now documented must no longer appear.`;
+
+  // Send the note as currently displayed, including manual edits
+  const noteForApi = {};
+  SECTIONS.forEach(([key])=>{ noteForApi[key] = currentCase.note[key] || ''; });
+
+  try{
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': getKey(),
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 4000,
+        system: sys,
+        messages:[{role:'user', content:
+          'EXISTING NOTE (JSON):\n' + JSON.stringify(noteForApi) +
+          '\n\nADDITIONS / CORRECTIONS dictated by the surgeon:\n' + additions}]
+      })
+    });
+    if(!res.ok){
+      throw new Error(res.status === 401 ? 'Invalid API key — tap ⚙ Key to re-enter.' : 'API error ' + res.status);
+    }
+    const data = await res.json();
+    let text = (data.content||[]).map(c=>c.text||'').join('');
+    text = text.replace(/```json/gi,'').replace(/```/g,'').trim();
+    const first = text.indexOf('{'); const last = text.lastIndexOf('}');
+    if(first === -1 || last === -1) throw new Error('Could not parse AI response — try again.');
+    const updated = JSON.parse(text.slice(first, last+1));
+
+    currentCase.note = updated;
+    currentCase.status = 'generated';
+    // Clear the integrated additions
+    document.getElementById('additions').value = '';
+    document.getElementById('additions').style.display = 'none';
+    flushSave();
+    renderNote(updated, true);
+    const remaining = (updated.guideline_gaps||[]).length;
+    toast(remaining ? 'Note updated — ' + remaining + ' checklist item(s) remaining'
+                    : 'Note updated — checklist clear ✓');
+  }catch(e){
+    toast(e.message || 'Failed to update note');
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Update Note';
+    btn.style.display = document.getElementById('additions').value.trim() ? 'block' : 'none';
+  }
+}
+
+/* ================= EXPORT ================= */
+function collectNoteText(){
+  const p = {
+    name: document.getElementById('pName').value.trim() || '—',
+    hosp: document.getElementById('pHosp').value.trim() || '—',
+    ageSex: document.getElementById('pAgeSex').value.trim() || '—',
+    date: formatDate(document.getElementById('pDate').value) || '—'
+  };
+  let out = 'OPERATIVE NOTE\nDr. B. Borooah Cancer Institute — Head & Neck Surgery\n\n';
+  out += 'Patient: ' + p.name + '   (' + p.ageSex + ')\n';
+  out += 'Hospital No.: ' + p.hosp + '\n';
+  out += 'Date of Surgery: ' + p.date + '\n\n';
+  document.querySelectorAll('#noteBody .ns-body').forEach(el=>{
+    const label = el.previousElementSibling.querySelector('.ns-label').textContent;
+    const val = el.textContent.trim();
+    if(val && val !== '—') out += label.toUpperCase() + ':\n' + val + '\n\n';
+  });
+  return out.trim();
+}
+
+function copyNote(){
+  navigator.clipboard.writeText(collectNoteText())
+    .then(()=>toast('Note copied to clipboard'))
+    .catch(()=>toast('Copy failed — select and copy manually'));
+}
+
+function confirmExportIfGapsRemain(){
+  const gaps = (currentCase && currentCase.note && currentCase.note.guideline_gaps) || [];
+  if(!gaps.length) return true;
+  return confirm(gaps.length + ' checklist item(s) still undocumented (as of last check).\n\nExport anyway?');
+}
+
+function sendWhatsApp(){
+  if(!confirmExportIfGapsRemain()) return;
+  window.open('https://wa.me/?text=' + encodeURIComponent(collectNoteText()), '_blank');
+}
+
+function exportPDF(){
+  if(!confirmExportIfGapsRemain()) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'mm', format:'a4'});
+  const W = 210, margin = 18, maxW = W - margin*2;
+  let y = 20;
+  const ensureSpace = (needed)=>{ if(y + needed > 280){ doc.addPage(); y = 20; } };
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(14);
+  doc.text('OPERATIVE NOTE', W/2, y, {align:'center'}); y += 6;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  doc.text('Dr. B. Borooah Cancer Institute — Head & Neck Surgery', W/2, y, {align:'center'}); y += 4;
+  doc.setDrawColor(46,107,94); doc.setLineWidth(.5);
+  doc.line(margin, y, W-margin, y); y += 8;
+
+  const p = [
+    ['Patient', document.getElementById('pName').value.trim() || '—'],
+    ['Age / Sex', document.getElementById('pAgeSex').value.trim() || '—'],
+    ['Hospital No.', document.getElementById('pHosp').value.trim() || '—'],
+    ['Date of Surgery', formatDate(document.getElementById('pDate').value) || '—']
+  ];
+  doc.setFontSize(10);
+  p.forEach(([k,v],i)=>{
+    const col = i % 2, row = Math.floor(i/2);
+    const x = margin + col*(maxW/2);
+    const yy = y + row*6;
+    doc.setFont('helvetica','bold'); doc.text(k + ':', x, yy);
+    doc.setFont('helvetica','normal'); doc.text(String(v), x + 30, yy);
+  });
+  y += 16;
+
+  document.querySelectorAll('#noteBody .ns-body').forEach(el=>{
+    const label = el.previousElementSibling.querySelector('.ns-label').textContent;
+    const val = el.textContent.trim();
+    if(!val || val === '—') return;
+    ensureSpace(14);
+    doc.setFont('helvetica','bold'); doc.setFontSize(10.5);
+    doc.setTextColor(46,107,94);
+    doc.text(label.toUpperCase(), margin, y); y += 5;
+    doc.setTextColor(20,33,30);
+    doc.setFont('helvetica','normal'); doc.setFontSize(10.5);
+    doc.splitTextToSize(val, maxW).forEach(line=>{
+      ensureSpace(6);
+      doc.text(line, margin, y); y += 5.2;
+    });
+    y += 4;
+  });
+
+  ensureSpace(28);
+  y += 12;
+  doc.setDrawColor(120); doc.line(margin, y, margin+60, y); y += 5;
+  doc.setFontSize(10); doc.setFont('helvetica','normal');
+  doc.text('Signature of Operating Surgeon', margin, y);
+
+  const pname = (document.getElementById('pName').value.trim() || 'patient').replace(/\s+/g,'_');
+  const pdate = document.getElementById('pDate').value || 'date';
+  doc.save('OT_Note_' + pname + '_' + pdate + '.pdf');
+  toast('PDF downloaded');
+}
+
+/* ================= TOAST ================= */
+let toastTimer = null;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{ t.style.display='none'; }, 2600);
+}
+
+/* ================= INIT ================= */
+renderCaseList();
+</script>
+</body>
+</html>
