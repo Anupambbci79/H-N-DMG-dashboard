@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>OT Note Dictation — BBCI Head & Neck</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
 <style>
@@ -238,7 +239,7 @@
 <header>
   <button id="backBtn" onclick="goToList()" aria-label="Back to case list">←</button>
   <div class="brand">
-    <span class="eyebrow">BBCI · Head & Neck Surgery</span>
+    <span class="eyebrow">BBCI · Head & Neck Surgery <span style="opacity:.55">· v1.2</span></span>
     <h1 id="headerTitle">OT Note Dictation</h1>
   </div>
   <button id="keyBtn" onclick="openKeyModal()" aria-label="API key settings">⚙ Key</button>
@@ -324,6 +325,20 @@
     <div class="btn-row" style="margin-top:0">
       <button class="btn btn-ghost" onclick="closeKeyModal()">Cancel</button>
       <button class="btn btn-primary" onclick="saveKey()">Save</button>
+    </div>
+    <div class="hint" style="margin-top:14px">Setting up a new phone? Scan this device's key instead of typing it.</div>
+    <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="openQRModal()">📱 Show setup QR for another device</button>
+  </div>
+</div>
+
+<!-- QR device-setup modal -->
+<div class="modal-bg" id="qrModal">
+  <div class="modal">
+    <h3>Scan on the new phone</h3>
+    <p>Open the camera app on the new device and point it at this code. It opens the app and saves the key automatically — no typing needed. Don't screenshot or forward this QR; it contains your live API key.</p>
+    <div id="qrBox" style="display:flex;justify-content:center;margin:16px 0"></div>
+    <div class="btn-row" style="margin-top:0">
+      <button class="btn btn-primary" style="width:100%" onclick="closeQRModal()">Done</button>
     </div>
   </div>
 </div>
@@ -828,6 +843,32 @@ function saveKey(){
   closeKeyModal();
   toast(v ? 'API key saved on this device' : 'No key entered');
 }
+
+/* ---- device-to-device setup via QR / link (no key ever hardcoded in source) ---- */
+function openQRModal(){
+  const key = getKey();
+  if(!key){ toast('Save a key on this device first'); return; }
+  const link = location.origin + location.pathname + '#key=' + encodeURIComponent(key);
+  const box = document.getElementById('qrBox');
+  box.innerHTML = '';
+  new QRCode(box, { text: link, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+  document.getElementById('qrModal').classList.add('open');
+}
+function closeQRModal(){ document.getElementById('qrModal').classList.remove('open'); }
+
+// If this page was opened via a setup link/QR (#key=...), import the key once,
+// save it locally, then strip it from the address bar so it isn't left visible
+// in browser history or re-shared accidentally.
+(function importKeyFromHash(){
+  const m = location.hash.match(/[#&]key=([^&]+)/);
+  if(!m) return;
+  try{
+    const key = decodeURIComponent(m[1]);
+    if(key) localStorage.setItem(API_KEY_STORAGE, key);
+    history.replaceState(null, '', location.pathname + location.search);
+    window.addEventListener('DOMContentLoaded', () => toast('API key saved on this device'));
+  }catch(e){ /* ignore malformed hash */ }
+})();
 
 /* ================= NOTE SECTIONS ================= */
 const SECTIONS = [
