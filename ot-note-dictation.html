@@ -535,8 +535,27 @@ window.addEventListener('visibilitychange', ()=>{ if(document.hidden) flushSave(
 window.addEventListener('pagehide', flushSave);
 
 /* ================= SPEECH RECOGNITION =================
-   Android Chrome duplication fix: rebuild the session transcript from
-   event.results on every event; commit to finalTranscript on session end. */
+   Cross-platform duplication fix: desktop Chrome delivers final results as
+   INCREMENTAL segments, but Android Chrome delivers CUMULATIVE snapshots
+   (each result repeats the whole utterance so far). mergeSpeech() detects
+   the overlap and replaces instead of appending, handling both styles. */
+function mergeSpeech(base, next){
+  base = (base || '').trim(); next = (next || '').trim();
+  if(!base) return next;
+  if(!next) return base;
+  const bl = base.toLowerCase(), nl = next.toLowerCase();
+  if(nl.startsWith(bl)) return next;      // cumulative snapshot → replace
+  if(bl.endsWith(nl))  return base;       // stale repeat → ignore
+  // Partial overlap: longest suffix of base that is a prefix of next
+  const bWords = base.split(/\s+/), nWords = next.split(/\s+/);
+  for(let o = Math.min(bWords.length, nWords.length); o > 0; o--){
+    if(bWords.slice(-o).join(' ').toLowerCase() === nWords.slice(0, o).join(' ').toLowerCase()){
+      return bWords.join(' ') + ' ' + nWords.slice(o).join(' ');
+    }
+  }
+  return base + ' ' + next;               // no overlap → normal append
+}
+
 function startWatchdog(){
   clearInterval(watchdogTimer);
   lastActivity = Date.now();
@@ -567,10 +586,12 @@ function initRecognition(){
     let sf = '';
     for(let i = 0; i < event.results.length; i++){
       const t = event.results[i][0].transcript;
-      if(event.results[i].isFinal) sf += t + ' ';
-      else interim += t;
+      if(event.results[i].isFinal) sf = mergeSpeech(sf, t);
+      else interim = mergeSpeech(interim, t);
     }
-    sessionFinal = sf;
+    // Interim often repeats the tail of the finals on Android — dedupe it
+    interim = mergeSpeech(sf, interim).slice(sf.length).trim();
+    sessionFinal = sf ? sf + ' ' : '';
     renderTranscript(interim);
   };
 
@@ -746,10 +767,11 @@ function startFieldDictation(btn, targetEl, mode, onCommit){
     let interim = '', sf = '';
     for(let i = 0; i < event.results.length; i++){
       const t = event.results[i][0].transcript;
-      if(event.results[i].isFinal) sf += t + ' ';
-      else interim += t;
+      if(event.results[i].isFinal) sf = mergeSpeech(sf, t);
+      else interim = mergeSpeech(interim, t);
     }
-    finalText = sf;
+    interim = mergeSpeech(sf, interim).slice(sf.length).trim();
+    finalText = sf ? sf + ' ' : '';
     setVal((base + finalText + interim).replace(/\s+/g,' ').trimStart());
   };
 
