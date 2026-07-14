@@ -8,7 +8,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Crimson+Pro:ital,wght@0,600;1,400&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
       --green:       #1D9E75;
       --green-dark:  #0F6E56;
@@ -23,7 +22,6 @@
       --text:        #0D2137;
       --text-2:      #4A6280;
     }
-
     body {
       font-family: 'Inter', sans-serif;
       background: var(--bg);
@@ -32,7 +30,6 @@
       display: flex;
       flex-direction: column;
     }
-
     /* ── Header ── */
     header {
       background: var(--navy);
@@ -82,7 +79,6 @@
       border-radius: 20px;
       letter-spacing: 0.04em;
     }
-
     /* ── Hero ── */
     .hero {
       background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
@@ -122,7 +118,6 @@
       margin: 0 auto;
       line-height: 1.6;
     }
-
     /* ── Grid ── */
     main {
       flex: 1;
@@ -131,7 +126,6 @@
       margin: 0 auto;
       width: 100%;
     }
-
     .section-label {
       font-size: 11px;
       font-weight: 600;
@@ -149,14 +143,12 @@
       height: 1px;
       background: var(--border);
     }
-
     .tools-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
       gap: 14px;
       margin-bottom: 2.5rem;
     }
-
     .tool-card {
       background: var(--card-bg, var(--surface));
       border: 1px solid var(--border);
@@ -187,7 +179,6 @@
       transition: opacity 0.18s;
     }
     .tool-card:hover::before { opacity: 1; }
-
     .tool-icon {
       width: 40px;
       height: 40px;
@@ -225,7 +216,6 @@
       color: var(--tag-color, var(--green-dark));
       align-self: flex-start;
     }
-
     /* NEW badge */
     .new-badge {
       position: absolute;
@@ -239,7 +229,6 @@
       padding: 2px 8px;
       border-radius: 10px;
     }
-
     /* Featured card — dictation */
     .tool-card.featured {
       background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
@@ -272,7 +261,6 @@
       color: #6EE7C2;
       flex-shrink: 0;
     }
-
     /* Footer */
     footer {
       text-align: center;
@@ -281,7 +269,6 @@
       color: var(--muted);
       border-top: 1px solid var(--border);
     }
-
     @media (max-width: 520px) {
       .tools-grid { grid-template-columns: 1fr; }
       .featured-inner { flex-wrap: wrap; }
@@ -292,7 +279,6 @@
   </style>
 </head>
 <body>
-
 <header>
   <div class="header-brand">
     <div class="header-logo">
@@ -307,15 +293,12 @@
   </div>
   <div class="header-badge">DIGITAL TOOLS</div>
 </header>
-
 <div class="hero">
   <div class="hero-eyebrow">Head &amp; Neck Surgery Department</div>
   <h1>Clinical Digital Workspace</h1>
   <p>Voice-powered documentation, registry, scheduling, and audit tools — built for BBCI's Head &amp; Neck Oncology team.</p>
 </div>
-
 <main>
-
   <!-- Dictation -->
   <div class="section-label">Dictation</div>
   <div class="tools-grid">
@@ -327,7 +310,6 @@
       </div>
       <span class="tool-tag" style="--tag-bg:#DBF4EA;--tag-color:#0F6E56">OPD · Ward Rounds · AI-powered</span>
     </a>
-
     <a href="ot-note-dictation.html" class="tool-card" style="--card-bg:#FFF5F6;--card-accent:#BE123C;--icon-bg:#FDE8EB;--icon-color:#BE123C;--tag-bg:#FDE8EB;--tag-color:#BE123C">
       <span class="new-badge">NEW</span>
       <div class="tool-icon">📝</div>
@@ -337,12 +319,19 @@
       </div>
       <span class="tool-tag" style="--tag-bg:#FDE8EB;--tag-color:#BE123C">Theatre · AI-powered</span>
     </a>
+    <a href="grossing.html" class="tool-card" style="--card-bg:#F0FBFC;--card-accent:#0E7490;--icon-bg:#CFF3FA;--icon-color:#0E7490;--tag-bg:#CFF3FA;--tag-color:#0E7490">
+      <span class="new-badge" style="background:#0E7490">NEW</span>
+      <div class="tool-icon">🧫</div>
+      <div class="tool-body">
+        <div class="tool-name">Pathology Grossing Dictation</div>
+        <div class="tool-desc">Dictate gross specimen findings in any order. AI structures a CAP-aligned gross report with a cassette block key and flags CAP-required elements that weren't dictated. Per-section mics, multi-case list, PDF/WhatsApp export.</div>
+      </div>
+      <span class="tool-tag" style="--tag-bg:#CFF3FA;--tag-color:#0E7490">Pathology · CAP · AI-powered</span>
+    </a>
   </div>
-
   <!-- Clinical tools -->
   <div class="section-label">Clinical</div>
   <div class="tools-grid">
-
     <a href="compliance.html" class="tool-card" style="--card-bg:#FAF7FF;--card-accent:#6f42c1;--icon-bg:#F0EBFF;--icon-color:#6f42c1;--tag-bg:#F0EBFF;--tag-color:#6f42c1">
       <div class="tool-icon">📋</div>
       <div class="tool-body">
@@ -351,7 +340,6 @@
       </div>
       <span class="tool-tag" style="--tag-bg:#F0EBFF;--tag-color:#6f42c1">Compliance</span>
     </a>
-
     <a href="hns_appointment.html" class="tool-card" style="--card-bg:#F0FDF8;--card-accent:#059669;--icon-bg:#D1FAE5;--icon-color:#059669;--tag-bg:#D1FAE5;--tag-color:#059669">
       <div class="tool-icon">🏥</div>
       <div class="tool-body">
@@ -360,7 +348,6 @@
       </div>
       <span class="tool-tag">OT Scheduling</span>
     </a>
-
     <a href="Endoscopy_Appointment_System_Enhanced_v4.html" class="tool-card" style="--card-bg:#FFF7F3;--card-accent:#c2410c;--icon-bg:#FEF0E8;--icon-color:#c2410c;--tag-bg:#FEF0E8;--tag-color:#c2410c">
       <div class="tool-icon">🔬</div>
       <div class="tool-body">
@@ -369,7 +356,6 @@
       </div>
       <span class="tool-tag" style="--tag-bg:#FEF0E8;--tag-color:#c2410c">Endoscopy</span>
     </a>
-
     <a href="surgical_audit.html" class="tool-card" style="--card-bg:#F4F7FC;--card-accent:#1a365d;--icon-bg:#EBF0F8;--icon-color:#1a365d;--tag-bg:#EBF0F8;--tag-color:#1a365d">
       <div class="tool-icon">📊</div>
       <div class="tool-body">
@@ -378,13 +364,10 @@
       </div>
       <span class="tool-tag" style="--tag-bg:#EBF0F8;--tag-color:#1a365d">Audit</span>
     </a>
-
   </div>
-
   <!-- Registry & Education -->
   <div class="section-label">Registry &amp; Education</div>
   <div class="tools-grid">
-
     <a href="oral-cavity-entry.html" class="tool-card" style="--card-bg:#F0FDFB;--card-accent:#0f766e;--icon-bg:#CCFBF1;--icon-color:#0f766e;--tag-bg:#CCFBF1;--tag-color:#0f766e">
       <div class="tool-icon">🦷</div>
       <div class="tool-body">
@@ -393,7 +376,6 @@
       </div>
       <span class="tool-tag" style="--tag-bg:#ECFDF5;--tag-color:#0f766e">Registry</span>
     </a>
-
     <a href="https://script.google.com/macros/s/AKfycbyx46jbIwMsSNp1fNsNCeKr4Z19hlTg6nhEaTuSFbC4xlV0eXCc3fL3IlZnfDC-H3NR/exec"
        target="_blank"
        class="tool-card" style="--card-bg:#F3F6FB;--card-accent:#143d6b;--icon-bg:#E8EEF6;--icon-color:#143d6b;--tag-bg:#E8EEF6;--tag-color:#143d6b">
@@ -404,7 +386,6 @@
       </div>
       <span class="tool-tag" style="--tag-bg:#E8EEF6;--tag-color:#143d6b">Registry</span>
     </a>
-
     <a href="resident_academics.html" class="tool-card" style="--card-bg:#FAF8FF;--card-accent:#7C3AED;--icon-bg:#F5F0FF;--icon-color:#7C3AED;--tag-bg:#F5F0FF;--tag-color:#7C3AED">
       <div class="tool-icon">🎓</div>
       <div class="tool-body">
@@ -413,15 +394,11 @@
       </div>
       <span class="tool-tag" style="--tag-bg:#F5F0FF;--tag-color:#7C3AED">Education</span>
     </a>
-
   </div>
-
 </main>
-
 <footer>
   BBCI Head &amp; Neck Oncology · Digital Tools Suite · Dr. B. Borooah Cancer Institute, Guwahati<br>
   <span style="display:inline-block;margin-top:6px">© 2026 Dr. Anupam Das · Head &amp; Neck Surgery, BBCI · All rights reserved</span>
 </footer>
-
 </body>
 </html>
