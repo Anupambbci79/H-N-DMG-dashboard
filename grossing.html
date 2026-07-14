@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Grossing Dictation — BBCI Pathology</title>
+<style>
+  :root{
+    --bg:#0f1720; --panel:#16212e; --panel2:#1d2b3a; --line:#2a3b4d;
+    --txt:#e8eef5; --muted:#9fb0c2; --accent:#2f9e7f; --accent2:#27866b;
+    --danger:#d1495b; --warn:#e0a13c; --chip:#22384c;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:16px;line-height:1.45}
+  a{color:var(--accent)}
+  header{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#14202c,#111b25);
+    border-bottom:1px solid var(--line);padding:10px 14px}
+  .hrow{display:flex;align-items:center;gap:10px}
+  .back{background:none;border:none;color:var(--muted);font-size:22px;padding:2px 6px;cursor:pointer}
+  .brand{font-size:12px;color:var(--muted);letter-spacing:.3px}
+  h1{font-size:20px;margin:2px 0 0}
+  .htools{margin-left:auto;display:flex;gap:8px}
+  button{font-family:inherit}
+  .btn{background:var(--accent);color:#fff;border:none;border-radius:10px;
+    padding:11px 14px;font-size:15px;font-weight:600;cursor:pointer}
+  .btn:active{background:var(--accent2)}
+  .btn.ghost{background:var(--panel2);color:var(--txt);border:1px solid var(--line)}
+  .btn.small{padding:8px 11px;font-size:13px;border-radius:9px}
+  .btn.block{width:100%}
+  .btn.danger{background:var(--danger)}
+  .btn.warn{background:var(--warn);color:#1a1206}
+  .wrap{max-width:720px;margin:0 auto;padding:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:14px;margin:12px 0}
+  .card h2{font-size:15px;margin:0 0 10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .note{font-size:12.5px;color:var(--muted);margin:6px 0}
+  label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+  .field{display:flex;gap:8px;align-items:center}
+  input[type=text],input[type=date],textarea,select{
+    width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    border-radius:10px;padding:11px;font-size:15px;font-family:inherit}
+  textarea{min-height:120px;resize:vertical;line-height:1.5}
+  .mic{flex:0 0 auto;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);
+    background:var(--panel2);color:var(--txt);font-size:18px;cursor:pointer}
+  .mic.on{background:var(--danger);border-color:var(--danger);animation:pulse 1.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(209,73,91,.5)}70%{box-shadow:0 0 0 10px rgba(209,73,91,0)}100%{box-shadow:0 0 0 0 rgba(209,73,91,0)}}
+  .bigmic{width:100%;padding:16px;border-radius:14px;font-size:17px;font-weight:700;
+    border:none;color:#fff;background:var(--accent);cursor:pointer;display:flex;
+    align-items:center;justify-content:center;gap:10px}
+  .bigmic.on{background:var(--danger);animation:pulse 1.2s infinite}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .row>*{flex:1}
+  .spacer{height:6px}
+  .caselist{display:flex;flex-direction:column;gap:8px}
+  .caseitem{display:flex;align-items:center;gap:10px;background:var(--panel2);
+    border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer}
+  .caseitem .meta{flex:1;min-width:0}
+  .caseitem .nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .caseitem .sub{font-size:12px;color:var(--muted)}
+  .chip{display:inline-block;background:var(--chip);border:1px solid var(--line);
+    border-radius:999px;padding:3px 9px;font-size:11.5px;color:var(--muted);margin-right:6px}
+  .del{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:6px}
+  .hidden{display:none!important}
+  .out{white-space:pre-wrap;background:var(--panel2);border:1px solid var(--line);
+    border-radius:10px;padding:12px;font-size:14.5px;line-height:1.55;min-height:60px}
+  .sec{border:1px solid var(--line);border-radius:10px;margin:8px 0;overflow:hidden}
+  .sec .sh{background:var(--panel2);padding:7px 10px;font-size:12px;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:8px}
+  .sec .sh .t{flex:1}
+  .secmic{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);
+    background:var(--panel);color:var(--txt);font-size:14px;cursor:pointer;line-height:1}
+  .secmic.on{background:var(--danger);border-color:var(--danger);animation:pulse 1.2s infinite}
+  .sec textarea{border:none;border-radius:0;background:transparent;min-height:70px}
+  /* two-column report layout */
+  .rgrid{display:flex;gap:14px;align-items:flex-start}
+  .col-edit{flex:1 1 60%;min-width:0}
+  .col-cap{flex:1 1 40%;min-width:0}
+  .col-cap .cap{position:sticky;top:74px}
+  @media (max-width:640px){
+    .rgrid{flex-direction:column-reverse}
+    .col-cap .cap{position:static}
+    .col-edit,.col-cap{flex:1 1 100%;width:100%}
+  }
+  table.blk{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
+  table.blk th,table.blk td{border:1px solid var(--line);padding:8px;text-align:left;vertical-align:top}
+  table.blk th{background:var(--panel2);color:var(--muted);font-size:12px;text-transform:uppercase}
+  .status{font-size:13px;color:var(--muted);margin:8px 0;min-height:18px}
+  .status.err{color:var(--danger)}
+  .status.ok{color:var(--accent)}
+  .banner{background:#12303f;border:1px solid #1f5266;border-radius:10px;padding:9px 12px;
+    font-size:13.5px;margin-bottom:10px}
+  .banner b{color:#63c6e8}
+  .cap{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px;background:#131e29}
+  .caphd{font-size:13px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:700}
+  .capcount{font-weight:600;text-transform:none;letter-spacing:0}
+  .capitem{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-top:1px solid var(--line);font-size:14px}
+  .capitem:first-of-type{border-top:none}
+  .capdot{flex:0 0 auto;width:9px;height:9px;border-radius:50%;margin-top:6px}
+  .capitem .el{flex:1}
+  .capitem .val{color:var(--muted);font-size:13px}
+  .cap-captured .capdot{background:var(--accent)}
+  .cap-missing .capdot{background:var(--warn)}
+  .cap-na .capdot{background:#5a6b7d}
+  .cap-missing .el{color:var(--warn)}
+  .cap-tag{font-size:11px;color:var(--warn);border:1px solid var(--warn);border-radius:6px;padding:1px 5px;margin-left:6px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;
+    justify-content:center;z-index:50;padding:18px}
+  .modal .box{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    padding:18px;max-width:440px;width:100%;max-height:88vh;overflow:auto}
+  .modal h3{margin:0 0 8px;font-size:17px}
+  .spin{display:inline-block;width:15px;height:15px;border:2px solid var(--muted);
+    border-top-color:transparent;border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px;margin-right:6px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  #qrbox{display:flex;justify-content:center;padding:14px;background:#fff;border-radius:12px;margin:10px 0}
+  .foot{text-align:center;font-size:11px;color:var(--muted);padding:20px 0}
+</style>
+</head>
+<body>
+<header>
+  <div class="hrow">
+    <button class="back hidden" id="backBtn" title="Back">←</button>
+    <div>
+      <div class="brand">BBCI · Pathology · Grossing · <span id="ver">v1.3 · CAP-aligned</span></div>
+      <h1 id="hTitle">Grossing Dictation</h1>
+    </div>
+    <div class="htools">
+      <button class="btn ghost small" id="keyBtn">⚙ Key</button>
+      <button class="btn small hidden" id="newBtnTop">＋ New</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- LIST VIEW -->
+  <div id="listView">
+    <div class="card">
+      <button class="btn block" id="newBtn">＋ New Specimen</button>
+      <p class="note">Cases are stored only on this device. Each case auto-deletes 15 days after its last edit.</p>
+    </div>
+    <div class="card">
+      <h2>Saved specimens</h2>
+      <div class="caselist" id="caseList"></div>
+      <p class="note" id="emptyNote">No saved specimens yet. Tap “New Specimen” to begin.</p>
+    </div>
+  </div>
+
+  <!-- CASE VIEW -->
+  <div id="caseView" class="hidden">
+
+    <div class="card">
+      <h2>Specimen &amp; Case Details</h2>
+      <label>Patient name</label>
+      <div class="field"><input type="text" id="f_name" placeholder="Patient name">
+        <button class="mic" data-mic="f_name">🎙</button></div>
+      <label>Surgical path no. / Reg. no.</label>
+      <div class="field"><input type="text" id="f_reg" placeholder="e.g. S-2026-04821">
+        <button class="mic" data-mic="f_reg">🎙</button></div>
+      <div class="row">
+        <div>
+          <label>Age / Sex</label>
+          <div class="field"><input type="text" id="f_age" placeholder="e.g. 54 / F">
+            <button class="mic" data-mic="f_age">🎙</button></div>
+        </div>
+        <div>
+          <label>Date received</label>
+          <input type="date" id="f_date">
+        </div>
+      </div>
+      <label>Specimen type / procedure</label>
+      <div class="field"><input type="text" id="f_spec" placeholder="e.g. Right modified radical mastectomy">
+        <button class="mic" data-mic="f_spec">🎙</button></div>
+    </div>
+
+    <div class="card">
+      <h2>Dictation</h2>
+      <button class="bigmic" id="dictBtn"><span id="dictIcon">🎙</span><span id="dictLbl">START</span></button>
+      <p class="note">Tap to dictate — in one go or in fragments. Describe the specimen freely in any order (measurements, appearance, margins, lesions, nodes, sections you’re taking). The AI will organise everything into a structured gross report with a cassette block key when you’re ready.</p>
+      <label>Raw dictation</label>
+      <textarea id="rawText" placeholder="Dictation appears here… you can also type or edit directly."></textarea>
+      <div class="row">
+        <button class="btn ghost small" id="clearDict">Clear Dictation</button>
+        <button class="btn small" id="genBtn">Generate Gross Report</button>
+      </div>
+      <div class="status" id="genStatus"></div>
+    </div>
+
+    <div class="card hidden" id="reportCard">
+      <h2>Gross Report</h2>
+      <div id="siteBanner" class="banner hidden"></div>
+      <p class="note">Tap the 🎙 on any section to dictate a correction, or type. Edits save automatically. The CAP checklist on the right shows what still needs to be dictated.</p>
+      <div class="rgrid">
+        <div class="col-edit">
+          <div id="sections"></div>
+        </div>
+        <div class="col-cap">
+          <div id="capCard" class="cap hidden">
+            <div class="caphd">CAP checklist <span id="capCount" class="capcount"></span></div>
+            <p class="note" id="capNote">Amber items are CAP-required at grossing but weren’t dictated — dictate them into the matching section, then confirm on the specimen before sign-out.</p>
+            <div id="capList"></div>
+          </div>
+        </div>
+      </div>
+
+      <h2 style="margin-top:16px">Sections Submitted / Block Key</h2>
+      <table class="blk" id="blkTable">
+        <thead><tr><th style="width:70px">Block</th><th>Sections / description</th></tr></thead>
+        <tbody id="blkBody"></tbody>
+      </table>
+      <div class="row" style="margin-top:8px">
+        <button class="btn ghost small" id="addBlk">＋ Add block</button>
+      </div>
+
+      <div class="spacer"></div>
+      <label>Additions &amp; corrections (optional)</label>
+      <p class="note">Two ways to revise: edit or dictate straight into the sections above (they save automatically), <b>or</b> dictate loose extra findings here. Either way, press <b>Update &amp; re-check CAP</b> — the AI keeps your edits, merges anything here, and refreshes the CAP checklist so supplied items turn green.</p>
+      <div class="field">
+        <textarea id="addText" placeholder="Optional — dictate or type loose additions…"></textarea>
+      </div>
+      <div class="row">
+        <button class="mic" data-mic="addText" style="width:100%;border-radius:10px">🎙 Dictate additions</button>
+      </div>
+      <div class="row">
+        <button class="btn small" id="updateBtn">Update &amp; re-check CAP</button>
+      </div>
+      <div class="status" id="updStatus"></div>
+
+      <div class="spacer"></div>
+      <div class="row">
+        <button class="btn ghost small" id="copyBtn">Copy</button>
+        <button class="btn ghost small" id="pdfBtn">PDF</button>
+        <button class="btn ghost small" id="waBtn">WhatsApp</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <button class="btn danger block small" id="deleteCase">Delete this specimen</button>
+    </div>
+  </div>
+
+  <div class="foot">BBCI Pathology · Grossing Dictation · runs entirely on this device</div>
+</div>
+
+<!-- KEY MODAL -->
+<div class="modal hidden" id="keyModal">
+  <div class="box">
+    <h3>Claude API Key</h3>
+    <p class="note">Stored only on this device (localStorage). Entered once per device. Uses the same key as the OPD / OT dictation apps.</p>
+    <input type="text" id="keyInput" placeholder="sk-ant-...">
+    <label>Model</label>
+    <select id="modelSel">
+      <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5 (recommended)</option>
+      <option value="claude-opus-4-1-20250805">Claude Opus 4.1</option>
+      <option value="claude-3-5-haiku-20241022">Claude Haiku 3.5 (fastest/cheapest)</option>
+    </select>
+    <div class="row" style="margin-top:12px">
+      <button class="btn ghost small" id="keyCancel">Cancel</button>
+      <button class="btn small" id="keySave">Save</button>
+    </div>
+    <p class="note" style="margin-top:14px">Setting up a new phone? Scan this device’s key instead of typing it.</p>
+    <button class="btn ghost small block" id="showQR">📱 Show setup QR for another device</button>
+    <div id="qrWrap" class="hidden">
+      <p class="note">Open the camera app on the new device and point it at this code. Don’t screenshot or forward this QR; it contains your live API key.</p>
+      <div id="qrbox"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(function(){
+  "use strict"; /* BBCI grossing app — CAP-aligned build */
+  var LS_CASES="bbci_gross_cases", LS_KEY="bbci_claude_key", LS_MODEL="bbci_claude_model";
+  var TTL_DAYS=15;
+
+  /* ---------- storage ---------- */
+  function load(){ try{return JSON.parse(localStorage.getItem(LS_CASES))||[]}catch(e){return[]} }
+  function save(c){ localStorage.setItem(LS_CASES, JSON.stringify(c)); }
+  function getKey(){ return localStorage.getItem(LS_KEY)||""; }
+  function getModel(){ return localStorage.getItem(LS_MODEL)||"claude-sonnet-4-5-20250929"; }
+  function uid(){ return "c"+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+  function now(){ return Date.now(); }
+  function purge(){
+    var cutoff=now()-TTL_DAYS*86400000;
+    var c=load().filter(function(x){ return (x.updated||x.created||0)>cutoff; });
+    save(c); return c;
+  }
+
+  var cases=purge();
+  var current=null; // active case object
+
+  /* ---------- element helpers ---------- */
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return (s||"").replace(/[&<>]/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[m];}); }
+
+  /* ---------- views ---------- */
+  function showList(){
+    current=null;
+    $("listView").classList.remove("hidden");
+    $("caseView").classList.add("hidden");
+    $("backBtn").classList.add("hidden");
+    $("newBtnTop").classList.add("hidden");
+    $("hTitle").textContent="Grossing Dictation";
+    renderList();
+  }
+  function showCase(c){
+    current=c;
+    $("listView").classList.add("hidden");
+    $("caseView").classList.remove("hidden");
+    $("backBtn").classList.remove("hidden");
+    $("newBtnTop").classList.remove("hidden");
+    $("hTitle").textContent=c.name||"Specimen";
+    $("f_name").value=c.name||"";
+    $("f_reg").value=c.reg||"";
+    $("f_age").value=c.age||"";
+    $("f_date").value=c.date||"";
+    $("f_spec").value=c.spec||"";
+    $("rawText").value=c.raw||"";
+    $("addText").value="";
+    renderReport();
+  }
+
+  function renderList(){
+    var box=$("caseList"); box.innerHTML="";
+    if(!cases.length){ $("emptyNote").classList.remove("hidden"); return; }
+    $("emptyNote").classList.add("hidden");
+    cases.slice().sort(function(a,b){return (b.updated||0)-(a.updated||0)}).forEach(function(c){
+      var d=document.createElement("div"); d.className="caseitem";
+      var days=Math.max(0, TTL_DAYS-Math.floor((now()-(c.updated||c.created))/86400000));
+      d.innerHTML='<div class="meta"><div class="nm">'+esc(c.name||"(unnamed)")+'</div>'+
+        '<div class="sub">'+esc(c.reg||"no reg")+' · '+esc(c.spec||"specimen")+
+        ' <span class="chip">'+days+'d left</span></div></div>'+
+        '<button class="del" title="Delete">🗑</button>';
+      d.querySelector(".meta").addEventListener("click",function(){ showCase(c); });
+      d.querySelector(".del").addEventListener("click",function(ev){
+        ev.stopPropagation();
+        if(confirm("Delete this specimen?")){ cases=cases.filter(function(x){return x.id!==c.id}); save(cases); renderList(); }
+      });
+      box.appendChild(d);
+    });
+  }
+
+  function touch(){ if(current){ current.updated=now(); save(cases); } }
+
+  /* ---------- field binding ---------- */
+  function bindField(id, key){
+    $(id).addEventListener("input", function(){
+      if(!current) return;
+      current[key]=$(id).value;
+      if(key==="name") $("hTitle").textContent=current.name||"Specimen";
+      touch();
+    });
+  }
+  bindField("f_name","name"); bindField("f_reg","reg"); bindField("f_age","age");
+  bindField("f_date","date"); bindField("f_spec","spec");
+  $("rawText").addEventListener("input", function(){ if(current){ current.raw=$("rawText").value; touch(); } });
+
+  /* ---------- report render ---------- */
+  var SECTION_ORDER=[
+    ["identification","Specimen Identification"],
+    ["clinical","Clinical Details"],
+    ["gross","Gross Description"],
+    ["measurements","Measurements & Weight"],
+    ["lesion","Lesion / Tumour"],
+    ["margins","Margins"],
+    ["nodes","Lymph Nodes"],
+    ["impression","Gross Impression"]
+  ];
+  function renderReport(){
+    if(!current || !current.report){ $("reportCard").classList.add("hidden"); return; }
+    $("reportCard").classList.remove("hidden");
+    var rep=current.report;
+
+    // detected site banner
+    var bn=$("siteBanner");
+    if(rep.detectedSite){ bn.innerHTML="Detected protocol: <b>"+esc(rep.detectedSite)+"</b>"; bn.classList.remove("hidden"); }
+    else bn.classList.add("hidden");
+
+    // CAP checklist
+    renderCAP(rep.capChecklist||[]);
+
+    var wrap=$("sections"); wrap.innerHTML="";
+    SECTION_ORDER.forEach(function(pair){
+      var k=pair[0], title=pair[1];
+      if(rep[k]===undefined || rep[k]===null || rep[k]==="") return;
+      var sec=document.createElement("div"); sec.className="sec";
+      var sh=document.createElement("div"); sh.className="sh";
+      sh.innerHTML='<span class="t">'+title+'</span>';
+      var mic=document.createElement("button"); mic.className="secmic"; mic.type="button";
+      mic.textContent="🎙"; mic.title="Dictate into this section";
+      sh.appendChild(mic); sec.appendChild(sh);
+      var ta=document.createElement("textarea");
+      ta.value=rep[k];
+      ta.addEventListener("input", function(){ current.report[k]=ta.value; touch(); });
+      mic.addEventListener("click", function(){
+        toggleRec(ta, mic, {save:function(v){ if(current&&current.report){ current.report[k]=v; touch(); } }});
+      });
+      sec.appendChild(ta);
+      wrap.appendChild(sec);
+    });
+    renderBlocks();
+  }
+  function renderCAP(list){
+    var card=$("capCard"), box=$("capList"); box.innerHTML="";
+    if(!list || !list.length){ card.classList.add("hidden"); return; }
+    card.classList.remove("hidden");
+    var missing=0, captured=0;
+    list.forEach(function(it){
+      var st=(it.status||"na");
+      if(st==="missing") missing++; else if(st==="captured") captured++;
+      var row=document.createElement("div");
+      row.className="capitem cap-"+st;
+      var tag = st==="missing" ? '<span class="cap-tag">confirm</span>' : "";
+      var val = (st==="captured" && it.value) ? '<div class="val">'+esc(it.value)+'</div>' : "";
+      row.innerHTML='<span class="capdot"></span><div class="el">'+esc(it.element||"")+tag+val+'</div>';
+      box.appendChild(row);
+    });
+    $("capCount").textContent="· "+captured+" captured, "+missing+" to confirm";
+  }
+
+  function renderBlocks(){
+    var body=$("blkBody"); body.innerHTML="";
+    var blocks=(current.report && current.report.blocks) || [];
+    blocks.forEach(function(b, i){
+      var tr=document.createElement("tr");
+      var td1=document.createElement("td");
+      var inp=document.createElement("input"); inp.type="text"; inp.value=b.code||""; inp.style.width="60px";
+      inp.addEventListener("input", function(){ b.code=inp.value; touch(); });
+      td1.appendChild(inp);
+      var td2=document.createElement("td");
+      var ta=document.createElement("input"); ta.type="text"; ta.value=b.desc||"";
+      ta.addEventListener("input", function(){ b.desc=ta.value; touch(); });
+      var delb=document.createElement("button"); delb.className="del"; delb.textContent="🗑";
+      delb.style.float="right";
+      delb.addEventListener("click", function(){ blocks.splice(i,1); touch(); renderBlocks(); });
+      td2.style.display="flex"; td2.style.gap="6px"; td2.appendChild(ta); td2.appendChild(delb);
+      tr.appendChild(td1); tr.appendChild(td2);
+      body.appendChild(tr);
+    });
+  }
+  $("addBlk").addEventListener("click", function(){
+    if(!current.report) return;
+    current.report.blocks=current.report.blocks||[];
+    var n=current.report.blocks.length;
+    var letter=String.fromCharCode(65+Math.floor(n/9));
+    current.report.blocks.push({code:letter+((n%9)+1), desc:""});
+    touch(); renderBlocks();
+  });
+
+  /* ---------- Web Speech dictation ---------- */
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var activeRec=null, activeBtn=null, activeIsBig=false;
+
+  // targetEl: textarea/input to write into; btnEl: the mic button; opts:{big, save(fn)}
+  function startRec(targetEl, btnEl, opts){
+    opts=opts||{};
+    if(!SR){ alert("Speech recognition isn’t supported in this browser. Try Chrome or Safari."); return; }
+    stopRec();
+    var rec=new SR();
+    rec.continuous=true; rec.interimResults=true; rec.lang="en-IN";
+    var base=targetEl.value;
+    function persist(){ if(opts.save) opts.save(targetEl.value); }
+    rec.onresult=function(e){
+      var fin="", intr="";
+      for(var i=e.resultIndex;i<e.results.length;i++){
+        var t=e.results[i][0].transcript;
+        if(e.results[i].isFinal) fin+=t; else intr+=t;
+      }
+      if(fin){ base=(base?base+" ":"")+fin.trim(); }
+      targetEl.value=(base+(intr?" "+intr:"")).trim();
+      persist();
+    };
+    rec.onerror=function(ev){ if(ev.error==="not-allowed"){ alert("Microphone permission denied."); } };
+    rec.onend=function(){
+      if(activeRec===rec){ persist(); clearBtn(btnEl,opts.big); activeRec=null; activeBtn=null; activeIsBig=false; }
+    };
+    activeRec=rec; activeBtn=btnEl; activeIsBig=!!opts.big;
+    try{ rec.start(); }catch(e){}
+    if(opts.big){ btnEl.classList.add("on"); $("dictIcon").textContent="⏺"; $("dictLbl").textContent="STOP"; }
+    else{ btnEl.classList.add("on"); }
+  }
+  function clearBtn(btnEl,isBig){
+    if(isBig){ if(btnEl) btnEl.classList.remove("on"); $("dictIcon").textContent="🎙"; $("dictLbl").textContent="START"; }
+    else if(btnEl){ btnEl.classList.remove("on"); }
+  }
+  function stopRec(){
+    if(activeRec){ var r=activeRec; activeRec=null; try{r.stop();}catch(e){} }
+    document.querySelectorAll(".mic.on,.secmic.on").forEach(function(b){b.classList.remove("on");});
+    clearBtn($("dictBtn"),true);
+    activeBtn=null; activeIsBig=false;
+  }
+  function toggleRec(targetEl, btnEl, opts){
+    if(btnEl.classList.contains("on")){ stopRec(); }
+    else { startRec(targetEl, btnEl, opts); }
+  }
+
+  $("dictBtn").addEventListener("click", function(){
+    if(activeIsBig && activeRec){ stopRec(); }
+    else { startRec($("rawText"), $("dictBtn"), {big:true, save:function(v){ if(current){ current.raw=v; touch(); } }}); }
+  });
+
+  var MIC_KEY={ f_name:"name", f_reg:"reg", f_age:"age", f_spec:"spec" };
+  document.querySelectorAll(".mic").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var id=btn.getAttribute("data-mic"), el=$(id), key=MIC_KEY[id];
+      toggleRec(el, btn, {save:function(v){
+        if(!current) return;
+        if(key){ current[key]=v; if(key==="name") $("hTitle").textContent=current.name||"Specimen"; touch(); }
+        else if(id==="rawText"){ current.raw=v; touch(); }
+      }});
+    });
+  });
+
+  $("clearDict").addEventListener("click", function(){
+    if(confirm("Clear the raw dictation?")){ $("rawText").value=""; if(current){current.raw=""; touch();} }
+  });
+
+  /* ---------- CAP grossing knowledge base ----------
+     Macroscopic (grossing) required data elements distilled from the CAP
+     Cancer Protocols (College of American Pathologists). These are the gross-stage
+     elements the pathologist must capture at the bench so the downstream synoptic
+     report can be completed. NOT a substitute for the live CAP protocol PDF. */
+  var CAP_KB =
+"CAP CANCER PROTOCOL — GROSS (MACROSCOPIC) REQUIRED ELEMENTS BY SITE.\n"+
+"Every cancer resection shares these CORE gross elements: procedure/specimen type; specimen integrity (intact vs fragmented, oriented vs not); specimen dimensions (3D) and weight where relevant; laterality; tumour site/location; tumour size (greatest dimension + additional dimensions); tumour focality (single/multifocal); macroscopic extent / involvement of adjacent structures; distance of tumour to the nearest and to each named margin; lymph nodes (number identified, sites/levels, largest node, grossly evident extranodal extension); prior treatment effect if neoadjuvant; representative sections mapped to a block key.\n"+
+"SITE-SPECIFIC gross essentials:\n"+
+"- BREAST (invasive/DCIS): procedure (lumpectomy/mastectomy/oncoplastic); specimen 3D size & weight; orientation sutures; tumour size; distance to each of the (up to 6) inked margins; skin/nipple/muscle involvement; biopsy-site/clip; separately submitted margins; SLN/axillary node count.\n"+
+"- COLORECTAL: procedure; segment & length; tumour site & size; % circumference; distance to proximal, distal, radial(CRM)/mesenteric margins; relation to peritoneal reflection; perforation; tumour deposits; completeness of mesorectum (rectal); node count.\n"+
+"- LUNG: procedure (wedge/lobectomy/pneumonectomy); tumour size & location; relation to bronchus/pleura/fissure; distance to bronchial, vascular, parenchymal & pleural margins; visceral pleural involvement; separate tumour nodules; nodes by station.\n"+
+"- PROSTATE (radical): prostate weight & 3D size; laterality/quadrants involved; tumour location & estimated extent; extraprostatic extension; seminal vesicle involvement; margin status & location of positive margin; SLN/pelvic nodes.\n"+
+"- THYROID: procedure (lobectomy/total); specimen weight & 3D size; tumour size, focality, laterality, encapsulation; extrathyroidal extension (gross); margins; parathyroid; node levels & counts.\n"+
+"- LARYNX/HYPOPHARYNX: procedure (partial/total laryngectomy); tumour site (supraglottis/glottis/subglottis) & size; cartilage/bone & soft-tissue invasion; mucosal & deep soft-tissue margins; thyroid gland; neck dissection levels, node counts, ENE.\n"+
+"- LIP/ORAL CAVITY & OROPHARYNX: procedure; tumour subsite & size; DEPTH OF INVASION (measure grossly); bone (mandible/maxilla) involvement; perineural/vascular if grossly evident; mucosal & deep margins (name each); neck dissection by level with node counts; ENE; (oropharynx: note p16/HPV testing requirement).\n"+
+"- SALIVARY GLAND: gland, specimen size/weight; tumour size, circumscription, extraglandular extension; facial nerve; margins; nodes.\n"+
+"- CERVIX: procedure (cone/trachelectomy/hysterectomy); tumour size (incl. horizontal extent & depth of invasion); parametria; vaginal cuff & radial margins; corpus/adnexa; nodes.\n"+
+"- ENDOMETRIUM/UTERUS: procedure; uterus 3D size; tumour location & size; myometrial invasion depth / wall thickness; cervix, serosa, adnexa; margins; nodes.\n"+
+"- OVARY/FALLOPIAN/PERITONEUM: procedure; ovary/mass size & surface (capsule intact vs ruptured); omentum; other sites; nodes.\n"+
+"- STOMACH/OESOPHAGUS: procedure; length; tumour site & size; depth/extent; distance to proximal, distal & radial margins; nodes.\n"+
+"- PANCREAS/AMPULLA/BILE DUCT: procedure (Whipple etc.); tumour site & size; relation to duct/duodenum/vessels; named margins (SMA/uncinate, bile duct, pancreatic neck, etc.); nodes.\n"+
+"- KIDNEY: procedure (partial/radical nephrectomy); specimen & tumour size; location; capsule/perinephric fat, renal sinus, vein involvement; margins (parenchymal/ureteric/vascular); adrenal; nodes.\n"+
+"- BLADDER/UROTHELIAL: procedure (TURBT/cystectomy); tumour site & size; muscularis propria in specimen; extent; ureteric/urethral & soft-tissue margins; nodes.\n"+
+"- SKIN/MELANOMA: procedure; lesion size; Breslow thickness & ulceration (record grossly-relevant sampling); peripheral & deep margins; satellite lesions; SLN.\n"+
+"- If the site is unclear or not a listed cancer type, use the CORE elements as a generic cancer-resection checklist.";
+
+  var SYS_PROMPT =
+    "You are a surgical pathology grossing assistant aligned to the CAP (College of American Pathologists) Cancer Protocols. "+
+    "You convert a pathologist's free-form, possibly out-of-order dictation of a gross specimen examination into a clean, "+
+    "structured gross report AND a CAP grossing completeness checklist.\n\n"+
+    "RULES:\n"+
+    "1. Preserve every clinical fact, measurement and observation dictated. NEVER invent measurements, margins, node counts, "+
+    "depth of invasion, or findings that were not dictated.\n"+
+    "2. First DETECT the most likely CAP cancer protocol site from the specimen type/procedure and dictation.\n"+
+    "3. Apply that site's CAP gross required elements (see knowledge base) to build a checklist: for each required gross element, "+
+    "mark status \"captured\" (with the dictated value), \"missing\" (element is CAP-required for this site but was NOT dictated — "+
+    "the pathologist should confirm/add it), or \"na\" (not applicable to this specimen).\n"+
+    "4. Do NOT fabricate values to fill 'missing' items — leave value empty and mark missing.\n"+
+    "5. Use standard grossing terminology; keep prose concise and factual.\n\n"+
+    CAP_KB+"\n\n"+
+    "Return ONLY valid JSON (no markdown fences) with this exact shape:\n"+
+    "{\n"+
+    '  "detectedSite": string,     // e.g. "Colon and Rectum (CAP)" or "Uncertain — generic cancer resection"\n'+
+    '  "identification": string,   // specimen label, laterality, procedure, container/fixative if mentioned\n'+
+    '  "clinical": string,         // clinical history / pre-op diagnosis if mentioned, else ""\n'+
+    '  "gross": string,            // main narrative gross description\n'+
+    '  "measurements": string,     // overall specimen dimensions and weight\n'+
+    '  "lesion": string,           // tumour/lesion description, size, depth, distance to margins if given, else ""\n'+
+    '  "margins": string,          // margin sampling/appearance/distances, else ""\n'+
+    '  "nodes": string,            // lymph node findings/levels/counts, else ""\n'+
+    '  "impression": string,       // brief gross impression, else ""\n'+
+    '  "blocks": [ {"code": string, "desc": string} ],  // cassette block key, e.g. code "A1", desc "tumour, deepest point / DOI"\n'+
+    '  "capChecklist": [ {"element": string, "status": "captured"|"missing"|"na", "value": string} ]\n'+
+    "}\n"+
+    "Number blocks in standard cassette style (A1, A2, ... then B1 for a second specimen part). "+
+    "Keep all JSON keys even if a string field is empty.";
+
+  function buildUserMsg(mode, prior){
+    var meta="Specimen metadata:\n"+
+      "- Patient: "+($("f_name").value||"(not given)")+"\n"+
+      "- Path no./Reg: "+($("f_reg").value||"(not given)")+"\n"+
+      "- Age/Sex: "+($("f_age").value||"(not given)")+"\n"+
+      "- Date received: "+($("f_date").value||"(not given)")+"\n"+
+      "- Specimen type/procedure: "+($("f_spec").value||"(not given)")+"\n\n";
+    if(mode==="generate"){
+      return meta+"Pathologist's dictation:\n\"\"\"\n"+($("rawText").value||"")+"\n\"\"\"\n\n"+
+        "Produce the structured gross report JSON.";
+    } else {
+      var add=($("addText").value||"").trim();
+      return meta+"Here is the CURRENT structured report JSON. The pathologist may have EDITED or "+
+        "DICTATED corrections directly into any section field — treat every field in this JSON as the "+
+        "pathologist's authoritative latest text; preserve their wording and do NOT revert it to earlier values:\n"+
+        JSON.stringify(prior)+"\n\n"+
+        (add ? ("Additional dictated notes to merge in (in any order):\n\"\"\"\n"+add+"\n\"\"\"\n\n")
+             : "There are no separate additions this time — the changes were made directly in the section fields above.\n\n")+
+        "Task: return the FULL updated report JSON. Merge any additional notes into the correct fields, "+
+        "keep all of the pathologist's edited section text, renumber the block key if sections changed, and "+
+        "RE-EVALUATE the CAP checklist and detectedSite against the FINAL content so that elements the "+
+        "pathologist has now supplied move from \"missing\" to \"captured\". Do not drop existing correct content.";
+    }
+  }
+
+  function callClaude(userMsg, cb){
+    var key=getKey();
+    if(!key){ cb({error:"No API key set. Tap ⚙ Key to add it."}); return; }
+    fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{
+        "content-type":"application/json",
+        "x-api-key":key,
+        "anthropic-version":"2023-06-01",
+        "anthropic-dangerous-direct-browser-access":"true"
+      },
+      body:JSON.stringify({
+        model:getModel(),
+        max_tokens:2000,
+        system:SYS_PROMPT,
+        messages:[{role:"user",content:userMsg}]
+      })
+    }).then(function(r){ return r.json(); }).then(function(d){
+      if(d.error){ cb({error:(d.error.message||"API error")}); return; }
+      var txt=(d.content && d.content[0] && d.content[0].text)||"";
+      var jsonStr=txt.trim().replace(/^```(json)?/,"").replace(/```$/,"").trim();
+      var m=jsonStr.match(/\{[\s\S]*\}/);
+      if(m) jsonStr=m[0];
+      try{ cb({data:JSON.parse(jsonStr)}); }
+      catch(e){ cb({error:"Couldn’t parse the model’s response. Raw output:\n"+txt}); }
+    }).catch(function(e){ cb({error:"Network error: "+e.message}); });
+  }
+
+  function setStatus(id, msg, cls){
+    var el=$(id); el.textContent=msg||""; el.className="status"+(cls?" "+cls:"");
+  }
+
+  $("genBtn").addEventListener("click", function(){
+    if(!($("rawText").value||"").trim()){ setStatus("genStatus","Nothing dictated yet.","err"); return; }
+    stopRec();
+    setStatus("genStatus", ""); $("genStatus").innerHTML='<span class="spin"></span>Structuring gross report…';
+    callClaude(buildUserMsg("generate"), function(res){
+      if(res.error){ setStatus("genStatus", res.error, "err"); return; }
+      current.report=res.data;
+      current.report.blocks=current.report.blocks||[];
+      touch(); renderReport();
+      setStatus("genStatus", "Report generated.", "ok");
+      $("reportCard").scrollIntoView({behavior:"smooth"});
+    });
+  });
+
+  $("updateBtn").addEventListener("click", function(){
+    if(!current.report){ setStatus("updStatus","Generate a report first.","err"); return; }
+    stopRec();
+    var hasAdd=!!($("addText").value||"").trim();
+    $("updStatus").className="status";
+    $("updStatus").innerHTML='<span class="spin"></span>'+(hasAdd?"Merging additions & re-checking CAP…":"Re-checking against CAP…");
+    callClaude(buildUserMsg("update", current.report), function(res){
+      if(res.error){ setStatus("updStatus", res.error, "err"); return; }
+      current.report=res.data; current.report.blocks=current.report.blocks||[];
+      $("addText").value="";
+      touch(); renderReport();
+      setStatus("updStatus", "Report updated.", "ok");
+    });
+  });
+
+  /* ---------- export ---------- */
+  function reportText(){
+    var c=current, r=c.report||{};
+    var L=[];
+    L.push("GROSS REPORT");
+    L.push("=================================");
+    if(c.name) L.push("Patient: "+c.name);
+    if(c.reg) L.push("Path no./Reg: "+c.reg);
+    if(c.age) L.push("Age/Sex: "+c.age);
+    if(c.date) L.push("Date received: "+c.date);
+    if(c.spec) L.push("Specimen: "+c.spec);
+    if(r.detectedSite) L.push("CAP protocol: "+r.detectedSite);
+    L.push("");
+    SECTION_ORDER.forEach(function(p){
+      var v=r[p[0]];
+      if(v){ L.push(p[1].toUpperCase()+":"); L.push(v); L.push(""); }
+    });
+    if(r.blocks && r.blocks.length){
+      L.push("SECTIONS SUBMITTED / BLOCK KEY:");
+      r.blocks.forEach(function(b){ L.push("  "+(b.code||"")+" — "+(b.desc||"")); });
+      L.push("");
+    }
+    if(r.capChecklist && r.capChecklist.length){
+      var miss=r.capChecklist.filter(function(x){return x.status==="missing";});
+      if(miss.length){
+        L.push("CAP ELEMENTS TO CONFIRM (not dictated):");
+        miss.forEach(function(x){ L.push("  [ ] "+x.element); });
+        L.push("");
+      }
+    }
+    L.push("— dictated & structured via BBCI Grossing app · CAP-aligned · verify against specimen —");
+    return L.join("\n");
+  }
+
+  $("copyBtn").addEventListener("click", function(){
+    var t=reportText();
+    if(navigator.clipboard){ navigator.clipboard.writeText(t).then(function(){ toast("Copied"); }); }
+    else { var ta=document.createElement("textarea"); ta.value=t; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); toast("Copied"); }
+  });
+  $("waBtn").addEventListener("click", function(){
+    var t=encodeURIComponent(reportText());
+    window.open("https://wa.me/?text="+t, "_blank");
+  });
+  $("pdfBtn").addEventListener("click", function(){
+    try{
+      var jsPDF=window.jspdf.jsPDF;
+      var doc=new jsPDF({unit:"pt",format:"a4"});
+      var margin=40, y=margin, pw=doc.internal.pageSize.getWidth();
+      var lines=doc.splitTextToSize(reportText(), pw-margin*2);
+      doc.setFont("courier","normal"); doc.setFontSize(10);
+      lines.forEach(function(ln){
+        if(y>doc.internal.pageSize.getHeight()-margin){ doc.addPage(); y=margin; }
+        doc.text(ln, margin, y); y+=14;
+      });
+      var fn=((current.reg||current.name||"gross").replace(/[^\w\-]+/g,"_"))+".pdf";
+      doc.save(fn);
+    }catch(e){ alert("PDF error: "+e.message); }
+  });
+
+  function toast(msg){
+    var t=document.createElement("div"); t.textContent=msg;
+    t.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#000;color:#fff;padding:10px 16px;border-radius:20px;z-index:99;font-size:14px";
+    document.body.appendChild(t); setTimeout(function(){ t.remove(); }, 1400);
+  }
+
+  /* ---------- new / back / delete ---------- */
+  function newCase(){
+    var c={id:uid(), name:"", reg:"", age:"", date:new Date().toISOString().slice(0,10),
+      spec:"", raw:"", report:null, created:now(), updated:now()};
+    cases.push(c); save(cases); showCase(c);
+  }
+  $("newBtn").addEventListener("click", newCase);
+  $("newBtnTop").addEventListener("click", newCase);
+  $("backBtn").addEventListener("click", function(){ stopRec(); showList(); });
+  $("deleteCase").addEventListener("click", function(){
+    if(current && confirm("Delete this specimen permanently?")){
+      cases=cases.filter(function(x){return x.id!==current.id}); save(cases); showList();
+    }
+  });
+
+  /* ---------- key modal ---------- */
+  var qrObj=null;
+  $("keyBtn").addEventListener("click", function(){
+    $("keyInput").value=getKey();
+    $("modelSel").value=getModel();
+    $("qrWrap").classList.add("hidden");
+    $("keyModal").classList.remove("hidden");
+  });
+  $("keyCancel").addEventListener("click", function(){ $("keyModal").classList.add("hidden"); });
+  $("keySave").addEventListener("click", function(){
+    localStorage.setItem(LS_KEY, $("keyInput").value.trim());
+    localStorage.setItem(LS_MODEL, $("modelSel").value);
+    $("keyModal").classList.add("hidden"); toast("Key saved");
+  });
+  $("showQR").addEventListener("click", function(){
+    var k=$("keyInput").value.trim()||getKey();
+    if(!k){ alert("Enter/save a key first."); return; }
+    $("qrWrap").classList.remove("hidden");
+    var box=$("qrbox"); box.innerHTML="";
+    var payload=location.origin+location.pathname+"#key="+encodeURIComponent(k);
+    try{ new QRCode(box,{text:payload,width:200,height:200}); }
+    catch(e){ box.textContent="QR library not loaded."; }
+  });
+
+  /* accept key via hash (scanned on new device) */
+  (function(){
+    var h=location.hash||"";
+    var m=h.match(/#key=([^&]+)/);
+    if(m){
+      var k=decodeURIComponent(m[1]);
+      localStorage.setItem(LS_KEY,k);
+      history.replaceState(null,"",location.pathname);
+      setTimeout(function(){ toast("API key saved from QR"); }, 400);
+    }
+  })();
+
+  /* ---------- init ---------- */
+  showList();
+})();
+</script>
+</body>
+</html>
