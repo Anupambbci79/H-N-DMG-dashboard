@@ -122,7 +122,7 @@
   <div class="hrow">
     <button class="back hidden" id="backBtn" title="Back">←</button>
     <div>
-      <div class="brand">BBCI · Pathology · Grossing · <span id="ver">v1.4 · CAP-aligned</span></div>
+      <div class="brand">BBCI · Pathology · Grossing · <span id="ver">v1.5 · CAP-aligned</span></div>
       <h1 id="hTitle">Grossing Dictation</h1>
     </div>
     <div class="htools">
@@ -460,27 +460,25 @@
     if(!SR){ alert("Speech recognition isn’t supported in this browser. Try Chrome or Safari."); return; }
     stopRec();
     var rec=new SR();
-    rec.continuous=true; rec.interimResults=true; rec.lang="en-IN";
-    // "committed" = text already accepted (whatever was in the field before this listen,
-    // plus text folded in whenever the recogniser restarts). Each onresult rebuilds the
-    // live transcript from the WHOLE results list — we deliberately ignore e.resultIndex,
-    // because Android Chrome reports it unreliably and iterating from it re-appends
-    // already-final words (the "repeated words" bug).
-    var committed=(targetEl.value||"").trim();
+    // NON-continuous is the key Android fix. In continuous mode Android Chrome keeps
+    // MANY overlapping segments in e.results at once; concatenating them stacks words up
+    // ("I I am I am trying trying to…"). Instead we run one short utterance per session,
+    // read ONLY the latest segment, commit it into `committed` when the session ends,
+    // and immediately restart — giving continuous-feel dictation with no duplication.
+    rec.continuous=false; rec.interimResults=true; rec.lang="en-IN";
+    var committed=(targetEl.value||"").trim();   // everything accepted so far
     rec._stopped=false;
     function persist(){ if(opts.save) opts.save(targetEl.value); }
-    function compose(sessionText){
+    function show(sessionText){
       var out=committed+((committed && sessionText)?" ":"")+sessionText;
-      return out.replace(/\s+/g," ").replace(/\s+([,.;:%])/g,"$1").trim();
+      targetEl.value=out.replace(/\s+/g," ").replace(/\s+([,.;:%])/g,"$1").trim();
+      persist();
     }
     rec.onresult=function(e){
-      var finalT="", interim="";
-      for(var i=0;i<e.results.length;i++){
-        var r=e.results[i], t=r[0].transcript;
-        if(r.isFinal) finalT+=t+" "; else interim+=t;
-      }
-      targetEl.value=compose(finalT+interim);
-      persist();
+      // take only the LAST result — it is the fullest guess of the CURRENT utterance;
+      // never concatenate the earlier overlapping segments Android leaves in the list.
+      var last=e.results[e.results.length-1];
+      show(last && last[0] ? last[0].transcript : "");
     };
     rec.onerror=function(ev){
       if(ev.error==="not-allowed"||ev.error==="service-not-allowed"||ev.error==="audio-capture"){
@@ -489,10 +487,10 @@
       }
     };
     rec.onend=function(){
-      if(activeRec!==rec) return;                 // superseded by another recogniser / stopped
-      committed=(targetEl.value||"").trim();       // fold session text in so a fresh session can't duplicate it
+      if(activeRec!==rec) return;                  // superseded / stopped
+      committed=(targetEl.value||"").trim();        // commit the finished utterance
       if(!rec._stopped){
-        try{ rec.start(); return; }catch(e){}      // Android ends the session on a pause — restart to keep listening
+        try{ rec.start(); return; }catch(e){}       // keep listening for the next utterance
       }
       persist(); clearBtn(btnEl,opts.big); activeRec=null; activeBtn=null; activeIsBig=false;
     };
