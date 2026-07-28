@@ -122,7 +122,7 @@
   <div class="hrow">
     <button class="back hidden" id="backBtn" title="Back">←</button>
     <div>
-      <div class="brand">BBCI · Pathology · Grossing · <span id="ver">v1.3 · CAP-aligned</span></div>
+      <div class="brand">BBCI · Pathology · Grossing · <span id="ver">v1.4 · CAP-aligned</span></div>
       <h1 id="hTitle">Grossing Dictation</h1>
     </div>
     <div class="htools">
@@ -461,21 +461,40 @@
     stopRec();
     var rec=new SR();
     rec.continuous=true; rec.interimResults=true; rec.lang="en-IN";
-    var base=targetEl.value;
+    // "committed" = text already accepted (whatever was in the field before this listen,
+    // plus text folded in whenever the recogniser restarts). Each onresult rebuilds the
+    // live transcript from the WHOLE results list — we deliberately ignore e.resultIndex,
+    // because Android Chrome reports it unreliably and iterating from it re-appends
+    // already-final words (the "repeated words" bug).
+    var committed=(targetEl.value||"").trim();
+    rec._stopped=false;
     function persist(){ if(opts.save) opts.save(targetEl.value); }
+    function compose(sessionText){
+      var out=committed+((committed && sessionText)?" ":"")+sessionText;
+      return out.replace(/\s+/g," ").replace(/\s+([,.;:%])/g,"$1").trim();
+    }
     rec.onresult=function(e){
-      var fin="", intr="";
-      for(var i=e.resultIndex;i<e.results.length;i++){
-        var t=e.results[i][0].transcript;
-        if(e.results[i].isFinal) fin+=t; else intr+=t;
+      var finalT="", interim="";
+      for(var i=0;i<e.results.length;i++){
+        var r=e.results[i], t=r[0].transcript;
+        if(r.isFinal) finalT+=t+" "; else interim+=t;
       }
-      if(fin){ base=(base?base+" ":"")+fin.trim(); }
-      targetEl.value=(base+(intr?" "+intr:"")).trim();
+      targetEl.value=compose(finalT+interim);
       persist();
     };
-    rec.onerror=function(ev){ if(ev.error==="not-allowed"){ alert("Microphone permission denied."); } };
+    rec.onerror=function(ev){
+      if(ev.error==="not-allowed"||ev.error==="service-not-allowed"||ev.error==="audio-capture"){
+        rec._stopped=true;
+        alert(ev.error==="audio-capture" ? "No microphone found." : "Microphone permission denied.");
+      }
+    };
     rec.onend=function(){
-      if(activeRec===rec){ persist(); clearBtn(btnEl,opts.big); activeRec=null; activeBtn=null; activeIsBig=false; }
+      if(activeRec!==rec) return;                 // superseded by another recogniser / stopped
+      committed=(targetEl.value||"").trim();       // fold session text in so a fresh session can't duplicate it
+      if(!rec._stopped){
+        try{ rec.start(); return; }catch(e){}      // Android ends the session on a pause — restart to keep listening
+      }
+      persist(); clearBtn(btnEl,opts.big); activeRec=null; activeBtn=null; activeIsBig=false;
     };
     activeRec=rec; activeBtn=btnEl; activeIsBig=!!opts.big;
     try{ rec.start(); }catch(e){}
@@ -487,7 +506,7 @@
     else if(btnEl){ btnEl.classList.remove("on"); }
   }
   function stopRec(){
-    if(activeRec){ var r=activeRec; activeRec=null; try{r.stop();}catch(e){} }
+    if(activeRec){ var r=activeRec; r._stopped=true; activeRec=null; try{r.stop();}catch(e){} }
     document.querySelectorAll(".mic.on,.secmic.on").forEach(function(b){b.classList.remove("on");});
     clearBtn($("dictBtn"),true);
     activeBtn=null; activeIsBig=false;
