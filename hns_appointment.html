@@ -1,590 +1,985 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-  <title>Head and Neck Surgery Appointment Booking</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
-  <style>
-    body { padding: 2rem; background: #f8fafc; }
-    .modal-dialog { max-width: 650px; }
-    .multiselect { min-width: 180px; }
-    .badge { margin: 0 2px 2px 0; }
-    .table-responsive { max-height: 500px; }
-    .table thead th { position: sticky; top: 0; background: #f1f5f9; }
-    .btn-page { min-width: 140px; }
-    #apptTable tbody tr.status-scheduled > td { background: #eef6fb !important; }
-    #apptTable tbody tr.status-completed > td { background: #e6f9e6 !important; }
-    #apptTable tbody tr.status-rescheduled > td { background: #fffde7 !important; }
-    #apptTable tbody tr.status-cancelled > td { background: #fbeaea !important; }
-    #calendar { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px #e0e7ff77; margin-bottom: 1.5rem; padding: 1.2rem; }
-    .delete-btn { color: #dc3545; cursor:pointer; font-size:1.25rem;}
-    .delete-btn:hover { color: #a71d2a; }
-    @media (max-width: 900px) {
-      #calendar { padding: 0.2rem;}
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>H&amp;N OT Appointments</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the wall calendar as a month grid beside the selected OT day's numbered case list; the waitlist sits below, like the diary's margins. */
+:root{
+  --paper:#f3f6f5; --surface:#ffffff; --ink:#15233b; --ink-2:#56657a; --rule:#d5dedb;
+  --drape:#1d7560; --drape-ink:#ffffff; --drape-wash:#e1efea;
+  --flap:#c41f37; --flap-wash:#fce8eb;
+  --pen:#2442a6; --pen-wash:#e8ecfa;
+  --amber:#93570a; --amber-wash:#fbefd9;
+  --mute-wash:#edf1f0; --scrim:rgba(13,22,36,.45);
+  --shadow:0 1px 2px rgba(21,35,59,.06),0 8px 24px rgba(21,35,59,.07);
+  --f-display:"Bricolage Grotesque","Atkinson Hyperlegible",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0e1514; --surface:#162120; --ink:#e5ecea; --ink-2:#9db0ab; --rule:#2a3836;
+  --drape:#4fc4a3; --drape-ink:#0b1513; --drape-wash:#16302a;
+  --flap:#ff6d7e; --flap-wash:#3b1820;
+  --pen:#93aaff; --pen-wash:#1d2647;
+  --amber:#f1b55c; --amber-wash:#382912;
+  --mute-wash:#1c2827; --scrim:rgba(0,0,0,.6);
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.3);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --paper:#0e1514; --surface:#162120; --ink:#e5ecea; --ink-2:#9db0ab; --rule:#2a3836;
+  --drape:#4fc4a3; --drape-ink:#0b1513; --drape-wash:#16302a;
+  --flap:#ff6d7e; --flap-wash:#3b1820;
+  --pen:#93aaff; --pen-wash:#1d2647;
+  --amber:#f1b55c; --amber-wash:#382912;
+  --mute-wash:#1c2827; --scrim:rgba(0,0,0,.6);
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.3);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--drape);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* header */
+.top{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;justify-content:space-between}
+.eyebrow{margin:0 0 2px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);font-weight:700}
+h1{margin:0;font-family:var(--f-display);font-weight:700;font-size:clamp(26px,5vw,34px);line-height:1.05;letter-spacing:-.02em;text-wrap:balance}
+h1 span{color:var(--drape)}
+.search{flex:1 1 260px;max-width:380px;position:relative}
+.search input{width:100%;padding:10px 12px 10px 36px;border:1px solid var(--rule);border-radius:10px;background:var(--surface)}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--ink-2)}
+.summary{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:14px;color:var(--ink-2)}
+.summary b{color:var(--ink);font-variant-numeric:tabular-nums}
+.summary .fl b{color:var(--flap)}
+
+.main{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:880px){.main{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:14px;box-shadow:var(--shadow);min-width:0}
+
+/* calendar */
+.mhead{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.mhead h2{margin:0 auto 0 4px;font-family:var(--f-display);font-weight:700;font-size:22px;letter-spacing:-.01em}
+.iconbtn{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:9px;border:1px solid var(--rule);background:var(--surface)}
+.iconbtn:hover{background:var(--mute-wash)}
+.textbtn{padding:7px 12px;border-radius:9px;border:1px solid var(--rule);background:var(--surface);font-size:14px}
+.textbtn:hover{background:var(--mute-wash)}
+.wk,.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.wk div{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-2);padding:2px 6px;font-weight:700}
+.wk div.ot{color:var(--drape)}
+.cell{position:relative;min-height:82px;padding:5px 6px 6px;border-radius:9px;border:1px solid transparent;background:var(--paper);
+  text-align:left;display:flex;flex-direction:column;gap:3px;min-width:0}
+.cell.blank{background:transparent;pointer-events:none}
+.cell.ot{background:var(--drape-wash)}
+.cell:hover{border-color:var(--rule)}
+.cell.sel{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.dnum{font-family:var(--f-display);font-weight:600;font-size:16px;line-height:1;font-variant-numeric:tabular-nums}
+.cell.today .dnum{display:inline-grid;place-items:center;width:24px;height:24px;margin:-3px 0 0 -3px;border-radius:50%;background:var(--ink);color:var(--surface)}
+.cell.past .dnum{color:var(--ink-2)}
+.hol{font-size:10.5px;line-height:1.15;color:var(--amber);font-weight:700}
+.minis{display:flex;flex-direction:column;gap:2px;min-width:0}
+.mi{display:block;font-size:11.5px;line-height:1.25;padding:1px 5px;border-radius:5px;background:var(--pen-wash);color:var(--pen);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mi.free{background:var(--flap-wash);color:var(--flap);box-shadow:inset 0 0 0 1px var(--flap)}
+.mi.done{background:var(--mute-wash);color:var(--ink-2);text-decoration:line-through}
+.more{font-size:11px;color:var(--ink-2)}
+@media (max-width:560px){
+  .wk,.grid{gap:3px}
+  .cell{min-height:58px;padding:4px}
+  .dnum{font-size:14px}
+  .hol{font-size:0}.hol::before{content:"";display:block;width:6px;height:6px;border-radius:50%;background:var(--amber)}
+  .minis{flex-direction:row;flex-wrap:wrap;gap:3px;margin-top:auto}
+  .mi{width:9px;height:9px;padding:0;border-radius:50%;font-size:0;background:var(--pen)}
+  .mi.free{background:var(--flap);box-shadow:none}
+  .mi.done{background:var(--ink-2)}
+  .more{font-size:10px}
+}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px;font-size:12.5px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:12px;height:12px;border-radius:3px;display:inline-block}
+
+/* day panel */
+.dhead{display:flex;flex-wrap:wrap;align-items:flex-start;gap:10px;justify-content:space-between;margin-bottom:12px}
+.dhead h2{margin:0;font-family:var(--f-display);font-weight:700;font-size:21px;line-height:1.15;letter-spacing:-.01em}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tag{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--mute-wash);color:var(--ink-2)}
+.tag.ot{background:var(--drape-wash);color:var(--drape)}
+.tag.hol{background:var(--amber-wash);color:var(--amber)}
+.tag.warn{background:var(--amber-wash);color:var(--amber)}
+.dactions{display:flex;gap:8px;flex-wrap:wrap}
+.primary{padding:9px 14px;border-radius:10px;border:0;background:var(--drape);color:var(--drape-ink);font-weight:700}
+.primary:hover{filter:brightness(1.06)}
+.list{display:flex;flex-direction:column;gap:10px}
+.case{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;padding:12px;border:1px solid var(--rule);border-radius:12px;background:var(--surface)}
+.ord{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--ink);display:grid;place-items:center;font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
+.case.off .ord{border-style:dashed;color:var(--ink-2);border-color:var(--ink-2)}
+.case.off{background:var(--paper)}
+.case.off .pname{text-decoration:line-through;color:var(--ink-2)}
+.crow{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.pname{margin:0;font-size:17px;font-weight:700;line-height:1.2}
+.agesex{font-size:13.5px;color:var(--ink-2)}
+.reg{font-size:13.5px;color:var(--ink-2)}
+.proc{margin:6px 0 0;font-size:15.5px;font-weight:700;color:var(--pen);overflow-wrap:anywhere}
+.flap{display:inline-block;font-size:12.5px;font-weight:700;padding:1px 7px;border-radius:4px;vertical-align:1px;margin-left:2px}
+.flap.free{color:var(--flap);border:1.5px solid var(--flap);background:var(--flap-wash)}
+.flap.ped{color:var(--ink-2);border:1.5px solid var(--rule)}
+.phones{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:14px}
+.phones a{color:var(--ink);text-decoration:none;border-bottom:1px dotted var(--ink-2)}
+.notes{margin:6px 0 0;font-size:13.5px;color:var(--ink-2);overflow-wrap:anywhere}
+.notes::before{content:"Note · ";font-weight:700}
+.cfoot{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px}
+.cfoot .grow{flex:1}
+.pill{appearance:none;-webkit-appearance:none;border:0;border-radius:999px;padding:4px 26px 4px 10px;font-size:12.5px;font-weight:700;
+  background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);
+  background-position:calc(100% - 13px) 55%,calc(100% - 9px) 55%;background-size:4px 4px;background-repeat:no-repeat}
+.st-booked{background-color:var(--pen-wash);color:var(--pen)}
+.st-workup{background-color:var(--amber-wash);color:var(--amber)}
+.st-ready{background-color:var(--drape-wash);color:var(--drape)}
+.st-done,.st-cancelled,.st-outside{background-color:var(--mute-wash);color:var(--ink-2)}
+.st-postponed{background-color:var(--amber-wash);color:var(--amber)}
+.sm{padding:5px 9px;border-radius:8px;border:1px solid var(--rule);background:var(--surface);font-size:13px}
+.sm:hover{background:var(--mute-wash)}
+.sm:disabled{opacity:.35;cursor:default}
+.linkbtn{border:0;background:none;padding:0 2px;font-size:12.5px;color:var(--drape);font-weight:700}
+.subhead{margin:16px 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);font-weight:700}
+.empty{padding:18px;border:1.5px dashed var(--rule);border-radius:12px;color:var(--ink-2);text-align:center}
+.empty b{display:block;color:var(--ink);margin-bottom:2px}
+
+/* waitlist */
+.wl-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 12px;justify-content:space-between;margin-bottom:10px}
+.wl-head h2{margin:0;font-family:var(--f-display);font-weight:700;font-size:20px}
+.wl-head p{margin:0;color:var(--ink-2);font-size:13.5px}
+.wl{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:10px}
+.wl .case{grid-template-columns:minmax(0,1fr)}
+
+/* results */
+.res{display:flex;flex-direction:column;gap:8px}
+.ritem{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px;padding:10px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--surface);text-align:left;width:100%}
+.ritem:hover{background:var(--mute-wash)}
+.rdate{font-size:13px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.rdate b{display:block;color:var(--ink);font-size:14px}
+
+/* footer */
+.foot{display:flex;flex-wrap:wrap;gap:10px 24px;align-items:center;justify-content:space-between;font-size:13.5px;color:var(--ink-2)}
+.otdays{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.otdays button{min-width:42px;padding:5px 8px;border-radius:8px;border:1px solid var(--rule);background:var(--surface);font-size:13px}
+.otdays button[aria-pressed="true"]{background:var(--drape);color:var(--drape-ink);border-color:var(--drape);font-weight:700}
+.mode{display:inline-flex;align-items:center;gap:7px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ink-2)}
+.mode.ok .dot{background:var(--drape)}
+.mode.warn .dot{background:var(--amber)}
+.mode.warn{color:var(--amber);font-weight:700}
+.sync{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.sm.cta{background:var(--drape);color:var(--drape-ink);border-color:var(--drape);font-weight:700}
+.lead{margin:-6px 0 14px;color:var(--ink-2);font-size:14px;max-width:60ch}
+.gmsg{margin:12px 0 0;font-size:13.5px;min-height:1em;color:var(--ink-2)}
+.gmsg.err{color:var(--flap);font-weight:700}
+.gmsg.ok{color:var(--drape);font-weight:700}
+.gmsg ul{margin:6px 0;padding-left:18px;font-weight:400;color:var(--ink)}
+.gmsg a{color:var(--drape);font-weight:700}
+
+/* sheet */
+.scrim{position:fixed;inset:0;z-index:30;background:var(--scrim);display:flex;align-items:flex-end;justify-content:center;
+  padding:12px max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px))}
+@media (min-width:640px){.scrim{align-items:center;padding-bottom:12px}}
+.sheet{width:100%;max-width:560px;max-height:calc(100% - 12px);overflow:auto;background:var(--surface);border-radius:16px 16px 0 0;
+  padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:var(--shadow)}
+@media (min-width:640px){.sheet{border-radius:16px;padding-bottom:18px}}
+.sheet h2{margin:0 0 14px;font-family:var(--f-display);font-weight:700;font-size:21px}
+.fgrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+.f{display:flex;flex-direction:column;gap:5px;grid-column:span 6;min-width:0}
+.f.h3{grid-column:span 3}.f.h2{grid-column:span 2}.f.h4{grid-column:span 4}
+@media (max-width:480px){.f.h3,.f.h4{grid-column:span 6}.f.h2{grid-column:span 4}}
+.f label,.f .lbl{font-size:12.5px;font-weight:700;color:var(--ink-2)}
+.f input,.f select,.f textarea{width:100%;padding:9px 10px;border:1px solid var(--rule);border-radius:9px;background:var(--paper)}
+.f textarea{min-height:64px;resize:vertical}
+.f input.mono{font-size:15px}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chips button{padding:3px 9px;border-radius:999px;border:1px solid var(--rule);background:var(--surface);font-size:12.5px}
+.chips button:hover{background:var(--mute-wash)}
+.chips button.free{color:var(--flap);border-color:var(--flap)}
+.hint{font-size:12.5px;color:var(--amber);min-height:0}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px}
+.chk input{width:18px;height:18px;accent-color:var(--drape)}
+.sactions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;align-items:center}
+.sactions .grow{flex:1}
+.danger{padding:9px 12px;border-radius:10px;border:1px solid var(--rule);background:var(--surface);color:var(--flap);font-weight:700}
+.danger.armed{background:var(--flap);color:var(--surface);border-color:var(--flap)}
+.err{color:var(--flap);font-size:13.5px;font-weight:700}
+/* scan */
+.scan{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;padding:12px;margin:-4px 0 16px;border:1.5px dashed var(--rule);border-radius:12px;background:var(--paper)}
+.scanbtn{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:10px;border:0;background:var(--ink);color:var(--surface);font-weight:700;flex:none}
+.scanbtn:disabled{opacity:.6;cursor:default}
+.scanthumb{width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid var(--rule);flex:none}
+.scantext{flex:1 1 200px;min-width:0;display:flex;flex-direction:column;gap:4px}
+.scanmsg{margin:0;font-size:13.5px;color:var(--ink-2);overflow-wrap:anywhere}
+.scanmsg.err{color:var(--flap);font-weight:700}
+.scanmsg.ok{color:var(--ink)}
+.scanmsg .warn{display:block;color:var(--amber);font-weight:700;margin-top:2px}
+.scanlinks{display:flex;flex-wrap:wrap;gap:4px 14px}
+.scankey{flex:1 1 100%;display:flex;flex-direction:column;gap:5px}
+.scankey label{font-size:12.5px;font-weight:700;color:var(--ink-2)}
+.scankey .row{display:flex;gap:8px}
+.scankey input{flex:1;min-width:0;padding:9px 10px;border:1px solid var(--rule);border-radius:9px;background:var(--surface)}
+.f input.scanned,.f select.scanned{border-color:var(--amber);background:var(--amber-wash);box-shadow:inset 0 0 0 1px var(--amber)}
+@media (prefers-reduced-motion:no-preference){.scan.busy .scanthumb{animation:pulse .9s ease-in-out infinite alternate}@keyframes pulse{to{opacity:.45}}}
+.copybox{width:100%;min-height:180px;font-family:var(--f-mono);font-size:13px;padding:10px;border:1px solid var(--rule);border-radius:9px;background:var(--paper)}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:40;
+  background:var(--ink);color:var(--surface);padding:9px 16px;border-radius:999px;font-size:14px;font-weight:700;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(12px);opacity:.6}to{transform:none;opacity:1}}}
+</style>
+
 </head>
 <body>
-  <div class="container">
-    <h2 class="mb-4 text-primary">Head and Neck Surgery Appointment Booking</h2>
-    <div class="d-flex align-items-center mb-3">
-      <button class="btn btn-outline-secondary btn-sm me-2" id="prevMonthBtn">&larr; Previous Month</button>
-      <select class="form-select form-select-sm me-2" id="monthSelect" style="width:auto;"></select>
-      <button class="btn btn-outline-secondary btn-sm me-4" id="nextMonthBtn">Next Month &rarr;</button>
-      <select class="form-select form-select-sm me-2" id="consultantSelect" style="width:auto; max-width:200px;">
-        <option value="">All Consultants</option>
-        <option>Dr Kaberi Kakati</option>
-        <option>Dr Anupam Das</option>
-        <option>Dr A. K. Das</option>
-        <option>Dr Tashnin Rahman</option>
-        <option>Dr R.J. Das</option>
-        <option>Dr Kishore Das</option>
-      </select>
-      <button class="btn btn-outline-primary btn-sm me-2" id="toggleCompleted">Show Completed Cases</button>
-      <button class="btn btn-outline-warning btn-sm me-2" id="showAllBtn">Show ALL Cases</button>
-      <button class="btn btn-success btn-sm" id="exportBtn">Export This Month (CSV)</button>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="eyebrow">Dept. of Head &amp; Neck Surgery · BBCI</p>
+      <h1>OT <span>Appointments</span></h1>
     </div>
-    <div id="calendar" class="mb-4"></div>
-    <!-- DATA ENTRY FORM -->
-    <form id="apptForm" class="row g-3 mb-4">
-      <div class="col-md-4">
-        <label class="form-label">Patient Name</label>
-        <input type="text" name="Patient Name" class="form-control" required>
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Hospital ID</label>
-        <input type="text" name="Hospital ID" class="form-control" required>
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Phone Number</label>
-        <input type="tel" name="Phone Number" class="form-control" required>
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Consultant Name</label>
-        <select name="Consultant Name" class="form-select" required>
-          <option value="">Select</option>
-          <option>Dr Kaberi Kakati</option>
-          <option>Dr Anupam Das</option>
-          <option>Dr A. K. Das</option>
-          <option>Dr Tashnin Rahman</option>
-          <option>Dr R.J. Das</option>
-          <option>Dr Kishore Das</option>
-        </select>
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">Diagnosis</label>
-        <input type="text" name="Diagnosis" class="form-control" required>
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">Type of Surgery</label>
-        <input type="text" name="Type of Surgery" class="form-control" required>
-      </div>
-      <div class="col-md-5">
-        <label class="form-label">Neck Dissection Extent</label>
-        <select name="Neck Dissection Extent" class="form-select multiselect" multiple required>
-          <option>No Neck Dissection</option>
-          <option>SOHND</option>
-          <option>LND</option>
-          <option>MND</option>
-          <option>RND</option>
-          <option>Extended RND</option>
-        </select>
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">Laterality</label>
-        <select name="Laterality" class="form-select" required>
-          <option value="">Select</option>
-          <option>Right</option>
-          <option>Left</option>
-          <option>Bilateral</option>
-        </select>
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Reconstruction</label>
-        <select name="Reconstruction" class="form-select multiselect" multiple>
-          <option>PMMC</option>
-          <option>Submental</option>
-          <option>Infrahyoid</option>
-          <option>Nasolabial</option>
-          <option>Island Nasolabial</option>
-          <option>Forehead Flap</option>
-          <option>BB flap</option>
-          <option>LD flap</option>
-          <option>DP</option>
-          <option>Double flap</option>
-          <option>FRAFF</option>
-          <option>ALT</option>
-          <option>Free Fibula OC flap</option>
-        </select>
-        <input type="text" class="form-control mt-1" name="ReconstructionOther" placeholder="Other reconstruction (type and press Enter)">
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Estimated Duration (hrs)</label>
-        <input type="number" name="Estimated Duration (hrs)" class="form-control" min="1" required>
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Appointment Date</label>
-        <input type="date" name="Appointment Date" class="form-control" required>
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Remarks</label>
-        <input type="text" name="Remarks" class="form-control">
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Status</label>
-        <select name="Status" class="form-select" required>
-          <option>Scheduled</option>
-          <option>Completed</option>
-          <option>Cancelled</option>
-          <option>Rescheduled</option>
-        </select>
-      </div>
-      <div class="col-md-12">
-        <button type="submit" class="btn btn-success mt-3">Book Appointment</button>
-      </div>
-    </form>
-    <div id="response"></div>
-    <div class="table-responsive">
-      <table class="table table-bordered align-middle table-hover" id="apptTable">
-        <thead class="table-light">
-          <tr>
-            <th>Sl No.</th>
-            <th>Consultant</th>
-            <th>Patient Name</th>
-            <th>Hosp. ID</th>
-            <th>Phone</th>
-            <th>Diagnosis</th>
-            <th>Surgery</th>
-            <th>Dissection</th>
-            <th>Laterality</th>
-            <th>Reconstruction</th>
-            <th>Date</th>
-            <th>Status</th>
-            <th>Remarks</th>
-            <th>Delete</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+    <div class="search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+      <label class="sr" for="q">Search cases</label>
+      <input id="q" type="search" placeholder="Search name, reg no or phone" autocomplete="off">
     </div>
-  </div>
-  <div class="modal fade" id="editModal" tabindex="-1">
-    <div class="modal-dialog">
-      <form class="modal-content" id="editForm">
-        <div class="modal-header">
-          <h5 class="modal-title">Edit Appointment</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body row g-3">
-          <input type="hidden" name="rowIndex">
-          <div class="col-md-6">
-            <label class="form-label">Patient Name</label>
-            <input type="text" name="Patient Name" class="form-control" required>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Hospital ID</label>
-            <input type="text" name="Hospital ID" class="form-control" required>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Phone Number</label>
-            <input type="tel" name="Phone Number" class="form-control" required>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Consultant Name</label>
-            <select name="Consultant Name" class="form-select" required>
-              <option value="">Select</option>
-              <option>Dr Kaberi Kakati</option>
-              <option>Dr Anupam Das</option>
-              <option>Dr A. K. Das</option>
-              <option>Dr Tashnin Rahman</option>
-              <option>Dr R.J. Das</option>
-              <option>Dr Kishore Das</option>
-            </select>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Diagnosis</label>
-            <input type="text" name="Diagnosis" class="form-control" required>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Type of Surgery</label>
-            <input type="text" name="Type of Surgery" class="form-control" required>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Neck Dissection Extent</label>
-            <select name="Neck Dissection Extent" class="form-select multiselect" multiple required>
-              <option>SOHND</option>
-              <option>LND</option>
-              <option>MND</option>
-              <option>RND</option>
-              <option>Extended RND</option>
-            </select>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Laterality</label>
-            <select name="Laterality" class="form-select" required>
-              <option value="">Select</option>
-              <option>Right</option>
-              <option>Left</option>
-              <option>Bilateral</option>
-            </select>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Reconstruction</label>
-            <select name="Reconstruction" class="form-select multiselect" multiple>
-              <option>PMMC</option>
-              <option>Submental</option>
-              <option>Infrahyoid</option>
-              <option>Nasolabial</option>
-              <option>Island Nasolabial</option>
-              <option>Forehead Flap</option>
-              <option>BB flap</option>
-              <option>LD flap</option>
-              <option>DP</option>
-              <option>Double flap</option>
-              <option>FRAFF</option>
-              <option>ALT</option>
-              <option>Free Fibula OC flap</option>
-            </select>
-            <input type="text" class="form-control mt-1" name="ReconstructionOther" placeholder="Other reconstruction (type and press Enter)">
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Estimated Duration (hrs)</label>
-            <input type="number" name="Estimated Duration (hrs)" class="form-control" min="1" required>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Appointment Date</label>
-            <input type="date" name="Appointment Date" class="form-control" required>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Status</label>
-            <select name="Status" class="form-select" required>
-              <option>Scheduled</option>
-              <option>Completed</option>
-              <option>Cancelled</option>
-              <option>Rescheduled</option>
-            </select>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Remarks</label>
-            <input type="text" name="Remarks" class="form-control">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-primary">Save Changes</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        </div>
-      </form>
-    </div>
-  </div>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
-  <script>
-    const API_URL = 'https://sheetdb.io/api/v1/q9zf0vky5mqml';
-    let allRows = [];
-    let currentMonth, currentYear;
-    let showCompleted = false;
-    let selectedConsultant = '';
-    let calendar = null;
-    let showAllActive = false;
+  </header>
+  <div class="summary" id="summary"></div>
 
-    function getFormData(form) {
-      const data = {};
-      Array.from(form.elements).forEach(input => {
-        if (input.type === 'select-multiple') {
-          data[input.name] = Array.from(input.selectedOptions).map(opt => opt.value).join(', ');
-        } else if (input.name && input.type !== 'submit' && input.type !== 'button') {
-          data[input.name] = input.value;
-        }
-      });
-      if (form["ReconstructionOther"] && form["ReconstructionOther"].value.trim()) {
-        if (data["Reconstruction"] && data["Reconstruction"].length > 0) {
-          data["Reconstruction"] += ', ' + form["ReconstructionOther"].value.trim();
-        } else {
-          data["Reconstruction"] = form["ReconstructionOther"].value.trim();
-        }
-      }
-      return data;
+  <div class="main">
+    <section class="card" aria-label="Month calendar">
+      <div class="mhead">
+        <h2 id="mtitle">Month</h2>
+        <button class="textbtn" data-act="today">Today</button>
+        <button class="iconbtn" data-act="prev" aria-label="Previous month"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m15 18-6-6 6-6"></path></svg></button>
+        <button class="iconbtn" data-act="next" aria-label="Next month"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"></path></svg></button>
+      </div>
+      <div class="wk" id="wk"></div>
+      <div class="grid" id="grid" style="margin-top:4px"></div>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--drape-wash);box-shadow:inset 0 0 0 1px var(--drape)"></i>OT day</span>
+        <span><i class="sw" style="background:var(--pen)"></i>Case</span>
+        <span><i class="sw" style="background:var(--flap)"></i>Free flap</span>
+        <span><i class="sw" style="background:var(--amber)"></i>Holiday</span>
+      </div>
+    </section>
+
+    <section class="card" id="daypanel" aria-live="polite"></section>
+  </div>
+
+  <section class="card" aria-label="Waitlist">
+    <div class="wl-head">
+      <div><h2>Waitlist</h2><p>Cases awaiting a date</p></div>
+      <button class="sm" data-act="addwait" id="addwait">Add to waitlist</button>
+    </div>
+    <div id="wl"></div>
+  </section>
+
+  <footer class="foot">
+    <div class="otdays" id="otdays"></div>
+    <div class="sync">
+      <div class="mode" id="mode"><i class="dot"></i><span>Opening the diary…</span></div>
+      <button class="sm" data-act="sheetcfg" id="sheetbtn">Connect Google Sheet</button>
+    </div>
+  </footer>
+</div>
+
+<div class="scrim" id="scrim" hidden>
+  <form class="sheet" id="form" novalidate>
+    <h2 id="ftitle">Book case</h2>
+    <div class="scan" id="scanbox">
+      <button type="button" class="scanbtn" id="scanbtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"></path><circle cx="12" cy="12" r="3.2"></circle></svg><span>Scan registration slip</span></button>
+      <img class="scanthumb" id="scanthumb" alt="Photo being read" hidden>
+      <div class="scantext">
+        <p class="scanmsg" id="scanmsg"></p>
+        <div class="scanlinks"><button type="button" class="linkbtn" id="scanpick">Choose a saved photo</button><button type="button" class="linkbtn" id="scankeylink">API key</button></div>
+      </div>
+      <div class="scankey" id="scankey" hidden>
+        <label for="s-key">Claude API key (saved on this device only)</label>
+        <div class="row"><input id="s-key" class="mono" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-…"><button type="button" class="sm" id="s-keysave">Save</button></div>
+      </div>
+      <input type="file" id="scancam" accept="image/*" capture="environment" hidden>
+      <input type="file" id="scanfile" accept="image/*" hidden>
+    </div>
+    <div class="fgrid">
+      <div class="f h4"><label for="f-name">Patient name <span style="font-weight:400">(optional)</span></label><input id="f-name" required autocomplete="off"></div>
+      <div class="f h2"><label for="f-age">Age / Sex</label>
+        <div style="display:flex;gap:6px"><input id="f-age" inputmode="numeric" placeholder="Age" style="min-width:0"><select id="f-sex" aria-label="Sex" style="width:62px;flex:none"><option value="">–</option><option>M</option><option>F</option><option>O</option></select></div></div>
+      <div class="f h3"><label for="f-reg">Reg no</label><input id="f-reg" class="mono" placeholder="17F2026/00xxxx" autocomplete="off"></div>
+      <div class="f h3"><label for="f-ph1">Phone</label><input id="f-ph1" class="mono" inputmode="tel" placeholder="Mobile"></div>
+      <div class="f h3"><label for="f-ph2">Second phone</label><input id="f-ph2" class="mono" inputmode="tel" placeholder="Optional"></div>
+      <div class="f h3"><label for="f-flap">Reconstruction</label>
+        <select id="f-flap"><option>None</option><option>PMMC</option><option>Other pedicled</option><option>ALT</option><option>RFFF</option><option>FFOCF</option><option>Other free</option></select></div>
+      <div class="f"><label for="f-proc">Procedure</label><input id="f-proc" placeholder="e.g. TL + ND + PC" autocomplete="off">
+        <div class="chips" id="pchips"></div></div>
+      <div class="f h3"><label for="f-date">OT date</label><input id="f-date" type="date"><span class="hint" id="f-hint"></span></div>
+      <div class="f h3"><span class="lbl">&nbsp;</span><label class="chk"><input type="checkbox" id="f-wait"> Waitlist, no date yet</label></div>
+      <div class="f h3"><label for="f-status">Status</label>
+        <select id="f-status"></select></div>
+      <div class="f"><label for="f-notes">Notes</label><textarea id="f-notes" placeholder="Work-up, PAC, imaging, anything the team should know"></textarea>
+        <div class="chips" id="nchips"></div></div>
+    </div>
+    <div class="sactions">
+      <button type="button" class="danger" id="f-del" hidden>Delete</button>
+      <span class="err" id="f-err"></span>
+      <span class="grow"></span>
+      <button type="button" class="textbtn" data-act="close">Cancel</button>
+      <button type="button" class="primary" id="f-save">Save</button>
+    </div>
+  </form>
+</div>
+
+<div class="scrim" id="cscrim" hidden>
+  <div class="sheet">
+    <h2>Copy this list</h2>
+    <p style="margin:-6px 0 10px;color:var(--ink-2);font-size:14px">Your browser blocked automatic copying. The text is selected below; copy it from here.</p>
+    <label class="sr" for="copybox">List text</label>
+    <textarea class="copybox" id="copybox" readonly></textarea>
+    <div class="sactions"><span class="grow"></span><button type="button" class="primary" data-act="cclose">Done</button></div>
+  </div>
+</div>
+
+<div class="scrim" id="gscrim" hidden>
+  <form class="sheet" id="gform" novalidate>
+    <h2>Google Sheet</h2>
+    <p class="lead">Bookings are kept in the department's Google Sheet, so everyone who has the link and the access key sees the same diary.</p>
+    <div class="fgrid">
+      <div class="f"><label for="g-url">Web app URL</label><input id="g-url" class="mono" inputmode="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" spellcheck="false"></div>
+      <div class="f h3"><label for="g-key">Access key</label><input id="g-key" class="mono" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="From the setup log"></div>
+      <div class="f h3"><label for="g-by">Your name or initials</label><input id="g-by" autocomplete="off" placeholder="Shown as Updated by"></div>
+    </div>
+    <p class="gmsg" id="g-msg"></p>
+    <div class="sactions">
+      <button type="button" class="danger" id="g-off" hidden>Disconnect</button>
+      <span class="grow"></span>
+      <button type="button" class="textbtn" data-act="gclose">Cancel</button>
+      <button type="button" class="primary" id="g-save">Connect</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+"use strict";
+var WD=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+var WDL=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+var MON=["January","February","March","April","May","June","July","August","September","October","November","December"];
+var FREE={"ALT":1,"RFFF":1,"FFOCF":1,"Other free":1};
+var PED={"PMMC":1,"Other pedicled":1};
+var STATUS=[["booked","Booked"],["workup","Work-up pending"],["ready","Ready for OT"],["done","Operated"],["postponed","Postponed"],["cancelled","Cancelled"],["outside","Operated outside"]];
+var STL={};STATUS.forEach(function(s){STL[s[0]]=s[1]});
+var OFF={"postponed":1,"cancelled":1};
+var CLOSED={"done":1,"cancelled":1,"outside":1};
+var FIXED_HOL={"01-26":"Republic Day","08-15":"Independence Day","10-02":"Gandhi Jayanti","12-02":"Asom Divas","12-25":"Christmas"};
+var DATE_HOL={"2026-11-24":"Guru Nanak's Birthday"};
+var PROC_CHIPS=["TL","TT","HT","CCND","ND","B/L ND","WLE","SM","NTG","BCR","Sup. parotidectomy","Parotidectomy","PC","TEP","Trach"];
+var NOTE_CHIPS=["Post NACT","Check MRI","PAC pending","Biopsy awaited","Consent done","Blood arranged"];
+
+function pad(n){return String(n).padStart(2,"0")}
+function ymd(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+function parse(s){var a=s.split("-").map(Number);return new Date(a[0],a[1]-1,a[2])}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]})}
+function hol(s){return DATE_HOL[s]||FIXED_HOL[s.slice(5)]||""}
+function $(id){return document.getElementById(id)}
+
+var today=new Date(); today.setHours(0,0,0,0);
+var TODAY=ymd(today);
+
+var S={sync:"",syncedAt:0,lastSnap:null,cases:[],otDays:[3,4],y:today.getFullYear(),m:today.getMonth(),sel:TODAY,q:"",mode:"connecting",loaded:false,canWrite:true,editing:null};
+
+/* ---------- storage ---------- */
+/* Optional: paste the Apps Script Web app URL (ends in /exec) between the quotes, so every phone
+   finds the sheet without typing it. The access key is never kept in this file: each person enters it once. */
+var SHEET_URL="https://script.google.com/macros/s/AKfycbxUjEzr9WtQFC-raCAsbrhdTT9FJvwQynfWxodHkeGEsTdO7ck0-WpoADehmK1EIaHw/exec";
+
+var LKEY="bbci_ot_appointments_v1",CKEY="bbci_ot_sheet",CACHE="bbci_ot_sheet_cache";
+function lsGet(k){try{return JSON.parse(localStorage.getItem(k)||"null")}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
+function lsDel(k){try{localStorage.removeItem(k)}catch(e){}}
+function sheetCfg(){var o=lsGet(CKEY)||{};if(!o.url&&SHEET_URL)o.url=SHEET_URL;return o}
+function norm(c){c=Object.assign({},c);c.order=Number(c.order)||0;c.createdAt=Number(c.createdAt)||0;c.updatedAt=Number(c.updatedAt)||0;return c}
+function upsertLocal(rec){var i=S.cases.findIndex(function(x){return x.id===rec.id});if(i>=0)S.cases[i]=rec;else S.cases.push(rec)}
+
+var Store={
+  cfg:null,inflight:0,timer:null,
+  init:function(){
+    var cfg=sheetCfg();
+    if(cfg.url&&cfg.key){this.startSheet(cfg);return}
+    this.cfg=null;S.mode="local";S.sync="";
+    var d=lsGet(LKEY);S.cases=d?(d.cases||[]).map(norm):[];if(d&&Array.isArray(d.otDays))S.otDays=d.otDays;
+    S.loaded=true;render();
+    if(SHEET_URL)openG();
+  },
+  startSheet:function(cfg,snap){
+    var self=this;this.cfg=cfg;S.mode="sheet";S.sync="loading";
+    var c=lsGet(CACHE);
+    if(snap)applySnap(snap,Date.now());
+    else if(c&&c.url===cfg.url&&c.snap)applySnap(c.snap,c.at,true);
+    else{S.loaded=false;S.cases=[];render()}
+    if(!snap)this.pull();
+    if(!this.timer){
+      this.timer=setInterval(function(){if(document.visibilityState==="visible")self.pull()},30000);
+      document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")self.pull()});
     }
-    function toYMD(date) {
-      if (!date) return { year: 0, month: 0, day: 0 };
-      if (typeof date === 'string') {
-        const [y, m, d] = date.split('-');
-        return { year: Number(y), month: Number(m), day: Number(d) };
-      }
-      return { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() };
-    }
-    function monthName(num) {
-      return ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][num-1];
-    }
-    function renderCalendar() {
-      var calendarEl = document.getElementById('calendar');
-      if (!calendarEl) return;
-      calendarEl.innerHTML = "";
-      let events = allRows.filter(row => {
-        let { year, month } = toYMD(row["Appointment Date"]);
-        let match = (year === currentYear && month === currentMonth);
-        if (!showCompleted) match = match && (row["Status"] !== "Completed");
-        if (selectedConsultant) match = match && (row["Consultant Name"] === selectedConsultant);
-        return match;
-      }).map(row => ({
-        title: row["Patient Name"] + (row["Type of Surgery"] ? " - " + row["Type of Surgery"] : ""),
-        start: row["Appointment Date"],
-        extendedProps: { rawRow: row }
-      }));
-      calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        height: 520,
-        initialDate: new Date(currentYear, currentMonth-1, 1),
-        events: events,
-        headerToolbar: { left: '', center: 'title', right: '' },
-        eventClick: function(info) {
-          let row = info.event.extendedProps.rawRow;
-          let idx = allRows.indexOf(row);
-          if (idx >= 0) openEditModal(row, idx+2);
-        }
-      });
-      calendar.render();
-    }
-    function updateCalendarMonth() {
-      if (calendar) calendar.gotoDate(new Date(currentYear, currentMonth-1, 1));
-    }
-    document.getElementById('monthSelect').onchange = function(e){
-      showAllActive = false;
-      const [y, m] = this.value.split('-');
-      currentYear = Number(y); currentMonth = Number(m);
-      renderTable();
-      renderCalendar();
-      updateCalendarMonth();
-    };
-    document.getElementById('prevMonthBtn').onclick = function(){
-      showAllActive = false;
-      if (!currentMonth || !currentYear) return;
-      if (currentMonth === 1) { currentMonth = 12; currentYear--; }
-      else currentMonth--;
-      document.getElementById('monthSelect').value = `${currentYear}-${currentMonth}`;
-      renderTable();
-      renderCalendar();
-      updateCalendarMonth();
-    };
-    document.getElementById('nextMonthBtn').onclick = function(){
-      showAllActive = false;
-      if (!currentMonth || !currentYear) return;
-      if (currentMonth === 12) { currentMonth = 1; currentYear++; }
-      else currentMonth++;
-      document.getElementById('monthSelect').value = `${currentYear}-${currentMonth}`;
-      renderTable();
-      renderCalendar();
-      updateCalendarMonth();
-    };
-    document.getElementById('toggleCompleted').onclick = function(){
-      showAllActive = false;
-      showCompleted = !showCompleted;
-      this.textContent = showCompleted ? "Hide Completed Cases" : "Show Completed Cases";
-      renderTable();
-      renderCalendar();
-      updateCalendarMonth();
-    };
-    document.getElementById('consultantSelect').onchange = function() {
-      selectedConsultant = this.value;
-      renderTable();
-      renderCalendar();
-      updateCalendarMonth();
-    };
-    document.getElementById('showAllBtn').onclick = function(){
-      showAllActive = true;
-      renderTable();
-    };
-    async function loadAppointments() {
-      const tbody = document.getElementById('apptTable').querySelector('tbody');
-      tbody.innerHTML = `<tr><td colspan="14">Loading...</td></tr>`;
-      try {
-        let resp = await fetch(API_URL);
-        let result = await resp.json();
-        allRows = result.sort((a, b) => {
-          let dA = toYMD(a["Appointment Date"]);
-          let dB = toYMD(b["Appointment Date"]);
-          return new Date(dA.year, dA.month-1, dA.day) - new Date(dB.year, dB.month-1, dB.day);
+  },
+  listUrl:function(cfg){var u=cfg.url;return u+(u.indexOf("?")>=0?"&":"?")+"action=list&key="+encodeURIComponent(cfg.key)+"&t="+Date.now()},
+  pull:function(){
+    var self=this;if(S.mode!=="sheet"||this.inflight)return Promise.resolve();
+    return fetch(this.listUrl(this.cfg),{cache:"no-store"}).then(function(r){return r.json()}).then(function(d){
+      if(self.inflight||S.mode!=="sheet")return;
+      if(!d||!d.ok){sheetFail(d&&d.error,false);return}
+      applySnap(d,Date.now());
+    }).catch(function(){if(S.mode==="sheet"){S.sync="offline";S.loaded=true;render()}});
+  },
+  post:function(payload){
+    var self=this;payload.key=this.cfg.key;payload.by=this.cfg.by||"";
+    this.inflight++;S.sync="saving";renderFoot();
+    return fetch(this.cfg.url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)})
+      .then(function(r){return r.json()})
+      .then(function(d){if(!d||!d.ok)throw {code:(d&&d.error)||"server"};return d})
+      .then(function(d){self.inflight--;if(!self.inflight)applySnap(d,Date.now())},
+        function(e){
+          self.inflight--;
+          if(!self.inflight&&S.lastSnap){S.cases=(S.lastSnap.cases||[]).map(norm);if(Array.isArray(S.lastSnap.otDays))S.otDays=S.lastSnap.otDays.map(Number)}
+          sheetFail(e&&e.code?e.code:"network",true);
+          if(!self.inflight)self.pull();
+          throw e;
         });
-        buildMonthDropdown();
-        renderTable();
-        renderCalendar();
-      } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="14">Error loading appointments</td></tr>`;
-      }
-    }
-    function buildMonthDropdown() {
-      const months = {};
-      allRows.forEach(row => {
-        let { year, month } = toYMD(row["Appointment Date"]);
-        if (year > 2000 && month > 0) months[`${year}-${month}`] = true;
-      });
-      let monthList = Object.keys(months).sort((a, b) => {
-        const [ay, am] = a.split('-'); const [by, bm] = b.split('-');
-        return (Number(ay)*12 + Number(am)) - (Number(by)*12 + Number(bm));
-      });
-      if (!currentMonth || !currentYear) {
-        if (monthList.length) {
-          const [y, m] = monthList[0].split('-');
-          currentYear = Number(y); currentMonth = Number(m);
-        } else {
-          let today = new Date();
-          currentMonth = today.getMonth() + 1;
-          currentYear = today.getFullYear();
-        }
-      }
-      let sel = document.getElementById('monthSelect');
-      sel.innerHTML = '';
-      monthList.forEach(key => {
-        const [y, m] = key.split('-');
-        let opt = document.createElement('option');
-        opt.value = key;
-        opt.text = `${monthName(Number(m))} ${y}`;
-        if (Number(y) === currentYear && Number(m) === currentMonth) opt.selected = true;
-        sel.appendChild(opt);
-      });
-    }
-    function renderTable() {
-      const tbody = document.getElementById('apptTable').querySelector('tbody');
-      let rows = allRows.filter(row => {
-        // Show all: ignore month/year, but honor filters
-        let match = true;
-        if (!showAllActive) {
-          let { year, month } = toYMD(row["Appointment Date"]);
-          match = (year === currentYear && month === currentMonth);
-        }
-        if (!showCompleted) match = match && (row["Status"] !== "Completed");
-        if (selectedConsultant) match = match && (row["Consultant Name"] === selectedConsultant);
-        return match;
-      });
-      tbody.innerHTML = '';
-      if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="14" class="text-secondary">No cases found.</td></tr>';
-        return;
-      }
-      rows.forEach((row, idx) => {
-        const tr = document.createElement('tr');
-        tr.setAttribute('data-row', idx+2);
-        let status = (row["Status"]||"").toLowerCase();
-        if (status === "completed") tr.classList.add("status-completed");
-        else if (status === "rescheduled") tr.classList.add("status-rescheduled");
-        else if (status === "cancelled") tr.classList.add("status-cancelled");
-        else tr.classList.add("status-scheduled");
-        tr.innerHTML = `
-          <td>${idx+1}</td>
-          <td>${row["Consultant Name"]||""}</td>
-          <td>${row["Patient Name"]||""}</td>
-          <td>${row["Hospital ID"]||""}</td>
-          <td>${row["Phone Number"]||""}</td>
-          <td>${row["Diagnosis"]||""}</td>
-          <td>${row["Type of Surgery"]||""}</td>
-          <td>${row["Neck Dissection Extent"]||""}</td>
-          <td>${row["Laterality"]||""}</td>
-          <td>${row["Reconstruction"]||""}</td>
-          <td>${row["Appointment Date"]||""}</td>
-          <td>${row["Status"]||""}</td>
-          <td>${row["Remarks"]||""}</td>
-          <td><span class="delete-btn" title="Delete" onclick="deleteRow('${row["Hospital ID"]}')">&#128465;</span></td>
-        `;
-        tr.ondblclick = () => openEditModal(row, allRows.indexOf(row)+2);
-        tbody.appendChild(tr);
-      });
-    }
-    window.deleteRow = async function(hospId) {
-      if (!confirm("Are you sure you want to delete this appointment?")) return;
-      try {
-        let resp = await fetch(`${API_URL}/Hospital ID/${encodeURIComponent(hospId)}`, {
-          method: "DELETE"
-        });
-        if (resp.ok) {
-          await loadAppointments();
-        } else {
-          alert("Error deleting appointment.");
-        }
-      } catch (err) {
-        alert("Network error: " + err);
-      }
-    }
-    let editModal = new bootstrap.Modal(document.getElementById('editModal'));
-    function openEditModal(row, rowIndex) {
-      const form = document.getElementById('editForm');
-      form["rowIndex"].value = rowIndex;
-      for (let key of ["Patient Name","Hospital ID","Phone Number","Diagnosis","Type of Surgery","Estimated Duration (hrs)","Appointment Date","Remarks","Status"]) {
-        form[key].value = row[key]||"";
-      }
-      form["Consultant Name"].value = row["Consultant Name"]||"";
-      Array.from(form["Neck Dissection Extent"].options).forEach(opt => {
-        opt.selected = (row["Neck Dissection Extent"]||"").split(",").map(x=>x.trim()).includes(opt.value);
-      });
-      form["Laterality"].value = row["Laterality"]||"";
-      Array.from(form["Reconstruction"].options).forEach(opt => {
-        opt.selected = (row["Reconstruction"]||"").split(",").map(x=>x.trim()).includes(opt.value);
-      });
-      if (form["ReconstructionOther"]) {
-        let otherRecon = (row["Reconstruction"]||"").split(',').map(x=>x.trim()).filter(val =>
-          !Array.from(form["Reconstruction"].options).map(opt => opt.value).includes(val)
-        );
-        form["ReconstructionOther"].value = otherRecon.join(', ');
-      }
-      editModal.show();
-    }
-    document.getElementById('editForm').onsubmit = async function(e){
-      e.preventDefault();
-      const rowIndex = e.target["rowIndex"].value;
-      const data = getFormData(e.target);
-      delete data["rowIndex"];
-      try {
-        let resp = await fetch(`${API_URL}/Hospital ID/${encodeURIComponent(data["Hospital ID"])}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ data })
-        });
-        if(resp.ok){
-          await loadAppointments();
-          editModal.hide();
-        }
-      } catch (err) {
-        alert("Error saving changes: " + err);
-      }
+  },
+  persistLocal:function(){if(!lsSet(LKEY,{cases:S.cases,otDays:S.otDays}))toast("Couldn't save on this device. Storage may be full or blocked.")},
+  newId:function(){return "c"+Date.now().toString(36)+Math.random().toString(36).slice(2,7)},
+  save:function(c){
+    var rec=Object.assign({},c,{updatedAt:Date.now()});
+    upsertLocal(rec);render();
+    if(S.mode==="sheet")return this.post({action:"save",case:rec});
+    this.persistLocal();return Promise.resolve();
+  },
+  patch:function(id,fields){return this.patchMany([{id:id,fields:fields}])},
+  patchMany:function(items){
+    var now=Date.now();
+    items.forEach(function(it){var c=S.cases.find(function(x){return x.id===it.id});if(c)Object.assign(c,it.fields,{updatedAt:now})});
+    render();
+    if(S.mode==="sheet")return this.post(items.length===1?{action:"patch",id:items[0].id,fields:items[0].fields}:{action:"patchMany",items:items});
+    this.persistLocal();return Promise.resolve();
+  },
+  remove:function(id){
+    S.cases=S.cases.filter(function(x){return x.id!==id});render();
+    if(S.mode==="sheet")return this.post({action:"delete",id:id});
+    this.persistLocal();return Promise.resolve();
+  },
+  setOtDays:function(days){
+    S.otDays=days;render();
+    if(S.mode==="sheet")return this.post({action:"setOtDays",days:days});
+    this.persistLocal();return Promise.resolve();
+  }
+};
+function applySnap(d,at,fromCache){
+  S.lastSnap={cases:d.cases||[],otDays:d.otDays};
+  S.cases=(d.cases||[]).map(norm);
+  if(Array.isArray(d.otDays))S.otDays=d.otDays.map(Number);
+  S.loaded=true;S.sync=fromCache?"cached":"ok";S.syncedAt=at||Date.now();
+  if(!fromCache&&Store.cfg)lsSet(CACHE,{url:Store.cfg.url,at:S.syncedAt,snap:S.lastSnap});
+  var a=document.activeElement;
+  if(a&&a.getAttribute&&a.getAttribute("data-ch")){renderSummary();renderCal();renderFoot();return}
+  render();
+}
+function sheetFail(code,isWrite){
+  if(code==="bad_key"){S.sync="badkey";toast("The sheet rejected the access key. Open Sheet settings and enter it again.")}
+  else if(code==="busy"){if(S.sync==="saving")S.sync="ok";toast("The sheet is busy. Try again in a moment.")}
+  else{S.sync="offline";if(isWrite)toast("Couldn't reach the sheet. That change wasn't saved.")}
+  S.loaded=true;render();
+}
+function writable(){return S.canWrite&&(S.mode==="local"||(S.mode==="sheet"&&S.sync!=="badkey"))}
+
+/* ---------- derived ---------- */
+function isOT(s){return S.otDays.indexOf(parse(s).getDay())>=0}
+function sortCases(a,b){return (a.order||0)-(b.order||0)||(a.createdAt||0)-(b.createdAt||0)}
+function dayCases(s){return S.cases.filter(function(c){return c.date===s}).sort(sortCases)}
+function activeOf(list){return list.filter(function(c){return !OFF[c.status]})}
+function label(c){return c.name||c.reg||"Unnamed"}
+function shortLabel(c){if(!c.name){var r=String(c.reg||"");return r?r.slice(-4):"?"}var p=String(c.name).trim().split(/\s+/);return p[0]&&p[0].length<=2&&p[1]?p[0]+" "+p[1]:p[0]}
+function agesex(c){var a=c.age?String(c.age):"";var s=c.sex||"";return a&&s?a+" "+s:(a||s)}
+function phones(c){return [c.ph1,c.ph2].filter(function(p){return p&&String(p).trim()})}
+function fmtDay(s){var d=parse(s);return WDL[d.getDay()]+", "+d.getDate()+" "+MON[d.getMonth()]}
+function fmtShort(s){var d=parse(s);return WD[d.getDay()]+" "+d.getDate()+" "+MON[d.getMonth()].slice(0,3)+" "+d.getFullYear()}
+function nextOT(from){var d=parse(from);for(var i=0;i<21;i++){var s=ymd(d);if(isOT(s)&&!hol(s))return s;d.setDate(d.getDate()+1)}return from}
+
+/* ---------- render ---------- */
+function render(){renderSummary();renderCal();renderPanel();renderWait();renderFoot()}
+
+function renderSummary(){
+  var pre=S.y+"-"+pad(S.m+1)+"-";
+  var mc=S.cases.filter(function(c){return c.date&&c.date.indexOf(pre)===0&&!OFF[c.status]});
+  var fl=mc.filter(function(c){return FREE[c.flap]}).length;
+  var dn=mc.filter(function(c){return c.status==="done"}).length;
+  var wl=waitList().length;
+  var mname=MON[S.m];
+  $("summary").innerHTML=!S.loaded?"<span>Opening the diary…</span>":
+    "<span><b>"+mc.length+"</b> booked in "+mname+"</span><span class=\"fl\"><b>"+fl+"</b> free flap"+(fl===1?"":"s")+"</span><span><b>"+dn+"</b> operated</span><span><b>"+wl+"</b> on waitlist</span>";
+}
+
+function renderCal(){
+  $("mtitle").textContent=MON[S.m]+" "+S.y;
+  $("wk").innerHTML=WD.map(function(w,i){return "<div class=\""+(S.otDays.indexOf(i)>=0?"ot":"")+"\">"+w+"</div>"}).join("");
+  var first=new Date(S.y,S.m,1),start=first.getDay(),n=new Date(S.y,S.m+1,0).getDate(),h="";
+  for(var i=0;i<start;i++)h+="<div class=\"cell blank\"></div>";
+  for(var d=1;d<=n;d++){
+    var s=S.y+"-"+pad(S.m+1)+"-"+pad(d);
+    var list=activeOf(dayCases(s)),ho=hol(s);
+    var cls="cell"+(isOT(s)&&!ho?" ot":"")+(s===S.sel?" sel":"")+(s===TODAY?" today":"")+(s<TODAY?" past":"");
+    var minis=list.slice(0,3).map(function(c){
+      return "<span class=\"mi"+(FREE[c.flap]?" free":"")+(CLOSED[c.status]?" done":"")+"\">"+esc(shortLabel(c))+"</span>"}).join("");
+    if(list.length>3)minis+="<span class=\"more\">+"+(list.length-3)+"</span>";
+    var lab=fmtDay(s)+(list.length?", "+list.length+" case"+(list.length>1?"s":""):"")+(ho?", "+ho:"");
+    h+="<button class=\""+cls+"\" data-act=\"pick\" data-d=\""+s+"\" aria-label=\""+esc(lab)+"\""+(s===S.sel?" aria-current=\"date\"":"")+">"+
+      "<span class=\"dnum\">"+d+"</span>"+(ho?"<span class=\"hol\">"+esc(ho)+"</span>":"")+"<span class=\"minis\">"+minis+"</span></button>";
+  }
+  $("grid").innerHTML=h;
+}
+
+function caseCard(c,num,opts){
+  opts=opts||{};
+  var off=!!OFF[c.status];
+  var st=c.status||"booked";
+  var fl=c.flap&&c.flap!=="None"?" <span class=\"flap "+(FREE[c.flap]?"free":"ped")+"\">"+esc(c.flap)+"</span>":"";
+  var ph=phones(c).map(function(p){var t=String(p).replace(/[^\d+]/g,"");return "<a class=\"mono\" href=\"tel:"+esc(t)+"\">"+esc(p)+"</a><button class=\"linkbtn\" data-act=\"copy\" data-text=\""+esc(p)+"\" aria-label=\"Copy "+esc(p)+"\">Copy</button>"}).join("");
+  var w=writable();
+  var sel="<label class=\"sr\" for=\"st-"+c.id+"\">Status</label><select class=\"pill st-"+st+"\" id=\"st-"+c.id+"\" data-ch=\"status\" data-id=\""+c.id+"\""+(w?"":" disabled")+">"+
+    STATUS.map(function(s){return "<option value=\""+s[0]+"\""+(s[0]===st?" selected":"")+">"+s[1]+"</option>"}).join("")+"</select>";
+  var ctl="";
+  if(w){
+    if(opts.reorder)ctl+="<button class=\"sm\" data-act=\"up\" data-id=\""+c.id+"\" aria-label=\"Move up\""+(opts.isFirst?" disabled":"")+">↑</button><button class=\"sm\" data-act=\"down\" data-id=\""+c.id+"\" aria-label=\"Move down\""+(opts.isLast?" disabled":"")+">↓</button>";
+    if(opts.schedule)ctl+="<button class=\"sm\" data-act=\"edit\" data-id=\""+c.id+"\" data-focus=\"date\">Give a date</button>";
+    ctl+="<button class=\"sm\" data-act=\"edit\" data-id=\""+c.id+"\">Edit</button>";
+  }
+  var ord=opts.noNum?"":"<div class=\"ord\" aria-label=\""+(num?"Case "+num:"Off the list")+"\">"+(num||"–")+"</div>";
+  return "<article class=\"case"+(off?" off":"")+"\">"+ord+"<div style=\"min-width:0\">"+
+    "<div class=\"crow\"><h3 class=\"pname"+(c.name?"":" mono")+"\">"+esc(label(c))+"</h3>"+(agesex(c)?"<span class=\"agesex\">"+esc(agesex(c))+"</span>":"")+"</div>"+
+    (c.reg&&c.name?"<div class=\"reg\"><span class=\"mono\">"+esc(c.reg)+"</span> <button class=\"linkbtn\" data-act=\"copy\" data-text=\""+esc(c.reg)+"\" aria-label=\"Copy reg no\">Copy</button></div>":"")+
+    "<p class=\"proc\">"+(c.proc?esc(c.proc):"<span style=\"color:var(--ink-2);font-weight:400\">Procedure not entered</span>")+fl+"</p>"+
+    (ph?"<div class=\"phones\">"+ph+"</div>":"")+
+    (c.notes?"<p class=\"notes\">"+esc(c.notes)+"</p>":"")+
+    "<div class=\"cfoot\">"+sel+"<span class=\"grow\"></span>"+ctl+"</div></div></article>";
+}
+
+function renderPanel(){
+  var p=$("daypanel");
+  if(S.q.trim()){p.innerHTML=renderSearch();return}
+  var s=S.sel,ho=hol(s),ot=isOT(s);
+  var all=dayCases(s),act=activeOf(all),off=all.filter(function(c){return OFF[c.status]});
+  var nf=act.filter(function(c){return FREE[c.flap]}).length;
+  var tags="";
+  if(ho)tags+="<span class=\"tag hol\">"+esc(ho)+"</span>";
+  tags+=ot?"<span class=\"tag ot\">OT day</span>":"<span class=\"tag\">Not a regular OT day</span>";
+  if(s===TODAY)tags+="<span class=\"tag\">Today</span>";
+  if(nf>1)tags+="<span class=\"tag warn\">"+nf+" free flaps on this list</span>";
+  var w=writable();
+  var h="<div class=\"dhead\"><div><h2>"+fmtDay(s)+"</h2><div class=\"tags\">"+tags+"</div></div><div class=\"dactions\">"+
+    (act.length?"<button class=\"sm\" data-act=\"copylist\">Copy OT list</button>":"")+
+    (w?"<button class=\"primary\" data-act=\"book\">Book case</button>":"")+"</div></div>";
+  if(!S.loaded){h+="<div class=\"empty\"><b>Opening the diary…</b>Booked cases will appear here.</div>"}
+  else if(!act.length){
+    h+="<div class=\"empty\"><b>No cases booked for this day.</b>"+(w?(ot?"Tap Book case to add the first patient. Cases are numbered in OT order.":"Pick a highlighted OT day, or book here for an extra list."):"Nothing on the list yet.")+"</div>";
+  } else {
+    h+="<div class=\"list\">"+act.map(function(c,i){return caseCard(c,i+1,{reorder:true,isFirst:i===0,isLast:i===act.length-1})}).join("")+"</div>";
+  }
+  if(off.length){h+="<p class=\"subhead\">Off this list</p><div class=\"list\">"+off.map(function(c){return caseCard(c,0,{})}).join("")+"</div>"}
+  p.innerHTML=h;
+}
+
+function renderSearch(){
+  var q=S.q.trim().toLowerCase(),qd=q.replace(/\D/g,"");
+  var hits=S.cases.filter(function(c){
+    var t=[c.name,c.reg,c.proc,c.notes].join(" ").toLowerCase();
+    if(t.indexOf(q)>=0)return true;
+    if(qd.length>=3){var p=phones(c).join(" ").replace(/\D/g," ");return p.indexOf(qd)>=0||String(c.reg||"").replace(/\D/g,"").indexOf(qd)>=0}
+    return false;
+  }).sort(function(a,b){return (b.date||"9999")<(a.date||"9999")?1:-1});
+  var h="<div class=\"dhead\"><div><h2>Search</h2><div class=\"tags\"><span class=\"tag\">"+hits.length+" match"+(hits.length===1?"":"es")+"</span></div></div><div class=\"dactions\"><button class=\"sm\" data-act=\"clearq\">Clear</button></div></div>";
+  if(!hits.length)return h+"<div class=\"empty\"><b>No case matches “"+esc(S.q.trim())+"”.</b>Try a surname, the last digits of a reg no, or a phone number.</div>";
+  return h+"<div class=\"res\">"+hits.map(function(c){
+    var when=c.date?"<b>"+esc(fmtShort(c.date).replace(/ \d{4}$/,""))+"</b>"+parse(c.date).getFullYear():"<b>Waitlist</b>no date";
+    return "<button class=\"ritem\" data-act=\"jump\" data-id=\""+c.id+"\"><span class=\"rdate\">"+when+"</span><span style=\"min-width:0\"><b>"+esc(label(c))+"</b> <span class=\"mono\" style=\"color:var(--ink-2);font-size:13px\">"+esc(c.reg||"")+"</span><br><span style=\"color:var(--pen);font-weight:700\">"+esc(c.proc||"")+"</span>"+(c.flap&&c.flap!=="None"?" <span class=\"flap "+(FREE[c.flap]?"free":"ped")+"\">"+esc(c.flap)+"</span>":"")+" · <span style=\"color:var(--ink-2)\">"+esc(STL[c.status||"booked"])+"</span></span></button>";
+  }).join("")+"</div>";
+}
+
+function waitList(){return S.cases.filter(function(c){return !c.date&&!CLOSED[c.status]}).sort(function(a,b){return (a.createdAt||0)-(b.createdAt||0)})}
+function renderWait(){
+  $("addwait").hidden=!writable();
+  var l=waitList();
+  $("wl").innerHTML=!S.loaded?"":l.length?"<div class=\"wl\">"+l.map(function(c){return caseCard(c,0,{noNum:true,schedule:true})}).join("")+"</div>":
+    "<div class=\"empty\"><b>No one is waiting for a date.</b>Patients still in work-up, or awaiting NACT, can wait here until they're ready to book.</div>";
+}
+
+function renderFoot(){
+  var w=writable();
+  $("otdays").innerHTML="<span>OT days</span>"+WD.map(function(d,i){var on=S.otDays.indexOf(i)>=0;return "<button data-act=\"otday\" data-i=\""+i+"\" aria-pressed=\""+on+"\""+(w?"":" disabled")+">"+d+"</button>"}).join("");
+  var t="",cls="",tm=S.syncedAt?new Date(S.syncedAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):"";
+  if(S.mode==="local"){t="Saved on this device only";cls="warn"}
+  else if(S.mode==="sheet"){
+    t={loading:"Google Sheet · connecting…",cached:"Google Sheet · copy from "+tm+", refreshing…",ok:"Google Sheet · up to date "+tm,saving:"Google Sheet · saving…",
+       offline:"Can't reach the sheet"+(tm?" · showing copy from "+tm:""),badkey:"Google Sheet · access key rejected"}[S.sync]||"Google Sheet";
+    cls=(S.sync==="offline"||S.sync==="badkey")?"warn":(S.sync==="ok"?"ok":"");
+  } else t="Opening the diary…";
+  var m=$("mode");m.className="mode "+cls;m.querySelector("span").textContent=t;
+  var b=$("sheetbtn");b.textContent=S.mode==="sheet"?"Sheet settings":"Connect Google Sheet";b.className="sm"+(S.mode==="sheet"?"":" cta");
+}
+
+/* ---------- sheet connection ---------- */
+function gmsg(t,k){var m=$("g-msg");m.textContent=t;m.className="gmsg"+(k?" "+k:"")}
+function openG(){
+  var c=sheetCfg();$("g-url").value=c.url||"";$("g-key").value=c.key||"";$("g-by").value=c.by||"";
+  $("g-off").hidden=S.mode!=="sheet";$("g-off").classList.remove("armed");$("g-off").textContent="Disconnect";
+  gmsg(S.mode==="sheet"?"Connected. Changes here go straight to the sheet.":"");
+  $("gscrim").hidden=false;setTimeout(function(){(c.url?$("g-key"):$("g-url")).focus()},30);
+}
+function closeG(){$("gscrim").hidden=true}
+function gfail(cfg,lead){
+  var m=$("g-msg");m.className="gmsg err";m.textContent="";
+  var p=document.createElement("div");p.textContent=lead;m.appendChild(p);
+  var ul=document.createElement("ul");
+  ["In Apps Script: Deploy → Manage deployments. \"Who has access\" must be Anyone (not Only myself).",
+   "The URL must be the Web app URL ending in /exec, copied from that deployment.",
+   "Open this file in Chrome or Edge directly, not inside a preview window."].forEach(function(t){var li=document.createElement("li");li.textContent=t;ul.appendChild(li)});
+  m.appendChild(ul);
+  var t=document.createElement("div");t.appendChild(document.createTextNode("Check the sheet directly: "));
+  var a=document.createElement("a");a.href=cfg.url+"?action=list&key="+encodeURIComponent(cfg.key);a.target="_blank";a.rel="noopener";a.textContent="open the test page";
+  t.appendChild(a);t.appendChild(document.createTextNode(". It should show \"ok\":true."));m.appendChild(t);
+}
+function connectSheet(){
+  var url=$("g-url").value.trim().replace(/[?#].*$/,""),key=$("g-key").value.trim(),by=$("g-by").value.trim();
+  $("g-url").value=url;
+  if(!/^https:\/\/script\.google\.com\/\S+\/exec$/.test(url)){
+    gmsg(/\/dev$/.test(url)?"That is the test (/dev) URL. Use the Web app URL ending in /exec from Deploy → Manage deployments.":"Paste the Web app URL from Apps Script. It starts with https://script.google.com and ends in /exec.","err");$("g-url").focus();return}
+  if(!key){gmsg("Enter the access key from the setup log.","err");$("g-key").focus();return}
+  var btn=$("g-save");if(btn.disabled)return;
+  btn.disabled=true;btn.textContent="Checking…";gmsg("Checking the sheet…");
+  var cfg={url:url,key:key,by:by},ctl=window.AbortController?new AbortController():null,to=setTimeout(function(){if(ctl)ctl.abort()},25000);
+  fetch(Store.listUrl(cfg),{cache:"no-store",signal:ctl?ctl.signal:undefined}).then(function(r){return r.text()}).then(function(txt){
+    var d=null;try{d=JSON.parse(txt)}catch(e){}
+    if(!d){gfail(cfg,"The URL answered with a web page instead of the diary data.");return}
+    if(d.ok){
+      var fromPhone=S.mode==="local"?S.cases.slice():[];
+      lsSet(CKEY,cfg);Store.startSheet(cfg,d);closeG();
+      if(fromPhone.length){
+        Store.post({action:"saveMany",cases:fromPhone}).then(function(){toast("Connected. Moved "+fromPhone.length+" case"+(fromPhone.length>1?"s":"")+" from this phone to the sheet.")}).catch(function(){});
+      } else toast("Connected to the Google Sheet");
+    } else if(d.error==="bad_key"){gmsg("That key doesn't match this sheet. Find it in Apps Script under Project Settings (gear icon) → Script Properties → OT_KEY.","err")}
+    else gmsg("The sheet replied with an error ("+(d.message||d.error||"unknown")+"). Run setup once in Apps Script, then deploy a new version.","err");
+  }).catch(function(e){
+    gfail(cfg,e&&e.name==="AbortError"?"The sheet didn't answer within 25 seconds.":"Couldn't reach the sheet.");
+  }).then(function(){clearTimeout(to);btn.disabled=false;btn.textContent="Connect"});
+}
+$("g-save").addEventListener("click",connectSheet);
+$("gform").addEventListener("submit",function(e){e.preventDefault();connectSheet()});
+["g-url","g-key","g-by"].forEach(function(id){$(id).addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();connectSheet()}})});
+$("g-off").addEventListener("click",function(){
+  var b=$("g-off");
+  if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="Tap again to disconnect";return}
+  lsDel(CKEY);lsDel(CACHE);S.lastSnap=null;S.syncedAt=0;closeG();Store.init();toast("Disconnected. This phone no longer shows the sheet.");
+});
+$("gscrim").addEventListener("click",function(e){if(e.target===this)closeG()});
+
+/* ---------- form ---------- */
+var F={};["name","age","sex","reg","ph1","ph2","flap","proc","date","wait","status","notes"].forEach(function(k){F[k]=$("f-"+k)});
+F.status.innerHTML=STATUS.map(function(s){return "<option value=\""+s[0]+"\">"+s[1]+"</option>"}).join("");
+$("pchips").innerHTML=PROC_CHIPS.map(function(p){return "<button type=\"button\" data-chip=\"proc\" data-v=\""+esc(p)+"\">"+esc(p)+"</button>"}).join("");
+$("nchips").innerHTML=NOTE_CHIPS.map(function(p){return "<button type=\"button\" data-chip=\"notes\" data-v=\""+esc(p)+"\">"+esc(p)+"</button>"}).join("");
+
+function openForm(c,focus){
+  S.editing=c;
+  $("ftitle").textContent=c.id?"Edit case":(c.date?"Book case · "+fmtShort(c.date):"Add to waitlist");
+  F.name.value=c.name||"";F.age.value=c.age||"";F.sex.value=c.sex||"";F.reg.value=c.reg||"";
+  F.ph1.value=c.ph1||"";F.ph2.value=c.ph2||"";F.flap.value=c.flap||"None";F.proc.value=c.proc||"";
+  F.date.value=c.date||"";F.wait.checked=!c.date;F.date.disabled=!c.date&&!focus;
+  if(focus==="date"){F.wait.checked=false;F.date.disabled=false;F.date.value=c.date||nextOT(TODAY)}
+  F.status.value=c.status||"booked";F.notes.value=c.notes||"";
+  $("f-err").textContent="";
+  var del=$("f-del");del.hidden=!c.id;del.classList.remove("armed");del.textContent="Delete";
+  dateHint();resetScan();
+  $("scrim").hidden=false;
+  var touch=window.matchMedia&&matchMedia("(pointer: coarse)").matches;
+  if(focus==="date"||!touch||c.id)setTimeout(function(){(focus==="date"?F.date:F.name).focus()},30);
+}
+function closeForm(){$("scrim").hidden=true;S.editing=null;scanPending=null}
+function dateHint(){
+  var v=F.date.value,h="";
+  if(v&&!F.wait.checked){var ho=hol(v);if(ho)h=ho+" is a holiday.";else if(!isOT(v))h=WDL[parse(v).getDay()]+" is not a regular OT day.";
+    var n=activeOf(dayCases(v)).filter(function(c){return !S.editing||c.id!==S.editing.id}).length;
+    if(n)h+=(h?" ":"")+n+" case"+(n>1?"s":"")+" already booked.";}
+  $("f-hint").textContent=h;
+}
+F.date.addEventListener("input",dateHint);
+F.wait.addEventListener("change",function(){F.date.disabled=F.wait.checked;if(F.wait.checked)F.date.value="";else if(!F.date.value)F.date.value=S.sel;dateHint()});
+F.reg.addEventListener("blur",function(){F.reg.value=F.reg.value.trim().toUpperCase()});
+
+/* ---------- registration slip scanner ---------- */
+/* The photo goes to Claude (your API key, saved on this device under bbci_hn_apikey, shared with the
+   department's other tools on the same site). Only the extracted text is kept; the image is discarded. */
+var CLAUDE_MODEL="claude-sonnet-5-5",AKEY="bbci_hn_apikey";
+var SCAN_HINT="Take a photo of the slip, or paste a screenshot of the registration screen. Name, reg no, age/sex and phone are filled for you.";
+var REG_RE=/^(\d{2}[A-Z]\d{4})\/?(\d{3,8})$/;
+var scanPending=null,scanBusy=false;
+function apiKey(){try{return (localStorage.getItem(AKEY)||"").trim()}catch(e){return ""}}
+function setApiKey(k){try{localStorage.setItem(AKEY,k);return true}catch(e){return false}}
+function scanMsg(html,k){var m=$("scanmsg");m.innerHTML=html;m.className="scanmsg"+(k?" "+k:"")}
+function resetScan(){
+  scanPending=null;$("scanthumb").hidden=true;$("scanthumb").removeAttribute("src");$("scankey").hidden=true;
+  $("scanbox").classList.remove("busy");$("scanbtn").disabled=false;scanMsg(esc(SCAN_HINT));
+  $("scankeylink").hidden=!apiKey();
+  Object.keys(F).forEach(function(k){F[k].classList.remove("scanned")});
+}
+function showKeyBox(msg){
+  $("scankey").hidden=false;$("s-key").value="";scanMsg(esc(msg),"err");setTimeout(function(){$("s-key").focus()},30);
+}
+function normReg(v,strict){
+  var t=String(v||"").toUpperCase().replace(/\s+/g,"");if(!t)return "";
+  var m=t.match(REG_RE);if(m)return m[1]+"/"+m[2];
+  return strict?"":t;
+}
+function normPhone(v){
+  var d=String(v||"").replace(/\D/g,"");
+  if(d.length===12&&d.indexOf("91")===0)d=d.slice(2);
+  if(d.length===11&&d.charAt(0)==="0")d=d.slice(1);
+  return d.length>=8&&d.length<=12?d:"";
+}
+function titleCase(n){return String(n||"").toLowerCase().replace(/(^|[\s.\-'])([a-z])/g,function(m,a,b){return a+b.toUpperCase()}).replace(/\s+/g," ").trim()}
+
+function prepImage(file){
+  return new Promise(function(res,rej){
+    var url=URL.createObjectURL(file),img=new Image();
+    img.onload=function(){
+      var max=1600,w=img.naturalWidth,h=img.naturalHeight,sc=Math.min(1,max/Math.max(w,h));
+      var cv=document.createElement("canvas");cv.width=Math.round(w*sc);cv.height=Math.round(h*sc);
+      var cx=cv.getContext("2d");cx.fillStyle="#fff";cx.fillRect(0,0,cv.width,cv.height);cx.drawImage(img,0,0,cv.width,cv.height);
+      var data=cv.toDataURL("image/jpeg",0.85);
+      res({img:img,url:url,dataUrl:data,b64:data.split(",")[1]});
     };
-    document.getElementById('exportBtn').onclick = function(){
-      let headers = ["Sl No.","Consultant Name","Patient Name","Hospital ID","Phone Number","Diagnosis","Type of Surgery","Neck Dissection Extent","Laterality","Reconstruction","Appointment Date","Status","Remarks"];
-      let rows = Array.from(document.querySelectorAll("#apptTable tbody tr"));
-      let csv = [headers.join(',')];
-      rows.forEach(tr => {
-        let cells = Array.from(tr.children).map(td => `"${(td.textContent||"").replace(/"/g,'""')}"`);
-        csv.push(cells.join(','));
-      });
-      let blob = new Blob([csv.join('\n')], {type:'text/csv'});
-      let url = URL.createObjectURL(blob);
-      let a = document.createElement('a');
-      a.href = url;
-      a.download = `Appointments_${currentYear}_${currentMonth}.csv`;
-      a.click();
-      setTimeout(()=>URL.revokeObjectURL(url),1000);
-    };
-    document.getElementById('apptForm').onsubmit = async function(e) {
-      e.preventDefault();
-      const data = { data: [getFormData(e.target)] };
-      const responseDiv = document.getElementById('response');
-      try {
-        let resp = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        });
-        if(resp.ok){
-          responseDiv.textContent = "Appointment booked successfully!";
-          e.target.reset();
-          await loadAppointments();
-        } else {
-          responseDiv.textContent = "Error booking appointment.";
-        }
-      } catch (err) {
-        responseDiv.textContent = "Network error: " + err;
-      }
-    };
-    loadAppointments();
-  </script>
+    img.onerror=function(){URL.revokeObjectURL(url);rej({kind:"image"})};
+    img.src=url;
+  });
+}
+function readBarcode(img){
+  if(!("BarcodeDetector" in window))return Promise.resolve("");
+  try{
+    return BarcodeDetector.getSupportedFormats().then(function(sup){
+      var want=["code_128","code_39","code_93","codabar","qr_code","data_matrix","pdf417"].filter(function(f){return sup.indexOf(f)>=0});
+      if(!want.length)return [];
+      return new BarcodeDetector({formats:want}).detect(img);
+    }).then(function(codes){
+      for(var i=0;i<codes.length;i++){var r=normReg(codes[i].rawValue,true);if(r)return r}
+      return "";
+    }).catch(function(){return ""});
+  }catch(e){return Promise.resolve("")}
+}
+function callClaude(b64){
+  var prompt="This is a photo of a patient registration slip, or a screenshot of the registration screen, from Dr. B. Borooah Cancer Institute, Guwahati. "+
+    "Read the patient's details and call fill_registration. Hospital registration numbers look like 17F2026/007754. "+
+    "Copy only what is printed or written. Leave a field empty rather than guess. If this is not a registration document, return every field empty.";
+  return fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{
+      "content-type":"application/json","x-api-key":apiKey(),"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify({model:CLAUDE_MODEL,max_tokens:600,
+      tools:[{name:"fill_registration",description:"Return the patient details read from the registration slip.",input_schema:{type:"object",properties:{
+        name:{type:"string",description:"Patient's full name as written. Empty if not visible."},
+        reg_no:{type:"string",description:"Hospital registration / UHID number, e.g. 17F2026/007754. Empty if not visible."},
+        age:{type:"string",description:"Age in years, digits only. Empty if not visible."},
+        sex:{type:"string",enum:["M","F","O",""],description:"M, F or O. Empty if not visible."},
+        phones:{type:"array",items:{type:"string"},description:"Up to two contact phone numbers as written, patient's first."},
+        unclear:{type:"string",description:"Very short note on anything hard to read. Empty if all clear."}
+      },required:["name","reg_no","age","sex","phones"]}}],
+      tool_choice:{type:"tool",name:"fill_registration"},
+      messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:"image/jpeg",data:b64}},{type:"text",text:prompt}]}]})
+  }).then(function(r){
+    return r.json().catch(function(){return {}}).then(function(d){
+      if(!r.ok)throw {kind:"api",status:r.status,msg:(d&&d.error&&d.error.message)||""};
+      var t=(d.content||[]).find(function(c){return c.type==="tool_use"});
+      if(!t||!t.input)throw {kind:"empty"};
+      return t.input;
+    });
+  },function(){throw {kind:"network"}});
+}
+function startScan(file){
+  if(scanBusy)return;
+  if(!file||!/^image\//.test(file.type||"")){scanMsg("That file isn't a photo. Choose a JPG or PNG image.","err");return}
+  if(!apiKey()){scanPending=file;showKeyBox("Enter the Claude API key once on this device, then the slip is read straight away.");return}
+  runScan(file);
+}
+function runScan(file){
+  scanBusy=true;scanPending=null;
+  var box=$("scanbox");box.classList.add("busy");$("scanbtn").disabled=true;$("scankey").hidden=true;
+  scanMsg("Reading the slip…");
+  var prep=null;
+  prepImage(file).then(function(p){
+    prep=p;var th=$("scanthumb");th.src=p.dataUrl;th.hidden=false;
+    return Promise.all([callClaude(p.b64),readBarcode(p.img)]);
+  }).then(function(r){applyScan(r[0]||{},r[1])},function(e){
+    e=e||{};
+    if(e.kind==="image")scanMsg("Couldn't open that image. Take the photo again.","err");
+    else if(e.kind==="network")scanMsg("Couldn't reach Claude. Check the internet connection and try again.","err");
+    else if(e.kind==="empty")scanMsg("Claude didn't return any details. Try again.","err");
+    else if(e.status===401||e.status===403){scanPending=file;showKeyBox("The API key was rejected. Enter a valid Claude API key.")}
+    else if(e.status===429)scanMsg("Too many scans at once. Wait a few seconds and try again.","err");
+    else if(e.status>=500)scanMsg("Claude is busy right now. Try again in a minute.","err");
+    else scanMsg("Claude couldn't read the photo"+(e.msg?": "+esc(e.msg):".")+"","err");
+  }).then(function(){
+    if(prep)URL.revokeObjectURL(prep.url);
+    scanBusy=false;box.classList.remove("busy");$("scanbtn").disabled=false;$("scankeylink").hidden=!apiKey();
+  });
+}
+function applyScan(ai,barcodeReg){
+  var got={},labels=[];
+  var name=titleCase(ai.name);if(name){got.name=name;labels.push("name")}
+  var reg=barcodeReg||normReg(ai.reg_no,false);if(reg){got.reg=reg;labels.push("reg no")}
+  var age=String(ai.age||"").replace(/\D/g,"");if(age&&+age>0&&+age<120){got.age=age;labels.push("age")}
+  var sx=String(ai.sex||"").toUpperCase().charAt(0);if(sx==="M"||sx==="F"||sx==="O"){got.sex=sx;labels.push("sex")}
+  var ph=[];(ai.phones||[]).forEach(function(p){var n=normPhone(p);if(n&&ph.indexOf(n)<0)ph.push(n)});
+  if(ph[0]){got.ph1=ph[0];labels.push("phone")}if(ph[1])got.ph2=ph[1];
+  if(!labels.length){$("scanthumb").hidden=true;scanMsg("No patient details found in that photo. Hold the slip flat, in good light, and fill the frame.","err");return}
+  Object.keys(got).forEach(function(k){F[k].value=got[k];F[k].classList.add("scanned")});
+  var html="Filled "+labels.join(", ")+". Check the highlighted fields against the slip before saving."+(barcodeReg?" Reg no taken from the barcode.":"");
+  if(ai.unclear)html+="<span class=\"warn\">Hard to read: "+esc(ai.unclear)+"</span>";
+  if(got.reg){
+    var dup=S.cases.filter(function(c){return c.reg===got.reg&&(!S.editing||c.id!==S.editing.id)&&!CLOSED[c.status]&&!OFF[c.status]});
+    if(dup.length)html+="<span class=\"warn\">This reg no is already "+(dup[0].date?"booked for "+esc(fmtShort(dup[0].date)):"on the waitlist")+".</span>";
+  }
+  scanMsg(html,"ok");
+}
+Object.keys(F).forEach(function(k){F[k].addEventListener("input",function(){F[k].classList.remove("scanned")})});
+$("scanbtn").addEventListener("click",function(){$("scancam").value="";$("scancam").click()});
+$("scanpick").addEventListener("click",function(){$("scanfile").value="";$("scanfile").click()});
+$("scancam").addEventListener("change",function(){if(this.files[0])startScan(this.files[0])});
+$("scanfile").addEventListener("change",function(){if(this.files[0])startScan(this.files[0])});
+$("scankeylink").addEventListener("click",function(){$("scankey").hidden=false;$("s-key").value=apiKey();$("s-key").focus()});
+function saveKey(){
+  var k=$("s-key").value.trim();
+  if(!k){scanMsg("Paste the API key first.","err");return}
+  if(!setApiKey(k)){scanMsg("This browser blocked saving the key. Turn off private browsing and try again.","err");return}
+  $("scankey").hidden=true;$("scankeylink").hidden=false;
+  if(scanPending)runScan(scanPending);else scanMsg("API key saved on this device.","ok");
+}
+$("s-keysave").addEventListener("click",saveKey);
+$("s-key").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();saveKey()}});
+document.addEventListener("paste",function(e){
+  if($("scrim").hidden)return;
+  var files=(e.clipboardData&&e.clipboardData.files)||[],f=null;
+  for(var i=0;i<files.length;i++)if(/^image\//.test(files[i].type)){f=files[i];break}
+  if(!f)return;
+  e.preventDefault();startScan(f);
+});
+
+$("form").addEventListener("submit",function(e){e.preventDefault();saveCase()});
+$("f-save").addEventListener("click",saveCase);
+function saveCase(){
+  if($("f-save").disabled)return;
+  var c=Object.assign({},S.editing||{});
+  var name=F.name.value.trim();
+  if(!name&&!F.reg.value.trim()){$("f-err").textContent="Enter a name or a reg no.";F.name.focus();return}
+  var date=F.wait.checked?"":F.date.value;
+  if(!F.wait.checked&&!date){$("f-err").textContent="Pick an OT date, or tick Waitlist.";F.date.focus();return}
+  var moved=c.date!==date;
+  Object.assign(c,{name:name,age:F.age.value.trim(),sex:F.sex.value,reg:F.reg.value.trim().toUpperCase(),ph1:F.ph1.value.trim(),ph2:F.ph2.value.trim(),
+    flap:F.flap.value,proc:F.proc.value.trim(),date:date,status:F.status.value,notes:F.notes.value.trim()});
+  if(!c.id){c.id=Store.newId();c.createdAt=Date.now()}
+  if(date&&(moved||!c.order)){var others=dayCases(date).filter(function(x){return x.id!==c.id});c.order=others.reduce(function(m,x){return Math.max(m,x.order||0)},0)+1}
+  if(!date)c.order=0;
+  var btn=$("f-save");btn.disabled=true;btn.textContent="Saving…";
+  Store.save(c).then(function(){
+    closeForm();Object.keys(F).forEach(function(k){F[k].classList.remove("scanned")});
+    if(date){S.sel=date;var d=parse(date);S.y=d.getFullYear();S.m=d.getMonth()}
+    render();toast(date?"Booked for "+fmtShort(date):"Added to waitlist");
+  }).catch(function(){}).then(function(){btn.disabled=false;btn.textContent="Save"});
+}
+$("f-del").addEventListener("click",function(){
+  var b=$("f-del");
+  if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="Tap again to delete";return}
+  var id=S.editing&&S.editing.id;if(!id)return;
+  Store.remove(id).then(function(){closeForm();toast("Case deleted")}).catch(function(){});
+});
+document.addEventListener("click",function(e){
+  var ch=e.target.closest("[data-chip]");if(!ch)return;
+  var el=F[ch.getAttribute("data-chip")],v=ch.getAttribute("data-v"),cur=el.value.trim();
+  if(ch.getAttribute("data-chip")==="proc")el.value=cur?cur+" + "+v:v;else el.value=cur?cur+(/[.;,]$/.test(cur)?" ":". ")+v:v;
+  el.focus();
+});
+
+/* ---------- actions ---------- */
+function reorder(id,dir){
+  var c=S.cases.find(function(x){return x.id===id});if(!c)return;
+  var act=activeOf(dayCases(c.date)),i=act.findIndex(function(x){return x.id===id}),j=i+dir;
+  if(j<0||j>=act.length)return;
+  var tmp=act[i];act[i]=act[j];act[j]=tmp;
+  var items=[];act.forEach(function(x,k){if((x.order||0)!==k+1)items.push({id:x.id,fields:{order:k+1}})});
+  if(items.length)Store.patchMany(items).catch(function(){});
+}
+function listText(s){
+  var act=activeOf(dayCases(s));
+  var lines=["H&N OT list · "+fmtShort(s)];
+  act.forEach(function(c,i){
+    var as=agesex(c);
+    lines.push("");
+    lines.push((i+1)+". "+label(c)+(as?", "+as:"")+(c.reg&&c.name?" · "+c.reg:""));
+    lines.push("   "+(c.proc||"Procedure TBD")+(c.flap&&c.flap!=="None"&&String(c.proc||"").indexOf(c.flap)<0?" + "+c.flap:""));
+    var p=phones(c);if(p.length)lines.push("   Ph: "+p.join(", "));
+    if(c.notes)lines.push("   Note: "+c.notes);
+  });
+  return lines.join("\n");
+}
+function copyText(t,okMsg){
+  var done=function(){toast(okMsg||"Copied")};
+  var fail=function(){var b=$("copybox");b.value=t;$("cscrim").hidden=false;setTimeout(function(){b.focus();b.select()},30)};
+  try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done,fail)}else fail()}catch(e){fail()}
+}
+
+document.addEventListener("click",function(e){
+  var b=e.target.closest("[data-act]");if(!b)return;
+  var a=b.getAttribute("data-act"),id=b.getAttribute("data-id");
+  if(a==="pick"){S.sel=b.getAttribute("data-d");renderCal();renderPanel();if(window.innerWidth<880)$("daypanel").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"})}
+  else if(a==="prev"||a==="next"){S.m+=a==="prev"?-1:1;if(S.m<0){S.m=11;S.y--}if(S.m>11){S.m=0;S.y++}renderSummary();renderCal()}
+  else if(a==="today"){S.y=today.getFullYear();S.m=today.getMonth();S.sel=TODAY;render()}
+  else if(a==="book"){openForm({date:S.sel,status:"booked"})}
+  else if(a==="addwait"){openForm({date:"",status:"workup"})}
+  else if(a==="edit"){var c=S.cases.find(function(x){return x.id===id});if(c)openForm(c,b.getAttribute("data-focus"))}
+  else if(a==="up"||a==="down"){reorder(id,a==="up"?-1:1)}
+  else if(a==="copy"){copyText(b.getAttribute("data-text"))}
+  else if(a==="copylist"){copyText(listText(S.sel),"OT list copied")}
+  else if(a==="close"){closeForm()}
+  else if(a==="cclose"){$("cscrim").hidden=true}
+  else if(a==="sheetcfg"){openG()}
+  else if(a==="gclose"){closeG()}
+  else if(a==="clearq"){S.q="";$("q").value="";renderPanel()}
+  else if(a==="jump"){var c2=S.cases.find(function(x){return x.id===id});if(!c2)return;
+    if(c2.date){S.q="";$("q").value="";S.sel=c2.date;var d=parse(c2.date);S.y=d.getFullYear();S.m=d.getMonth();render()}else if(writable())openForm(c2)}
+  else if(a==="otday"){var i=+b.getAttribute("data-i"),days=S.otDays.slice(),k=days.indexOf(i);if(k>=0)days.splice(k,1);else days.push(i);days.sort();Store.setOtDays(days).catch(function(){})}
+});
+document.addEventListener("change",function(e){
+  var t=e.target;if(t.getAttribute("data-ch")!=="status")return;
+  t.className="pill st-"+t.value;
+  Store.patch(t.getAttribute("data-id"),{status:t.value}).then(function(){toast(STL[t.value])}).catch(function(){});
+});
+$("scrim").addEventListener("click",function(e){if(e.target===this)closeForm()});
+$("cscrim").addEventListener("click",function(e){if(e.target===this)this.hidden=true});
+document.addEventListener("keydown",function(e){if(e.key==="Escape"){if(!$("scrim").hidden)closeForm();$("cscrim").hidden=true;closeG()}});
+var qt;$("q").addEventListener("input",function(){clearTimeout(qt);var v=this.value;qt=setTimeout(function(){S.q=v;renderPanel()},120)});
+
+var tt;function toast(m){var t=$("toast");t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(function(){t.hidden=true},2200)}
+
+/* start on the next OT day */
+S.sel=nextOT(TODAY);(function(){var d=parse(S.sel);S.y=d.getFullYear();S.m=d.getMonth()})();
+render();
+Store.init();
+})();
+</script>
+
 </body>
 </html>
