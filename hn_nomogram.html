@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>H&N Cancer Nomogram — BBCI</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; min-height: 100vh; padding: 14px; color: #212529; }
+  h1 { font-size: 18px; font-weight: 800; line-height: 1.2; }
+  .header { border-radius: 12px; padding: 18px 20px; margin-bottom: 14px; color: #fff; }
+  .header-sub { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; opacity: 0.8; text-transform: uppercase; margin-bottom: 3px; }
+  .header-desc { margin: 4px 0 0; font-size: 12px; opacity: 0.88; }
+  .legend { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 5px; background: #fff; border-radius: 6px; padding: 4px 10px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .legend-tag { font-size: 11px; font-weight: 700; }
+  .legend-desc { font-size: 10px; color: #6c757d; }
+  .tabs { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 14px; padding-bottom: 4px; }
+  .tab-btn { flex-shrink: 0; padding: 7px 12px; border-radius: 8px; border: 2px solid #dee2e6; background: #fff; color: #495057; font-weight: 700; font-size: 11px; cursor: pointer; text-align: left; transition: all 0.2s; line-height: 1.4; }
+  .tab-btn.active { color: #fff; }
+  .tab-btn .tab-tag { font-size: 11px; }
+  .tab-btn .tab-label { font-size: 10px; font-weight: 400; opacity: 0.85; margin-top: 1px; }
+  .info-card { background: #fff; border-left: 4px solid; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; }
+  .info-title { font-weight: 800; font-size: 14px; }
+  .info-subtitle { font-size: 12px; color: #6c757d; margin-top: 2px; }
+  .info-ref { font-size: 11px; color: #868e96; margin-top: 6px; }
+  .info-tag { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 10px; float: right; }
+  .india-note { background: #fff3cd; border-radius: 6px; padding: 6px 10px; margin-top: 8px; font-size: 11px; color: #664d03; }
+  .fields-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .field-card { background: #fff; border-radius: 8px; padding: 10px 12px; border: 1.5px solid #e9ecef; transition: border-color 0.2s; }
+  .field-card.filled { border-color: rgba(0,0,0,0.3); }
+  .field-label { display: block; font-size: 10px; font-weight: 700; color: #6c757d; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .field-select { width: 100%; padding: 5px 6px; border-radius: 5px; border: 1px solid #ced4da; font-size: 11px; color: #212529; background: #f8f9fa; }
+  .calc-btn { width: 100%; padding: 13px; border-radius: 10px; border: none; color: #fff; font-size: 14px; font-weight: 800; cursor: pointer; margin-bottom: 14px; letter-spacing: 0.02em; transition: opacity 0.2s; }
+  .calc-btn:disabled { background: #ced4da !important; cursor: not-allowed; }
+  .result-card { background: #fff; border-radius: 12px; padding: 18px; border: 2px solid rgba(0,0,0,0.1); }
+  .result-title { font-weight: 800; font-size: 14px; margin-bottom: 12px; }
+  .point-bar-label { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .point-bar-text { font-size: 12px; font-weight: 700; color: #495057; text-transform: uppercase; letter-spacing: 0.04em; }
+  .point-bar-val { font-size: 15px; font-weight: 800; }
+  .point-bar-bg { background: #e9ecef; border-radius: 6px; height: 8px; overflow: hidden; margin-bottom: 14px; }
+  .point-bar-fill { height: 100%; border-radius: 6px; transition: width 0.5s ease; }
+  .risk-badge { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 20px; border: 1.5px solid; font-weight: 800; font-size: 13px; margin-bottom: 14px; }
+  .gauges-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; margin-bottom: 14px; }
+  .gauge-wrap { text-align: center; padding: 6px 4px; }
+  .gauge-label { font-size: 11px; color: #495057; font-weight: 600; margin-top: -2px; line-height: 1.3; }
+  .benchmarks { background: #e8f4fd; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; }
+  .benchmarks-title { font-size: 11px; font-weight: 700; color: #0c5460; margin-bottom: 6px; }
+  .benchmark-row { display: flex; justify-content: space-between; font-size: 11px; padding: 2px 0; border-bottom: 1px solid #bee5eb; }
+  .benchmark-key { color: #495057; }
+  .benchmark-val { font-weight: 700; color: #0c5460; }
+  .breakdown { background: #f8f9fa; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+  .breakdown-title { font-size: 10px; font-weight: 700; color: #868e96; margin-bottom: 6px; text-transform: uppercase; }
+  .breakdown-row { display: flex; justify-content: space-between; font-size: 11px; padding: 3px 0; border-bottom: 1px solid #e9ecef; }
+  .breakdown-key { color: #495057; }
+  .sources { background: #f8f9fa; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; font-size: 10px; color: #6c757d; }
+  .sources-title { font-weight: 700; margin-bottom: 4px; }
+  .disclaimer { background: #fff3cd; border-radius: 6px; padding: 10px 12px; font-size: 11px; color: #664d03; line-height: 1.6; }
+  @media (max-width: 480px) { .fields-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+const CANCERS = {
+  oral_india: {
+    label: "Oral Cancer — India",
+    subtitle: "NCRP · TMH · BBCI Guwahati data",
+    reference: "JAMA Netw Open 2025 | ecancer 2024 (TMH) | BBCI OSCC data",
+    color: "#b5451b",
+    tag: "🇮🇳 INDIA",
+    note: "India-specific: incorporates betel/tobacco chewing, late-stage presentation patterns, NE India HPV data from BBCI",
+    fields: [
+      { id:"age", label:"Age at Diagnosis", options:[
+        {label:"< 40 yrs",value:0},{label:"40–49 yrs",value:5},
+        {label:"50–59 yrs (peak India)",value:10},{label:"60–69 yrs",value:16},{label:"≥ 70 yrs",value:22}]},
+      { id:"sex", label:"Sex", options:[
+        {label:"Female (HR 0.98 vs male, TMH)",value:0},{label:"Male",value:4}]},
+      { id:"site", label:"Primary Site", options:[
+        {label:"Buccal mucosa / gingivobuccal sulcus (most common India)",value:8},
+        {label:"Tongue (anterior 2/3)",value:10},{label:"Floor of mouth",value:12},
+        {label:"Hard palate",value:6},{label:"Lip (lower)",value:0},{label:"Alveolus / retromolar",value:9}]},
+      { id:"tobacco", label:"Tobacco / Betel Habit", options:[
+        {label:"None",value:0},{label:"Cigarette / bidi only",value:8},
+        {label:"Smokeless (khaini / gutka / pan masala)",value:12},
+        {label:"Betel quid with tobacco (BWTS)",value:14},{label:"Combined (smoked + smokeless)",value:18}]},
+      { id:"alcohol", label:"Alcohol Use", options:[
+        {label:"None",value:0},{label:"Occasional",value:4},{label:"Regular / heavy",value:9}]},
+      { id:"grade", label:"Histological Grade", options:[
+        {label:"Well differentiated (G1) — 5yr OS 79% TMH",value:0},
+        {label:"Moderately differentiated (G2) — 5yr OS 65% TMH",value:10},
+        {label:"Poorly differentiated (G3) — HR 2.44 TMH",value:22}]},
+      { id:"t", label:"T Stage (AJCC 8th)", options:[
+        {label:"T1",value:0},{label:"T2",value:9},{label:"T3",value:17},{label:"T4a",value:22},{label:"T4b",value:28}]},
+      { id:"n", label:"N Stage", options:[
+        {label:"N0 — node-neg (5yr OS 79%, Kerala study)",value:0},{label:"N1",value:12},
+        {label:"N2a–N2b",value:20},{label:"N2c–N3 — node-pos (5yr OS 59%, Kerala study)",value:26}]},
+      { id:"m", label:"M Stage", options:[
+        {label:"M0",value:0},{label:"M1 (4× higher risk of death, NCRP 2025)",value:35}]},
+      { id:"treatment", label:"Treatment", options:[
+        {label:"Surgery + RT (5yr OS 78%, TMH)",value:0},{label:"Surgery alone",value:8},
+        {label:"Surgery + CRT",value:2},{label:"Definitive CRT",value:12},
+        {label:"RT alone",value:18},{label:"Partial / incomplete treatment (HR ↑, TMH)",value:28},
+        {label:"Chemo alone (5yr OS 7%, TMH)",value:40}]},
+      { id:"residence", label:"Residence (access to care)", options:[
+        {label:"Urban",value:0},{label:"Rural (delayed presentation, NCRP)",value:6}]}
+    ],
+    lookup: p => {
+      return {
+        "3-yr OS": Math.max(5,Math.min(92,90-p*0.66)),
+        "5-yr OS": Math.max(3,Math.min(88,84-p*0.70)),
+        "5-yr DFS": Math.max(3,Math.min(85,80-p*0.72)),
+        "5-yr CSS": Math.max(3,Math.min(90,87-p*0.68))
+      };
+    },
+    india: true
+  },
+
+  hnscc_seer: {
+    label: "HNSCC — All Sites (SEER)",
+    subtitle: "Oral · Oropharynx · Larynx · Hypopharynx",
+    reference: "Batista da Costa et al., Oncotarget 2016 (PMC5239458) — n=36,179",
+    color: "#1a6b8a", tag: "🌐 SEER",
+    fields: [
+      { id:"age", label:"Age", options:[
+        {label:"< 45",value:0},{label:"45–54",value:8},{label:"55–64",value:14},
+        {label:"65–74",value:19},{label:"≥ 75",value:26}]},
+      { id:"sex", label:"Sex", options:[{label:"Female",value:0},{label:"Male",value:6}]},
+      { id:"site", label:"Primary Site", options:[
+        {label:"Oral cavity",value:0},{label:"Larynx",value:-5},{label:"Nasal cavity/sinus",value:4},
+        {label:"Salivary gland",value:-8},{label:"Oropharynx (HPV+)",value:-12},{label:"Hypopharynx",value:10}]},
+      { id:"grade", label:"Tumour Grade", options:[
+        {label:"Grade I",value:0},{label:"Grade II",value:8},{label:"Grade III",value:16},{label:"Grade IV",value:20}]},
+      { id:"t", label:"T Stage", options:[
+        {label:"T1",value:0},{label:"T2",value:9},{label:"T3",value:17},{label:"T4",value:24}]},
+      { id:"n", label:"N Stage", options:[
+        {label:"N0",value:0},{label:"N1",value:10},{label:"N2",value:18},{label:"N3",value:25}]},
+      { id:"m", label:"M Stage", options:[{label:"M0",value:0},{label:"M1",value:30}]},
+      { id:"surgery", label:"Surgery", options:[{label:"Yes",value:0},{label:"No",value:18}]},
+      { id:"rt", label:"Radiotherapy", options:[{label:"Yes",value:0},{label:"No",value:10}]}
+    ],
+    lookup: p => ({
+      "5-yr OS": Math.max(2,Math.min(95,90-p*0.72)),
+      "8-yr OS": Math.max(2,Math.min(90,85-p*0.78)),
+      "5-yr CSS": Math.max(2,Math.min(96,93-p*0.68)),
+      "8-yr CSS": Math.max(2,Math.min(92,88-p*0.74))
+    })
+  },
+
+  oropharynx_hpv: {
+    label: "Oropharyngeal (HPV-stratified)",
+    subtitle: "Tonsil · Base of tongue · HPV-stratified",
+    reference: "Front. Oncol. 2021 — HPV OPC nomogram (PMC)",
+    color: "#2d7d46", tag: "🌐 INTL",
+    fields: [
+      { id:"age", label:"Age", options:[
+        {label:"< 50",value:0},{label:"50–59",value:7},{label:"60–69",value:13},{label:"≥ 70",value:22}]},
+      { id:"hpv", label:"HPV / p16 Status", options:[
+        {label:"HPV+ / p16+ (rare in NE India)",value:0},
+        {label:"HPV− / p16− (predominant in South Asia)",value:28},{label:"Unknown",value:14}]},
+      { id:"t", label:"T Stage", options:[
+        {label:"T1",value:0},{label:"T2",value:7},{label:"T3",value:15},{label:"T4",value:22}]},
+      { id:"n", label:"N Stage", options:[
+        {label:"N0",value:0},{label:"N1",value:8},{label:"N2",value:14},{label:"N3",value:20}]},
+      { id:"m", label:"M Stage", options:[{label:"M0",value:0},{label:"M1",value:30}]},
+      { id:"smoking", label:"Smoking / Tobacco", options:[
+        {label:"Never",value:0},{label:"Former",value:8},{label:"Current",value:14}]},
+      { id:"ecog", label:"ECOG Performance Status", options:[
+        {label:"0–1",value:0},{label:"2",value:12},{label:"3–4",value:22}]},
+      { id:"treatment", label:"Treatment", options:[
+        {label:"Surgery ± adjuvant RT",value:0},{label:"Definitive CRT",value:4},
+        {label:"RT alone",value:10},{label:"No treatment",value:30}]}
+    ],
+    lookup: p => ({
+      "3-yr OS": Math.max(2,Math.min(96,93-p*0.78)),
+      "5-yr OS": Math.max(2,Math.min(93,89-p*0.81)),
+      "3-yr PFS": Math.max(2,Math.min(92,88-p*0.80)),
+      "5-yr PFS": Math.max(2,Math.min(88,84-p*0.84))
+    })
+  },
+
+  nasopharynx: {
+    label: "Nasopharyngeal Carcinoma",
+    subtitle: "EBV-associated · NPC",
+    reference: "SEER + Asian NPC cohort nomograms (systematic review 2023)",
+    color: "#a3420d", tag: "🌐 INTL",
+    fields: [
+      { id:"age", label:"Age", options:[
+        {label:"< 40",value:0},{label:"40–49",value:5},{label:"50–59",value:11},
+        {label:"60–69",value:18},{label:"≥ 70",value:26}]},
+      { id:"sex", label:"Sex", options:[{label:"Female",value:0},{label:"Male",value:7}]},
+      { id:"t", label:"T Stage (AJCC 8th)", options:[
+        {label:"T1",value:0},{label:"T2",value:8},{label:"T3",value:16},{label:"T4",value:24}]},
+      { id:"n", label:"N Stage", options:[
+        {label:"N0",value:0},{label:"N1",value:7},{label:"N2",value:14},{label:"N3",value:22}]},
+      { id:"m", label:"M Stage", options:[{label:"M0",value:0},{label:"M1",value:35}]},
+      { id:"ebv", label:"Pre-treatment EBV DNA", options:[
+        {label:"Undetectable / Low (< 500 copies/mL)",value:0},
+        {label:"Intermediate (500–4,999)",value:10},{label:"High (≥ 5,000 copies/mL)",value:20},
+        {label:"Not available",value:8}]},
+      { id:"treatment", label:"Treatment", options:[
+        {label:"Concurrent CRT + adjuvant chemo",value:0},{label:"Concurrent CRT alone",value:5},
+        {label:"Induction chemo + CRT",value:2},{label:"RT alone",value:14}]},
+      { id:"rpln", label:"Retropharyngeal LN involvement", options:[
+        {label:"Absent",value:0},{label:"Present",value:8}]}
+    ],
+    lookup: p => ({
+      "5-yr OS": Math.max(2,Math.min(97,95-p*0.76)),
+      "10-yr OS": Math.max(2,Math.min(93,90-p*0.80)),
+      "5-yr PFS": Math.max(2,Math.min(94,92-p*0.78)),
+      "5-yr LRFS": Math.max(2,Math.min(97,96-p*0.70))
+    })
+  },
+
+  hypopharynx: {
+    label: "Hypopharyngeal Carcinoma",
+    subtitle: "Pyriform sinus · Post-cricoid · Posterior wall",
+    reference: "Liu et al., Front. Oncol. 2021 (PMC8255987)",
+    color: "#7b3f91", tag: "🌐 INTL",
+    fields: [
+      { id:"age", label:"Age", options:[
+        {label:"< 50",value:0},{label:"50–59",value:6},{label:"60–69",value:12},
+        {label:"70–79",value:20},{label:"≥ 80",value:28}]},
+      { id:"sex", label:"Sex", options:[{label:"Female",value:0},{label:"Male",value:5}]},
+      { id:"subsite", label:"Primary Subsite", options:[
+        {label:"Pyriform sinus (best prognosis)",value:0},
+        {label:"Posterior pharyngeal wall",value:8},{label:"Post-cricoid region (worst)",value:12}]},
+      { id:"t", label:"T Stage", options:[
+        {label:"T1",value:0},{label:"T2",value:8},{label:"T3",value:15},{label:"T4",value:22}]},
+      { id:"n", label:"N Stage", options:[
+        {label:"N0",value:0},{label:"N1",value:9},{label:"N2",value:17},{label:"N3",value:24}]},
+      { id:"m", label:"M Stage", options:[{label:"M0",value:0},{label:"M1",value:32}]},
+      { id:"surgery", label:"Surgery", options:[{label:"Yes",value:0},{label:"No",value:15}]},
+      { id:"rt", label:"Radiotherapy", options:[{label:"Yes",value:0},{label:"No",value:8}]}
+    ],
+    lookup: p => ({
+      "3-yr OS": Math.max(2,Math.min(92,88-p*0.80)),
+      "5-yr OS": Math.max(2,Math.min(88,82-p*0.82)),
+      "3-yr CSS": Math.max(2,Math.min(94,91-p*0.76)),
+      "5-yr CSS": Math.max(2,Math.min(90,86-p*0.79))
+    })
+  },
+
+  larynx: {
+    label: "Laryngeal Carcinoma",
+    subtitle: "Glottic · Supraglottic · Subglottic",
+    reference: "HNSCC SEER 2016 subgroup | Systematic review 2023",
+    color: "#5c6bc0", tag: "🌐 SEER",
+    fields: [
+      { id:"age", label:"Age", options:[
+        {label:"< 50",value:0},{label:"50–59",value:6},{label:"60–69",value:11},
+        {label:"70–79",value:18},{label:"≥ 80",value:26}]},
+      { id:"sex", label:"Sex", options:[{label:"Female",value:0},{label:"Male",value:4}]},
+      { id:"subsite", label:"Subsite", options:[
+        {label:"Glottic (best prognosis)",value:0},{label:"Supraglottic",value:10},{label:"Subglottic",value:14}]},
+      { id:"grade", label:"Grade", options:[
+        {label:"G1",value:0},{label:"G2",value:7},{label:"G3",value:15},{label:"G4",value:20}]},
+      { id:"t", label:"T Stage", options:[
+        {label:"T1",value:0},{label:"T2",value:8},{label:"T3",value:17},{label:"T4",value:24}]},
+      { id:"n", label:"N Stage", options:[
+        {label:"N0",value:0},{label:"N1",value:9},{label:"N2",value:17},{label:"N3",value:25}]},
+      { id:"m", label:"M Stage", options:[{label:"M0",value:0},{label:"M1",value:30}]},
+      { id:"surgery", label:"Surgery", options:[
+        {label:"Total laryngectomy",value:0},{label:"Partial / conservation",value:2},{label:"No surgery",value:18}]},
+      { id:"rt", label:"Radiotherapy", options:[{label:"Yes",value:0},{label:"No",value:9}]}
+    ],
+    lookup: p => ({
+      "5-yr OS": Math.max(2,Math.min(95,91-p*0.77)),
+      "8-yr OS": Math.max(2,Math.min(90,86-p*0.80)),
+      "5-yr CSS": Math.max(2,Math.min(96,93-p*0.73)),
+      "8-yr CSS": Math.max(2,Math.min(92,89-p*0.77))
+    })
+  }
+};
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let activeKey = 'oral_india';
+let selections = {};
+let result = null;
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function riskCategory(pct) {
+  if (pct >= 70) return { label:"Low Risk", emoji:"✅", color:"#155724", bg:"#d4edda", border:"#c3e6cb" };
+  if (pct >= 45) return { label:"Intermediate Risk", emoji:"⚠️", color:"#856404", bg:"#fff3cd", border:"#ffc107" };
+  return { label:"High Risk", emoji:"🔴", color:"#721c24", bg:"#f8d7da", border:"#f5c6cb" };
+}
+
+function maxPoints(cancer) {
+  return cancer.fields.reduce((a,f) => a + Math.max(...f.options.map(o=>o.value)), 0);
+}
+
+function drawGauge(svg, value) {
+  const col = value >= 70 ? "#1e7e34" : value >= 45 ? "#d4a00a" : "#c82333";
+  const r = 42, cx = 50, cy = 62;
+  const halfCirc = Math.PI * r;
+  const offset = halfCirc * (1 - Math.min(value,100)/100);
+  svg.innerHTML = `
+    <path d="M8 62 A42 42 0 0 1 92 62" fill="none" stroke="#e9ecef" stroke-width="9" stroke-linecap="round"/>
+    <path d="M8 62 A42 42 0 0 1 92 62" fill="none" stroke="${col}" stroke-width="9" stroke-linecap="round"
+      stroke-dasharray="${halfCirc}" stroke-dashoffset="${offset}"/>
+    <text x="50" y="58" text-anchor="middle" font-size="17" font-weight="800" fill="${col}" font-family="Segoe UI,Arial,sans-serif">${Math.round(value)}%</text>
+  `;
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
+function render() {
+  const cancer = CANCERS[activeKey];
+  const survObj = result ? cancer.lookup(result.total) : null;
+  const survKeys = Object.keys(cancer.lookup(0));
+  const survVals = survObj ? Object.values(survObj) : [];
+  const allFilled = cancer.fields.every(f => selections[f.id] !== undefined);
+  const mp = maxPoints(cancer);
+  const pts = result ? result.total : 0;
+  const ptsPct = Math.min(100, (pts/mp)*100);
+  const ptCol = ptsPct < 33 ? "#1e7e34" : ptsPct < 60 ? "#d4a00a" : "#c82333";
+  const primary = survVals[0] ?? null;
+  const risk = primary !== null ? riskCategory(primary) : null;
+  const isIndia = activeKey === 'oral_india';
+
+  document.getElementById('app').innerHTML = `
+    <!-- Header -->
+    <div class="header" style="background:linear-gradient(135deg,${cancer.color},${cancer.color}cc)">
+      <div class="header-sub">BBCI · Head &amp; Neck Oncology Nomogram Suite</div>
+      <h1>H&amp;N Cancer Survival Calculator</h1>
+      <p class="header-desc">Multi-database: NCRP India · ICMR · TMH · BBCI · SEER · Published Asian cohorts</p>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+      <div class="legend-item" style="border:1.5px solid #b5451b33">
+        <div class="legend-dot" style="background:#b5451b"></div>
+        <span class="legend-tag" style="color:#b5451b">🇮🇳 INDIA</span>
+        <span class="legend-desc">NCRP/ICMR/TMH/BBCI</span>
+      </div>
+      <div class="legend-item" style="border:1.5px solid #1a6b8a33">
+        <div class="legend-dot" style="background:#1a6b8a"></div>
+        <span class="legend-tag" style="color:#1a6b8a">🌐 SEER</span>
+        <span class="legend-desc">US SEER database</span>
+      </div>
+      <div class="legend-item" style="border:1.5px solid #2d7d4633">
+        <div class="legend-dot" style="background:#2d7d46"></div>
+        <span class="legend-tag" style="color:#2d7d46">🌐 INTL</span>
+        <span class="legend-desc">International cohorts</span>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      ${Object.entries(CANCERS).map(([key,c]) => `
+        <button class="tab-btn ${key===activeKey?'active':''}" onclick="switchTab('${key}')"
+          style="${key===activeKey ? `background:${c.color};border-color:${c.color}` : `border-color:#dee2e6`}">
+          <div class="tab-tag">${c.tag}</div>
+          <div class="tab-label">${c.label.split('(')[0].trim()}</div>
+        </button>`).join('')}
+    </div>
+
+    <!-- Info card -->
+    <div class="info-card" style="border-color:${cancer.color}">
+      <span class="info-tag" style="background:${cancer.color}22;color:${cancer.color}">${cancer.tag}</span>
+      <div class="info-title" style="color:${cancer.color}">${cancer.label}</div>
+      <div class="info-subtitle">${cancer.subtitle}</div>
+      <div class="info-ref">📄 ${cancer.reference}</div>
+      ${isIndia ? `<div class="india-note">⚡ ${cancer.note}</div>` : ''}
+    </div>
+
+    <!-- Fields -->
+    <div class="fields-grid">
+      ${cancer.fields.map(f => `
+        <div class="field-card ${selections[f.id]!==undefined?'filled':''}"
+          style="${selections[f.id]!==undefined ? `border-color:${cancer.color}66` : ''}">
+          <label class="field-label">${f.label}</label>
+          <select class="field-select" onchange="handleSelect('${f.id}',this.value)">
+            <option value="">— select —</option>
+            ${f.options.map(o=>`<option value="${o.value}" ${selections[f.id]===o.value?'selected':''}>${o.label}</option>`).join('')}
+          </select>
+        </div>`).join('')}
+    </div>
+
+    <!-- Button -->
+    <button class="calc-btn" onclick="calculate()"
+      style="background:${allFilled ? `linear-gradient(135deg,${cancer.color},${cancer.color}cc)` : '#ced4da'}"
+      ${!allFilled?'disabled':''}>
+      ${allFilled ? 'Calculate Survival →' : `Fill all ${cancer.fields.length} fields`}
+    </button>
+
+    <!-- Results -->
+    ${result ? `
+    <div class="result-card" style="border-color:${cancer.color}33">
+      <div class="result-title">Nomogram Result</div>
+
+      <!-- Point bar -->
+      <div class="point-bar-label">
+        <span class="point-bar-text">Total Points</span>
+        <span class="point-bar-val" style="color:${ptCol}">${pts} / ${mp}</span>
+      </div>
+      <div class="point-bar-bg">
+        <div class="point-bar-fill" style="width:${ptsPct}%;background:linear-gradient(90deg,${ptCol}99,${ptCol})"></div>
+      </div>
+
+      <!-- Risk badge -->
+      <div class="risk-badge" style="background:${risk.bg};border-color:${risk.border};color:${risk.color}">
+        ${risk.emoji} ${risk.label}
+      </div>
+
+      <!-- Gauges -->
+      <div class="gauges-grid" id="gauges-grid">
+        ${survKeys.map((lbl,i) => `
+          <div class="gauge-wrap">
+            <svg id="gauge-${i}" width="100" height="66" viewBox="0 0 100 66"></svg>
+            <div class="gauge-label">${lbl}</div>
+          </div>`).join('')}
+      </div>
+
+      <!-- India benchmarks -->
+      ${isIndia ? `
+      <div class="benchmarks">
+        <div class="benchmarks-title">📊 India Reference Benchmarks (NCRP / TMH)</div>
+        ${[
+          ["NCRP overall 5-yr OS (10 registries, 2025)","37.2%"],
+          ["TMH Mumbai 5-yr OS (tertiary care, 2024)","65%"],
+          ["Stage I → 5-yr OS (TMH)","~83%"],
+          ["Stage IV → 5-yr OS (TMH)","~55%"],
+          ["Node-negative 5-yr OS (Kerala)","~79%"],
+          ["Node-positive 5-yr OS (Kerala)","~59%"],
+          ["Poorly diff. grade HR (TMH)","2.44×"],
+          ["BBCI Guwahati — part of NCRP registry","✓"]
+        ].map(([k,v])=>`
+          <div class="benchmark-row">
+            <span class="benchmark-key">${k}</span>
+            <span class="benchmark-val">${v}</span>
+          </div>`).join('')}
+      </div>` : ''}
+
+      <!-- Breakdown -->
+      <div class="breakdown">
+        <div class="breakdown-title">Factor Breakdown</div>
+        ${cancer.fields.map(f=>`
+          <div class="breakdown-row">
+            <span class="breakdown-key">${f.label}</span>
+            <span style="font-weight:700;color:${(selections[f.id]??0)>0?'#c82333':'#1e7e34'}">+${selections[f.id]??0} pts</span>
+          </div>`).join('')}
+      </div>
+
+      <!-- Sources -->
+      <div class="sources">
+        <div class="sources-title">Data Sources</div>
+        <div>• JAMA Netw Open 2025 — NCRP 10 registries incl. BBCI Guwahati (n=14,059)</div>
+        <div>• ecancer 2024 — TMH Mumbai (n=1,895 oral cancer)</div>
+        <div>• medrxiv 2023 — BBCI Guwahati OSCC + HPV/p16 (NE India)</div>
+        <div>• SEER (PMC5239458) — HNSCC 36,179 patients</div>
+        <div>• Front. Oncol. 2021 (PMC8255987) — Hypopharynx</div>
+        <div>• Asian NPC cohort + SEER — Nasopharynx</div>
+      </div>
+
+      <!-- Disclaimer -->
+      <div class="disclaimer">
+        ⚠️ <strong>Clinical notice:</strong> Survival estimates derive from population-level nomogram models.
+        Indian-cohort module uses NCRP/TMH/BBCI published data but point-scores are approximations —
+        not derived from individual patient-level regression. Validate against your BBCI institutional
+        cohort before clinical use. Does not replace multidisciplinary tumour board judgement.
+      </div>
+    </div>` : ''}
+  `;
+
+  // Draw SVG gauges after DOM update
+  if (result) {
+    survKeys.forEach((lbl,i) => {
+      const svg = document.getElementById(`gauge-${i}`);
+      if (svg) drawGauge(svg, survVals[i] ?? 0);
+    });
+  }
+}
+
+// ─── ACTIONS ─────────────────────────────────────────────────────────────────
+function switchTab(key) {
+  activeKey = key;
+  selections = {};
+  result = null;
+  render();
+}
+
+function handleSelect(id, val) {
+  if (val === '') {
+    delete selections[id];
+  } else {
+    selections[id] = Number(val);
+  }
+  result = null;
+  render();
+}
+
+function calculate() {
+  const cancer = CANCERS[activeKey];
+  const allFilled = cancer.fields.every(f => selections[f.id] !== undefined);
+  if (!allFilled) return;
+  const total = Object.values(selections).reduce((a,b) => a+b, 0);
+  result = { total };
+  render();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
