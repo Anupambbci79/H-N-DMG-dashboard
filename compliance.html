@@ -191,14 +191,14 @@
       <div><label>DMG</label><br><select id="dmg">
         <option value="">Select</option>
         <option>Def RT</option><option>Def RT+CT</option><option>Pall RT</option>
-        <option>Surgery</option><option>Surgery with adjuvant RT</option><option>Noadjuvant CT</option><option>Pall CT</option><option>Observation</option><option>Adjuvant RT</option><option>Adjuvant RTCT</option><option>BSC</option>
+        <option>Surgery</option><option>Noadjuvant CT</option><option>Pall CT</option><option>Observation</option><option>Adjuvant RT</option><option>Adjuvant RTCT</option><option>BSC</option>
       </select></div>
       <div><label>DMG Date</label><br><input id="dmg_date" type="date"></div>
       <div><label>Actual Treatment</label><br><select id="actual_treatment">
         <option value="">Select</option>
         <option>Def RT</option><option>Def RT+CT</option><option>Pall RT</option><option>Adjuvant RT</option><option>Adjuvant RTCT</option>
-        <option>Surgery</option><option>Surgery with adjuvant RT</option><option>Noadjuvant CT</option><option>Pall CT</option><option>Observation</option><option>BSC</option>
-      <option>Referred Outside</option><option>Defaulted</option></select></div>
+        <option>Surgery</option><option>Noadjuvant CT</option><option>Pall CT</option><option>Observation</option><option>BSC</option>
+      <option>Referred Outside</option></select></div>
       <div><label>Actual Start Date</label><br><input id="actual_treatment_start_date" type="date"></div>
       <div><label>Date of Surgery</label><br><input id="date_of_surgery" type="date"></div>
       <div><label>Date of Starting Adjuvant RT</label><br><input id="date_of_starting_adjuvant_rt" type="date"></div>
@@ -221,6 +221,10 @@
       <div><label>Date of Completion of Treatment</label><br><input id="date_of_completion_of_treatment" type="date"></div>
       <div><label>TNM</label><br><input id="tnm" readonly style="background:#f2f2f2;"></div>
       <div><label>TAT (days)</label><br><input id="tat" readonly style="background:#f2f2f2;"></div>
+      <div>
+        <label>Remark</label><br>
+        <input id="remark" type="text" placeholder="Enter any additional details">
+      </div>
       <div style="align-self: flex-end;">
         <input type="submit" value="Add" class="btn" id="submitBtn">
       </div>
@@ -251,6 +255,7 @@
           <th>NC Type</th>
           <th>Reason for Deviation</th>
           <th>Complete Date</th>
+          <th>Remark</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -268,11 +273,68 @@
   </div>
 </div>
 <script>
-const API_BASE = "https://sheetdb.io/api/v1/o8uj0gn1iu70b";
-const USERS_API = `${API_BASE}?sheet=Users`;
-const AUDIT_API = `${API_BASE}?sheet=AuditLog`;
-const USAGE_API = `${API_BASE}?sheet=UsageAudit`;
-const PATIENT_API = `${API_BASE}?sheet=Sheet1`;
+// ===== Apps Script backend (replaces SheetDB) =====
+// Paste your Web App /exec URL here after deploying Code.gs
+const API_BASE = "https://script.google.com/macros/s/AKfycbySoX-XU1Ils7voqlsCiqyMpnLApiirW401uYBrtoT7sOa7uUhs3lReo8Pi_z_-bdg9/exec";
+
+// Session token issued by the server at login. Nothing is readable without it.
+let authToken = sessionStorage.getItem("dmg_token") || null;
+
+// Session expired / tampered token -> bounce back to the login screen.
+function forceLogout(msg) {
+  sessionStorage.removeItem("dmg_user");
+  sessionStorage.removeItem("dmg_token");
+  authToken = null;
+  alert(msg || "Your session has expired. Please log in again.");
+  location.reload();
+}
+function checkAuthError(resp) {
+  if (resp && (resp.error === "unauthorized" || resp.error === "forbidden")) {
+    forceLogout(resp.error === "forbidden"
+      ? "You don't have permission for that."
+      : "Your session has expired. Please log in again.");
+    return true;
+  }
+  return false;
+}
+
+// POST helper — uses text/plain to dodge CORS preflight (Apps Script quirk)
+function apiPost(body) {
+  const payload = Object.assign({}, body);
+  if (authToken && payload.action !== "login") payload.token = authToken;
+  return fetch(API_BASE, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload)
+  }).then(r => r.json()).then(resp => {
+    if (checkAuthError(resp)) return resp;
+    if (resp && resp.error) console.error("Backend error:", resp.error, body);
+    if (resp && resp.unmatched && resp.unmatched.length)
+      console.warn("Columns missing in sheet header (values NOT saved):", resp.unmatched, "sheet:", body.sheet);
+    return resp;
+  });
+}
+// Authenticated GET. Returns [] on an auth failure so callers can't crash.
+function apiList(sheet) {
+  return fetchJson(`${API_BASE}?action=list&sheet=${encodeURIComponent(sheet)}&token=${encodeURIComponent(authToken || "")}`)
+    .then(resp => {
+      if (checkAuthError(resp)) return [];
+      if (resp && resp.error) { console.error("Backend error:", resp.error, sheet); return []; }
+      return Array.isArray(resp) ? resp : [];
+    });
+}
+function apiLogin(username, password) {
+  return apiPost({ action: "login", username, password });
+}
+function apiInsert(sheet, data) {
+  return apiPost({ action: "insert", sheet, data });
+}
+function apiUpdate(sheet, key, value, data) {
+  return apiPost({ action: "update", sheet, key, value, data });
+}
+function apiDelete(sheet, key, value) {
+  return apiPost({ action: "delete", sheet, key, value });
+}
 
 let userRole = null;
 let username = null;
@@ -349,14 +411,16 @@ function calcComplianceNCType(row) {
 
 // ========== Login and session ==========
 function checkLogin() {
-  const user = document.getElementById("loginUserInput").value.trim().toLowerCase();
+  const user = document.getElementById("loginUserInput").value.trim();
   const pwd = document.getElementById("pwdInput").value;
   document.getElementById("loginError").innerText = "Checking credentials...";
-  fetchJson(`${API_BASE}/search?sheet=Users&username=${encodeURIComponent(user)}`).then(users => {
-    if (users && users.length > 0 && users[0].password === pwd) {
-      username = users[0].username;
-      userRole = users[0].role;
-      fullName = users[0].full_name || "";
+  apiLogin(user, pwd).then(resp => {
+    if (resp && resp.success && resp.token) {
+      authToken = resp.token;
+      sessionStorage.setItem("dmg_token", authToken);
+      username = resp.user.username;
+      userRole = resp.user.role;
+      fullName = resp.user.full_name || "";
       sessionStorage.setItem("dmg_user", JSON.stringify({username, userRole, fullName}));
       document.getElementById("loginOverlay").style.display = "none";
       document.getElementById("mainContent").style.display = "block";
@@ -366,16 +430,28 @@ function checkLogin() {
       fetchData();
   applyDateRestrictions();
     } else {
-      document.getElementById("loginError").innerText = "Invalid username or password!";
+      // Server message covers both bad credentials and the lockout notice.
+      document.getElementById("loginError").innerText =
+        (resp && resp.error) ? resp.error : "Invalid username or password!";
     }
   }).catch(e => {
     document.getElementById("loginError").innerText = "Login failed, try again.";
   });
 }
 function logout() {
-  postAuditLog("logout");
-  sessionStorage.removeItem("dmg_user");
-  location.reload();
+  const t = authToken;
+  // Write the audit entry FIRST, then kill the token — otherwise the two
+  // requests race and the logout can invalidate the token mid-flight.
+  Promise.resolve(postAuditLog("logout")).catch(() => {}).then(() => {
+    sessionStorage.removeItem("dmg_user");
+    sessionStorage.removeItem("dmg_token");
+    authToken = null;
+    return fetch(API_BASE, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "logout", token: t })
+    }).catch(() => {});
+  }).then(() => location.reload());
 }
 
 function applyDateRestrictions() {
@@ -399,7 +475,8 @@ function applyDateRestrictions() {
 window.onload = function() {
   const today = todayStr();
   const sess = sessionStorage.getItem("dmg_user");
-  if (sess) {
+  // Both are required: a stored user without a live token can't call the API.
+  if (sess && authToken) {
     const u = JSON.parse(sess);
     username = u.username;
     userRole = u.userRole;
@@ -424,7 +501,7 @@ function setRolePermissions() {
   document.getElementById('downloadExcelBtn').style.display = (userRole === "admin") ? "" : "none";
 }
 function loadUsers() {
-  fetchJson(USERS_API).then(users => {
+  apiList("Users").then(users => {
     usersData = users;
     renderUserTable();
   });
@@ -444,7 +521,7 @@ function renderUserTable() {
 }
 function deleteUser(user) {
   if (!confirm("Delete this user?")) return;
-  fetch(`${API_BASE}?sheet=Users&username=${encodeURIComponent(user)}`, { method: "DELETE" })
+  apiDelete("Users", "username", user)
     .then(() => {
       loadUsers();
       document.getElementById("addUserStatus").innerText = "User deleted!";
@@ -471,11 +548,7 @@ function addUser() {
     return;
   }
   let userRow = { username: uname, password: pwd, role: "guest", full_name: name };
-  fetch(USERS_API, {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({ data: [userRow] })
-  }).then(() => {
+  apiInsert("Users", userRow).then(() => {
     loadUsers();
     document.getElementById("addUserStatus").innerText = `User added! Username: ${uname}, Password: ${pwd}`;
     document.getElementById("genUsername").value = "";
@@ -488,18 +561,10 @@ function addUser() {
 document.getElementById("passwordGenForm").onsubmit = e => e.preventDefault();
 
 function postAuditLog(action) {
-  fetch(AUDIT_API, {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({ data: [{ username, action, timestamp: nowDateTimeStr() }] })
-  });
+  return apiInsert("AuditLog", { username, action, timestamp: nowDateTimeStr() });
 }
 function postUsageAudit(action, patient_id) {
-  fetch(USAGE_API, {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({ data: [{ username, action, patient_id, timestamp: nowDateTimeStr() }] })
-  });
+  apiInsert("UsageAudit", { username, action, patient_id, timestamp: nowDateTimeStr() });
 }
 function renderAuditLog() {
   const logs = auditData || [];
@@ -569,14 +634,14 @@ function changeUsagePage(newPage) {
   renderUsageAudit();
 }
 function loadAuditLog() {
-  fetchJson(AUDIT_API).then(logs => {
+  apiList("AuditLog").then(logs => {
     auditData = logs;
     auditPage = 1;
     renderAuditLog();
   });
 }
 function loadUsageAudit() {
-  fetchJson(USAGE_API).then(logs => {
+  apiList("UsageAudit").then(logs => {
     usageAuditData = logs;
     usagePage = 1;
     renderUsageAudit();
@@ -604,10 +669,10 @@ function syncDeviationReason() {
 
 function fetchData() {
   Promise.all([
-    fetchJson(PATIENT_API),
-    userRole === "admin" ? fetchJson(USERS_API) : Promise.resolve([]),
-    userRole === "admin" ? fetchJson(AUDIT_API) : Promise.resolve([]),
-    userRole === "admin" ? fetchJson(USAGE_API) : Promise.resolve([])
+    apiList("Sheet1"),
+    userRole === "admin" ? apiList("Users") : Promise.resolve([]),
+    userRole === "admin" ? apiList("AuditLog") : Promise.resolve([]),
+    userRole === "admin" ? apiList("UsageAudit") : Promise.resolve([])
   ]).then(([data, users, audit, usage]) => {
     tableData = data;
     if (userRole === "admin") {
@@ -630,6 +695,7 @@ function updateTable() {
     row.nc_type = compObj.ncType || "";
     row.reason_for_deviation = row.reason_for_deviation || "";
     return row;
+    row.remark = row.remark || "";
   }).filter(row => {
     if (complianceFilter && row.compliance_status !== complianceFilter) return false;
     if (consultantFilter && row.consultant !== consultantFilter) return false;
@@ -674,6 +740,7 @@ function updateTable() {
         <td style="${ncTypeStyle}">${row.nc_type || ""}</td>
         <td>${row.reason_for_deviation || ""}</td>
         <td>${row.date_of_completion_of_treatment || ""}</td>
+        <td>${row.remark || ""}</td>
         <td>
           <div class="actions-btn">
             <button class="edit-btn" onclick='editEntry("${row.patient_id}")'>Edit</button>
@@ -850,7 +917,7 @@ function editEntry(pid) {
 }
 function deleteEntry(pid) {
   if (!confirm("Delete this entry?")) return;
-  fetch(`${PATIENT_API}&patient_id=${encodeURIComponent(pid)}`, { method: "DELETE" })
+  apiDelete("Sheet1", "patient_id", pid)
     .then(() => { fetchData();
   applyDateRestrictions(); postUsageAudit("delete", pid); });
 }
@@ -939,43 +1006,35 @@ document.getElementById('entryForm').onsubmit = function(e) {
     nc_type: (compliance === "NC" ? ncType : ""),
     reason_for_deviation: (compliance === "NC" ? document.getElementById('reason_for_deviation_text').value.trim() : ""),
     date_of_completion_of_treatment: form.date_of_completion_of_treatment.value,
-    tat: form.tat.value
+    tat: form.tat.value,
+    remark: form.remark ? form.remark.value.trim() : ""
   };
 
   if (editMode && editRowId) {
-    // PATCH block (edit/update)
-    fetch(`${API_BASE}/patient_id/${encodeURIComponent(editRowId)}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data: newRow })
-    })
-    .then(r => r.json())
+    // Update (edit) block
+    apiUpdate("Sheet1", "patient_id", editRowId, newRow)
     .then(resp => {
-      console.log("SheetDB PATCH response:", resp);
+      console.log("Update response:", resp);
       if (resp.updated === 1) {
         alert("Update successful!");
         editMode = false; editRowId = null; form.reset(); fetchData();
   applyDateRestrictions();
         document.getElementById("submitBtn").value = "Add";
       } else {
-        alert("Update failed: SheetDB did not update any row! (updated: 0)\nCheck patient_id and Sheet carefully.");
+        alert("Update failed: no matching row found! (updated: 0)\nCheck patient_id and Sheet carefully.");
         console.log("DEBUG: Tried to update patient_id:", editRowId, "with data:", newRow);
       }
     })
     .catch(e => {
-      alert("PATCH error: " + e);
-      console.error("PATCH error:", e);
+      alert("Update error: " + e);
+      console.error("Update error:", e);
     });
   } else {
     // POST block (add new)
     if (tableData.some(row => row.patient_id === newRow.patient_id)) {
       showFormAlert("Patient ID already exists."); return false;
     }
-    fetch(PATIENT_API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data: newRow })
-    }).then(() => { 
+    apiInsert("Sheet1", newRow).then(() => { 
       form.reset(); fetchData();
   applyDateRestrictions(); document.getElementById("submitBtn").value = "Add";
     });
@@ -1006,7 +1065,8 @@ function downloadExcel() {
     "Compliance Status": row.compliance_status,
     "NC Type": row.nc_type,
     "Reason for Deviation": row.reason_for_deviation || "",
-    "Date of Completion": row.date_of_completion_of_treatment
+    "Date of Completion": row.date_of_completion_of_treatment,
+    "Remark": row.remark || ""
   }));
   let ws = XLSX.utils.json_to_sheet(exportData);
   let wb = XLSX.utils.book_new();
