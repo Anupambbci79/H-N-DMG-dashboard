@@ -1,0 +1,2065 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>H&amp;N Surgery Registry · BBCI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --bg: #f3f6fb;
+      --surface: #ffffff;
+      --surface-2: #f8fbff;
+      --text: #1a2433;
+      --muted: #66758a;
+      --border: #d9e3f0;
+      --primary: #143d6b;
+      --accent: #148a6a;
+      --danger: #c43d4b;
+      --warning: #b7791f;
+      --shadow: 0 10px 28px rgba(18, 42, 67, 0.08);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(180deg, #eef3f9 0%, #f6f9fc 100%);
+      color: var(--text);
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 260px 1fr;
+    }
+
+    .sidebar {
+      background: linear-gradient(180deg, #0f2f58 0%, #174b84 100%);
+      color: #fff;
+      padding: 22px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .brand {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .brand h1 {
+      margin: 0 0 6px;
+      font-size: 21px;
+      line-height: 1.25;
+    }
+
+    .brand p {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.5;
+      color: rgba(255,255,255,0.82);
+    }
+
+    .role-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .nav-title {
+      margin: 4px 10px 0;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.7);
+    }
+
+    .nav {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .nav button {
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: #fff;
+      text-align: left;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .nav button:hover,
+    .nav button.active {
+      background: rgba(255,255,255,0.14);
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.08);
+      font-size: 12px;
+      color: rgba(255,255,255,0.84);
+      line-height: 1.5;
+    }
+
+    .main {
+      padding: 24px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .topbar h2 {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.15;
+    }
+
+    .topbar p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .header-badges {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .header-badge {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: var(--primary);
+      box-shadow: var(--shadow);
+    }
+
+    .search-panel, .module-search-panel {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 18px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .search-panel input, .module-search-panel input {
+      min-width: 220px;
+      flex: 1;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .summary-card .label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .summary-card .value {
+      font-size: 26px;
+      font-weight: bold;
+      color: var(--primary);
+    }
+
+    .summary-card .sub {
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .content-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-head {
+      padding: 22px 24px 16px;
+      border-bottom: 1px solid #e8eef6;
+      background: linear-gradient(180deg, #fbfdff 0%, #f6faff 100%);
+    }
+
+    .card-head h3 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .card-head p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .page {
+      display: none;
+      padding: 24px;
+    }
+
+    .page.active { display: block; }
+
+    .section-title {
+      margin: 0 0 14px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--primary);
+      font-weight: bold;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .field.span-2 { grid-column: span 2; }
+
+    label {
+      font-weight: bold;
+      font-size: 13px;
+      color: #304156;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 14px;
+      color: var(--text);
+      outline: none;
+      transition: 0.18s ease;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: #5c8fc7;
+      box-shadow: 0 0 0 4px rgba(61, 117, 183, 0.10);
+    }
+
+    input[readonly] {
+      background: #f1f5fa;
+      color: #546579;
+    }
+
+    .form-block {
+      margin-bottom: 22px;
+      padding: 18px;
+      border: 1px solid #ebf1f8;
+      border-radius: 18px;
+      background: var(--surface-2);
+    }
+
+    .form-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .submit-btn,
+    .secondary-btn {
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      padding: 12px 18px;
+    }
+
+    .submit-btn {
+      background: var(--primary);
+      color: white;
+    }
+
+    .submit-btn:hover { background: #0f3157; }
+
+    .secondary-btn {
+      background: #eef4fb;
+      color: var(--primary);
+    }
+
+    .status {
+      min-height: 22px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .status.success { color: var(--accent); }
+    .status.error { color: var(--danger); }
+    .status.loading { color: var(--primary); }
+
+    .top-note {
+      margin-bottom: 18px;
+      background: #edf5ff;
+      border: 1px solid #d5e7ff;
+      color: #29507a;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .mode-banner {
+      margin-bottom: 18px;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.5;
+      font-weight: bold;
+      border: 1px solid;
+    }
+
+    .mode-banner.new {
+      background: #eaf7ef;
+      border-color: #b7e0c2;
+      color: #17603a;
+    }
+
+    .mode-banner.edit {
+      background: #fff6e8;
+      border-color: #ead1a3;
+      color: #8a5a10;
+    }
+
+    .resident-only { display: inline-flex; }
+    .admin-only { display: none; }
+
+    body.admin-mode .admin-only { display: inline-flex; }
+    body.admin-mode .resident-only { display: none; }
+
+    @media (max-width: 1200px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+      .summary-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 860px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .sidebar {
+        position: relative;
+        height: auto;
+        border-radius: 0 0 20px 20px;
+      }
+      .main { padding: 16px; }
+      .grid, .summary-grid { grid-template-columns: 1fr; }
+      .topbar h2 { font-size: 24px; }
+    }
+
+    /* ---------- Login, busy indicator, logout (GitHub version) ---------- */
+    .login-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: linear-gradient(180deg, #0f2f58 0%, #174b84 100%);
+    }
+
+    .login-overlay[hidden] { display: none; }
+
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+      background: var(--surface);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .login-card h2 { margin: 0; font-size: 22px; color: var(--primary); }
+    .login-card p { margin: 0 0 6px; font-size: 14px; color: var(--muted); line-height: 1.5; }
+    .login-card .submit-btn { width: 100%; margin-top: 4px; }
+
+    .login-back {
+      font-size: 13px;
+      color: var(--primary);
+      text-decoration: none;
+      text-align: center;
+    }
+
+    .busy-indicator {
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      z-index: 60;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: var(--primary);
+      color: #fff;
+      font-size: 13px;
+      font-weight: bold;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+
+    .busy-indicator.show { opacity: 1; }
+
+    .submit-btn:disabled { opacity: 0.6; cursor: wait; }
+
+    a.header-badge { text-decoration: none; }
+
+    .logout-btn {
+      margin-top: 10px;
+      width: 100%;
+      border: 1px solid rgba(255,255,255,0.3);
+      background: transparent;
+      color: #fff;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .logout-btn:hover { background: rgba(255,255,255,0.12); }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Head &amp; Neck Surgery Registry</h1>
+        <p>Modern data entry portal for patient master, surgery modules, pathology, and follow-up.</p>
+      </div>
+
+      <div class="role-switch">
+        <button type="button" id="residentModeBtn" class="secondary-btn" onclick="setRoleMode('resident')">Resident</button>
+        <button type="button" id="adminModeBtn" class="secondary-btn" onclick="setRoleMode('admin')">Admin</button>
+      </div>
+
+      <div class="nav-title">Navigation</div>
+      <div class="nav">
+        <button type="button" class="nav-btn active" data-page="patientPage" onclick="showPage('patientPage', this)">Patient Master</button>
+        <button type="button" class="nav-btn" data-page="surgeryPage" onclick="showPage('surgeryPage', this)">Surgery Index</button>
+        <button type="button" class="nav-btn" data-page="ssiPage" onclick="showPage('ssiPage', this)">SSI Module</button>
+        <button type="button" class="nav-btn" data-page="thyroidPage" onclick="showPage('thyroidPage', this)">Thyroid Module</button>
+        <button type="button" class="nav-btn" data-page="parotidPage" onclick="showPage('parotidPage', this)">Parotid Module</button>
+        <button type="button" class="nav-btn" data-page="larynxHypoPage" onclick="showPage('larynxHypoPage', this)">Larynx-Hypopharynx</button>
+        <button type="button" class="nav-btn" data-page="pathologyPage" onclick="showPage('pathologyPage', this)">Pathology-Oncology</button>
+        <button type="button" class="nav-btn" data-page="followupPage" onclick="showPage('followupPage', this)">Follow-up</button>
+      </div>
+
+      <div class="sidebar-footer">
+        Resident mode = entry only.<br>
+        Admin mode = password-protected export access.
+        <button type="button" class="logout-btn" onclick="logout()">Log out</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <h2 id="pageTitle">Patient Master Entry</h2>
+          <p id="pageSubtitle">Enter baseline demographic, clinical, and comorbidity details for the registry.</p>
+        </div>
+        <div class="header-badges">
+          <div class="header-badge resident-only">Resident View</div>
+          <div class="header-badge admin-only">Admin View</div>
+          <a class="header-badge" href="index.html">BBCI H&amp;N Portal</a>
+          <button type="button" class="secondary-btn admin-only" onclick="exportActiveSheetFromBackend()">Export Active Module</button>
+          <button type="button" class="secondary-btn admin-only" onclick="exportAllSheetsZip()">Export Full Registry</button>
+        </div>
+      </div>
+
+      <div class="search-panel">
+        <button type="button" class="secondary-btn" onclick="setEntryMode('new')">Add New</button>
+        <button type="button" class="secondary-btn" onclick="setEntryMode('edit')">Edit Existing</button>
+        <button type="button" class="secondary-btn" onclick="clearAllContext()">Clear All</button>
+      </div>
+
+      <div id="entryModeBanner" class="mode-banner new">Mode: Add New — fresh entry.</div>
+
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div class="label">Current Patient</div>
+          <div class="value" id="currentPatientId">—</div>
+          <div class="sub" id="currentPatientHospital">No patient selected</div>
+        </div>
+        <div class="summary-card">
+          <div class="label">Current Surgery</div>
+          <div class="value" id="currentSurgeryId">—</div>
+          <div class="sub" id="currentSurgerySub">No surgery selected</div>
+        </div>
+        <div class="summary-card">
+          <div class="label">Current Page</div>
+          <div class="value" id="currentPageMini">Patient</div>
+          <div class="sub">Module-aware navigation</div>
+        </div>
+        <div class="summary-card">
+          <div class="label">Entry Mode</div>
+          <div class="value" id="entryModeMini">New</div>
+          <div class="sub">New or edit workflow</div>
+        </div>
+      </div>
+
+      <div class="content-card">
+        <div class="card-head">
+          <h3 id="cardTitle">Patient Master Entry</h3>
+          <p id="cardText">Use this section to enter the core patient-level fields before proceeding to surgery and site-specific modules.</p>
+        </div>
+
+        <!-- PATIENT PAGE -->
+        <div id="patientPage" class="page active">
+          <div class="top-note">Search by Patient ID or UHID in edit mode. Patient ID is auto-generated in new mode and locked during edit.</div>
+          <div class="module-search-panel">
+            <input type="text" id="patientSearchInput" placeholder="Search by Patient ID or UHID">
+            <button type="button" class="secondary-btn" onclick="searchPatientAndAutofill()">Search Patient</button>
+            <button type="button" class="secondary-btn" onclick="resetPatientFormOnly()">Reset Form</button>
+          </div>
+
+          <form id="patientForm">
+            <input type="hidden" name="_rowNumber" id="patient_rowNumber">
+
+            <div class="form-block">
+              <div class="section-title">Identity and Consent</div>
+              <div class="grid">
+                <div class="field"><label>Patient ID</label><input type="text" name="patient_id" id="patient_id_field" required readonly></div>
+                <div class="field"><label>UHID (Hospital ID)</label><input type="text" name="hospital_id" required></div>
+                <div class="field"><label>Unit Name</label><input type="text" name="unit_name"></div>
+                <div class="field"><label>Consent for Registry</label><select name="consent_registry"><option value="1">Yes</option><option value="0">No</option></select></div>
+                <div class="field"><label>Consent for Research</label><select name="consent_research"><option value="1">Yes</option><option value="0">No</option></select></div>
+                <div class="field"><label>Residence</label><input type="text" name="residence"></div>
+              </div>
+            </div>
+
+            <div class="form-block">
+              <div class="section-title">Demographics and Background</div>
+              <div class="grid">
+                <div class="field"><label>Age (years)</label><input type="number" name="age_years"></div>
+                <div class="field"><label>Sex</label><select name="sex"><option value="1">Male</option><option value="2">Female</option><option value="3">Other</option></select></div>
+                <div class="field"><label>Education Level</label><input type="text" name="education_level"></div>
+                <div class="field"><label>Occupation</label><input type="text" name="occupation"></div>
+                <div class="field"><label>BMI</label><input type="number" step="0.1" name="bmi"></div>
+                <div class="field"><label>Performance Status</label><input type="text" name="performance_status"></div>
+                <div class="field"><label>Smoking Status</label><select name="smoking_status"><option value="0">Never</option><option value="1">Former</option><option value="2">Current</option></select></div>
+                <div class="field"><label>Smokeless Tobacco</label><select name="smokeless_tobacco"><option value="0">Never</option><option value="1">Former</option><option value="2">Current</option></select></div>
+                <div class="field"><label>Alcohol Use</label><select name="alcohol_use"><option value="0">Never</option><option value="1">Former</option><option value="2">Current</option></select></div>
+              </div>
+            </div>
+
+            <div class="form-block">
+              <div class="section-title">Comorbidities and Preoperative Labs</div>
+              <div class="grid">
+                <div class="field"><label>ASA Grade</label><input type="text" name="asa_grade"></div>
+                <div class="field"><label>Diabetes</label><select name="diabetes"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>HbA1c</label><input type="number" step="0.1" name="hba1c"></div>
+                <div class="field"><label>Hypertension</label><select name="hypertension"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>CAD</label><select name="cad"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>CKD</label><select name="ckd"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>CLD</label><select name="cld"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Immunosuppression</label><select name="immunosuppression"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Steroid Use</label><select name="steroid_use"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Antiplatelet Use</label><select name="antiplatelet_use"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Anticoagulant Use</label><select name="anticoagulant_use"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Preop Hb</label><input type="number" step="0.1" name="hb_preop"></div>
+                <div class="field"><label>Preop Albumin</label><input type="number" step="0.1" name="albumin_preop"></div>
+                <div class="field"><label>Preop WBC</label><input type="number" name="wbc_preop"></div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="submit-btn">Save Patient</button>
+              <button type="button" class="secondary-btn" onclick="resetPatientFormOnly()">Reset</button>
+              <div id="patientStatus" class="status"></div>
+            </div>
+          </form>
+        </div>
+
+        <!-- SURGERY PAGE -->
+        <div id="surgeryPage" class="page">
+          <div class="top-note">Search by Surgery ID, Patient ID or UHID in edit mode. If the patient has more than one surgery, you will be shown the list.</div>
+          <div class="module-search-panel">
+            <input type="text" id="surgerySearchInput" placeholder="Search by Surgery ID, Patient ID or UHID">
+            <button type="button" class="secondary-btn" onclick="searchSurgeryFormRecord()">Search Surgery</button>
+            <button type="button" class="secondary-btn" onclick="resetSurgeryFormOnly()">Reset Form</button>
+          </div>
+
+          <form id="surgeryForm">
+            <input type="hidden" name="_rowNumber" id="surgery_rowNumber">
+            <div class="form-block">
+              <div class="section-title">Surgery Details</div>
+              <div class="grid">
+                <div class="field"><label>Surgery ID</label><input type="text" name="surgery_id" id="surgery_id"></div>
+                <div class="field"><label>Patient ID</label><input type="text" name="patient_id" id="surgery_patient_id" required></div>
+                <div class="field"><label>Date of Surgery</label><input type="date" name="date_of_surgery" required></div>
+
+                <div class="field"><label>Admission Date</label><input type="date" name="admission_date"></div>
+                <div class="field"><label>Discharge Date</label><input type="date" name="discharge_date"></div>
+                <div class="field"><label>Site Code</label>
+                  <select name="site_code" required>
+                    <option value="">Select</option>
+                    <option value="1">SSI-only / other non-site-specific</option>
+                    <option value="2">Thyroid</option>
+                    <option value="3">Parotid</option>
+                    <option value="4">Larynx</option>
+                    <option value="5">Hypopharynx</option>
+                    <option value="6">Oral cavity</option>
+                    <option value="7">Oropharynx</option>
+                    <option value="8">Neck / cervical mass</option>
+                    <option value="9">Salivary gland other</option>
+                    <option value="10">Skin / scalp / cutaneous head and neck</option>
+                    <option value="11">Nose / paranasal sinus</option>
+                    <option value="12">Nasopharynx</option>
+                    <option value="13">Ear / temporal bone</option>
+                    <option value="14">Skull base</option>
+                    <option value="15">Esophagus / pharyngoesophageal region</option>
+                    <option value="16">Other</option>
+                  </select>
+                </div>
+
+                <div class="field span-2"><label>Anatomical Site / Standard Site Name</label><input type="text" name="anatomical_site_text" placeholder="e.g. Right thyroid lobe / Left parotid / Supraglottic larynx"></div>
+                <div class="field"><label>Diagnosis (Preop)</label><input type="text" name="diagnosis_preop" required></div>
+
+                <div class="field"><label>Disease Nature</label>
+                  <select name="benign_malignant_flag">
+                    <option value="1">Benign</option>
+                    <option value="2">Malignant</option>
+                    <option value="3">Inflammatory</option>
+                    <option value="4">Other</option>
+                  </select>
+                </div>
+
+                <div class="field"><label>Laterality</label>
+                  <select name="laterality">
+                    <option value="0">NA</option>
+                    <option value="1">Right</option>
+                    <option value="2">Left</option>
+                    <option value="3">Bilateral</option>
+                    <option value="4">Midline</option>
+                  </select>
+                </div>
+
+                <div class="field"><label>Episode Type</label>
+                  <select name="episode_type">
+                    <option value="">Select</option>
+                    <option value="1">New primary</option>
+                    <option value="2">Recurrence</option>
+                    <option value="3">Second primary</option>
+                    <option value="4">Revision</option>
+                    <option value="5">Staged procedure</option>
+                    <option value="6">Residual / completion surgery</option>
+                    <option value="7">Complication-related reoperation</option>
+                    <option value="8">Other</option>
+                  </select>
+                </div>
+
+                <div class="field"><label>Urgency</label>
+                  <select name="elective_urgent">
+                    <option value="1">Elective</option>
+                    <option value="2">Urgent</option>
+                    <option value="3">Emergency</option>
+                  </select>
+                </div>
+
+                <div class="field"><label>Setting</label>
+                  <select name="primary_revision_salvage">
+                    <option value="1">Primary</option>
+                    <option value="2">Revision</option>
+                    <option value="3">Salvage</option>
+                  </select>
+                </div>
+
+                <div class="field span-2"><label>Procedure Name</label><input type="text" name="procedure_name" required></div>
+
+                <div class="field"><label>Surgeon Name</label>
+                  <select name="surgeon_name" required>
+                    <option value="">Select</option>
+                    <option value="1">Dr Ashok Kr Das</option>
+                    <option value="2">Dr R.J. Das</option>
+                    <option value="3">Dr Tashnin Rahman</option>
+                    <option value="4">Dr Kishore Das</option>
+                    <option value="5">Dr Anupam Das</option>
+                    <option value="6">Dr Kaberi Kakati</option>
+                    <option value="7">Other</option>
+                  </select>
+                </div>
+
+                <div class="field"><label>Wound Class</label><select name="wound_class"><option value="1">Clean</option><option value="2">Clean-contaminated</option><option value="3">Contaminated</option><option value="4">Dirty</option></select></div>
+                <div class="field"><label>Duration (min)</label><input type="number" name="duration_min"></div>
+                <div class="field"><label>Estimated Blood Loss (mL)</label><input type="number" name="estimated_blood_loss"></div>
+                <div class="field"><label>Transfusion</label><select name="transfusion"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Drain Used</label><select name="drain_used"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Tracheostomy Done</label><select name="tracheostomy_done"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>ICU/HDU Postop</label><select name="icu_hdu_postop"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Antibiotic Prophylaxis</label><select name="antibiotic_prophylaxis"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Prophylaxis Agent</label><input type="text" name="prophylaxis_agent"></div>
+                <div class="field"><label>Timing Before Incision (min)</label><input type="number" name="prophylaxis_timing_min"></div>
+                <div class="field"><label>Redosing Done</label><select name="redosing_done"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Skin Prep Agent</label><input type="text" name="skin_prep_agent"></div>
+                <div class="field"><label>Nerve Monitoring Used</label><select name="nerve_monitoring_used"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Frozen Section</label><select name="frozen_section"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Mucosal Entry</label><select name="mucosal_entry"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Intraop Spillage/Breach</label><select name="intraop_spillage_breach"><option value="0">No</option><option value="1">Yes</option></select></div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="submit-btn">Save Surgery</button>
+              <button type="button" class="secondary-btn" onclick="resetSurgeryFormOnly()">Reset</button>
+              <div id="surgeryStatus" class="status"></div>
+            </div>
+          </form>
+        </div>
+
+        <!-- SSI PAGE -->
+        <div id="ssiPage" class="page">
+          <div class="top-note">In edit mode, search by Surgery ID, Patient ID or UHID. If the patient has entries for more than one surgery, you will be shown the list.</div>
+          <div class="module-search-panel">
+            <input type="text" id="ssiSearchInput" placeholder="Surgery ID, Patient ID or UHID">
+            <button type="button" class="secondary-btn" onclick="searchModuleBySurgeryId('ssi')">Search SSI</button>
+            <button type="button" class="secondary-btn" onclick="resetModuleFormOnly('ssi')">Reset Form</button>
+          </div>
+
+          <form id="ssiForm">
+            <input type="hidden" name="_rowNumber" id="ssi_rowNumber">
+            <div class="form-block">
+              <div class="section-title">SSI Module</div>
+              <div class="grid">
+                <div class="field"><label>Surgery ID</label><input type="text" name="surgery_id" id="ssi_surgery_id" required></div>
+                <div class="field"><label>Patient ID</label><input type="text" name="patient_id" id="ssi_patient_id" required></div>
+                <div class="field"><label>SSI Present</label><select name="ssi_present" required><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>SSI Date</label><input type="date" name="ssi_date"></div>
+                <div class="field"><label>Days from Surgery</label><input type="number" name="ssi_days_from_surgery"></div>
+                <div class="field"><label>SSI Type</label><select name="ssi_type"><option value="">Select</option><option value="1">Superficial</option><option value="2">Deep</option><option value="3">Organ-space</option></select></div>
+                <div class="field"><label>Diagnostic Basis</label><select name="ssi_diagnostic_basis"><option value="">Select</option><option value="1">Purulence</option><option value="2">Positive culture</option><option value="3">Deliberate opening</option><option value="4">Imaging</option><option value="5">Reoperation</option><option value="6">Clinical diagnosis</option></select></div>
+                <div class="field span-2"><label>SSI Site Detail</label><input type="text" name="ssi_site_detail"></div>
+                <div class="field"><label>Culture Sent</label><select name="culture_sent"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Organism Isolated</label><input type="text" name="organism_isolated"></div>
+                <div class="field"><label>MDR Flag</label><select name="mdr_flag"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field span-2"><label>SSI Treatment</label><input type="text" name="ssi_treatment"></div>
+                <div class="field"><label>Return to OT for SSI</label><select name="return_to_ot_ssi"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Readmission due to SSI</label><select name="readmission_ssi"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>SSI Resolved</label><select name="ssi_resolved"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>SSI Resolved Date</label><input type="date" name="ssi_resolved_date"></div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="submit-btn">Save SSI</button>
+              <button type="button" class="secondary-btn" onclick="resetModuleFormOnly('ssi')">Reset</button>
+              <div id="ssiStatus" class="status"></div>
+            </div>
+          </form>
+        </div>
+
+        <!-- THYROID PAGE -->
+        <div id="thyroidPage" class="page">
+          <div class="top-note">In edit mode, search by Surgery ID, Patient ID or UHID. If the patient has entries for more than one surgery, you will be shown the list.</div>
+          <div class="module-search-panel">
+            <input type="text" id="thyroidSearchInput" placeholder="Surgery ID, Patient ID or UHID">
+            <button type="button" class="secondary-btn" onclick="searchModuleBySurgeryId('thyroid')">Search Thyroid</button>
+            <button type="button" class="secondary-btn" onclick="resetModuleFormOnly('thyroid')">Reset Form</button>
+          </div>
+
+          <form id="thyroidForm">
+            <input type="hidden" name="_rowNumber" id="thyroid_rowNumber">
+            <div class="form-block">
+              <div class="section-title">Thyroid Module</div>
+              <div class="grid">
+                <div class="field"><label>Surgery ID</label><input type="text" name="surgery_id" id="thyroid_surgery_id" required></div>
+                <div class="field"><label>Patient ID</label><input type="text" name="patient_id" id="thyroid_patient_id" required></div>
+                <div class="field"><label>Indication</label><select name="thy_indication"><option value="">Select</option><option value="1">MNG</option><option value="2">Graves</option><option value="3">Toxic nodule</option><option value="4">Indeterminate nodule</option><option value="5">DTC</option><option value="6">MTC</option><option value="7">Completion</option><option value="8">Other</option></select></div>
+                <div class="field"><label>Compressive Symptoms</label><select name="compressive_symptoms"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Retrosternal Extension</label><select name="retrosternal_extension"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Thyroid Function Status</label><select name="thyroid_function_status"><option value="">Select</option><option value="1">Euthyroid</option><option value="2">Hyperthyroid</option><option value="3">Hypothyroid</option></select></div>
+                <div class="field"><label>Preop Laryngoscopy Done</label><select name="laryngoscopy_preop"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Preop Vocal Cord Mobility</label><select name="vc_mobility_preop"><option value="">Select</option><option value="0">Normal</option><option value="1">Reduced</option><option value="2">Fixed</option></select></div>
+                <div class="field"><label>USG Primary Size (cm)</label><input type="number" step="0.1" name="usg_primary_size_cm"></div>
+                <div class="field"><label>FNAC / Bethesda Result</label><input type="text" name="fnac_result"></div>
+                <div class="field"><label>Serum Calcium Preop</label><input type="number" step="0.1" name="serum_calcium_preop"></div>
+                <div class="field"><label>PTH Preop</label><input type="number" step="0.1" name="pth_preop"></div>
+                <div class="field"><label>Vitamin D Preop</label><input type="number" step="0.1" name="vitamin_d_preop"></div>
+                <div class="field"><label>Clinical Nodes</label><select name="clinical_nodes"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Extent of Thyroid Surgery</label><select name="thyroid_extent"><option value="">Select</option><option value="1">Hemithyroidectomy</option><option value="2">Total Thyroidectomy</option><option value="3">Near-total</option><option value="4">Completion</option></select></div>
+                <div class="field"><label>Central Neck Dissection</label><select name="central_neck_dissection"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Lateral Neck Dissection</label><select name="lateral_neck_dissection"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>RLN Identified</label><select name="rln_identified"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option><option value="2">Not applicable</option></select></div>
+                <div class="field"><label>RLN Monitoring Used</label><select name="rln_monitoring"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Parathyroids Identified (No.)</label><input type="number" name="parathyroids_identified_n"></div>
+                <div class="field"><label>Parathyroid Autotransplant</label><select name="parathyroid_autotransplant"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Postop Hematoma</label><select name="hematoma_postop"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Re-exploration for Bleed</label><select name="reexploration_bleed"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Calcium POD1</label><input type="number" step="0.1" name="calcium_pod1"></div>
+                <div class="field"><label>PTH Postop</label><input type="number" step="0.1" name="pth_postop"></div>
+                <div class="field"><label>Biochemical Hypocalcemia</label><select name="hypocalcemia_biochem"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Symptomatic Hypocalcemia</label><select name="hypocalcemia_symptomatic"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Temporary RLN Palsy</label><select name="temporary_rln_palsy"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Permanent RLN Palsy</label><select name="permanent_rln_palsy"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Permanent Hypoparathyroidism</label><select name="permanent_hypoparathyroidism"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="submit-btn">Save Thyroid Module</button>
+              <button type="button" class="secondary-btn" onclick="resetModuleFormOnly('thyroid')">Reset</button>
+              <div id="thyroidStatus" class="status"></div>
+            </div>
+          </form>
+        </div>
+
+        <!-- PAROTID PAGE -->
+        <div id="parotidPage" class="page">
+          <div class="top-note">In edit mode, search by Surgery ID, Patient ID or UHID. If the patient has entries for more than one surgery, you will be shown the list.</div>
+          <div class="module-search-panel">
+            <input type="text" id="parotidSearchInput" placeholder="Surgery ID, Patient ID or UHID">
+            <button type="button" class="secondary-btn" onclick="searchModuleBySurgeryId('parotid')">Search Parotid</button>
+            <button type="button" class="secondary-btn" onclick="resetModuleFormOnly('parotid')">Reset Form</button>
+          </div>
+
+          <form id="parotidForm">
+            <input type="hidden" name="_rowNumber" id="parotid_rowNumber">
+            <div class="form-block">
+              <div class="section-title">Parotid Module</div>
+              <div class="grid">
+                <div class="field"><label>Surgery ID</label><input type="text" name="surgery_id" id="parotid_surgery_id" required></div>
+                <div class="field"><label>Patient ID</label><input type="text" name="patient_id" id="parotid_patient_id" required></div>
+                <div class="field"><label>Side</label><select name="parotid_side"><option value="">Select</option><option value="1">Right</option><option value="2">Left</option><option value="3">Bilateral</option></select></div>
+                <div class="field"><label>Lobe Involved</label><select name="parotid_lobe"><option value="">Select</option><option value="1">Superficial</option><option value="2">Deep</option><option value="3">Both</option></select></div>
+                <div class="field"><label>Tumor Size (cm)</label><input type="number" step="0.1" name="parotid_size_cm"></div>
+                <div class="field"><label>Skin Involvement</label><select name="skin_involvement"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Preop Facial Weakness</label><select name="facial_weakness_preop"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>HB Grade Preop</label><select name="hb_grade_preop"><option value="">Select</option><option value="I">I</option><option value="II">II</option><option value="III">III</option><option value="IV">IV</option><option value="V">V</option><option value="VI">VI</option></select></div>
+                <div class="field"><label>FNAC / Milan Category</label><input type="text" name="milan_fnac"></div>
+                <div class="field"><label>Preop Suspicion</label><select name="benign_malignant_suspicion_parotid"><option value="">Select</option><option value="1">Benign</option><option value="2">Malignant</option><option value="3">Indeterminate</option></select></div>
+                <div class="field"><label>Clinical Nodal Disease</label><select name="nodal_disease_parotid"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Recurrent Parotid Tumor</label><select name="recurrent_parotid_tumor"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Parotid Procedure</label><select name="parotid_procedure"><option value="">Select</option><option value="1">ECD</option><option value="2">Superficial Parotidectomy</option><option value="3">Total Conservative</option><option value="4">Radical</option><option value="5">Other</option></select></div>
+                <div class="field"><label>Facial Nerve Preserved</label><select name="facial_nerve_preserved"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option><option value="2">Partially</option></select></div>
+                <div class="field"><label>Any Branch Sacrificed</label><select name="branch_sacrifice"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Nerve Graft / Reanimation</label><select name="nerve_graft"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Neck Dissection Done</label><select name="neck_dissection_parotid"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Reconstruction / Flap Used</label><select name="reconstruction_parotid"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>HB Grade POD1</label><select name="hb_grade_pod1"><option value="">Select</option><option value="I">I</option><option value="II">II</option><option value="III">III</option><option value="IV">IV</option><option value="V">V</option><option value="VI">VI</option></select></div>
+                <div class="field"><label>HB Grade 1 Month</label><select name="hb_grade_1m"><option value="">Select</option><option value="I">I</option><option value="II">II</option><option value="III">III</option><option value="IV">IV</option><option value="V">V</option><option value="VI">VI</option></select></div>
+                <div class="field"><label>HB Grade 3 Months</label><select name="hb_grade_3m"><option value="">Select</option><option value="I">I</option><option value="II">II</option><option value="III">III</option><option value="IV">IV</option><option value="V">V</option><option value="VI">VI</option></select></div>
+                <div class="field"><label>Permanent Facial Weakness</label><select name="permanent_facial_weakness"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Sialocele</label><select name="sialocele"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Salivary Fistula</label><select name="salivary_fistula"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Frey Syndrome</label><select name="frey_syndrome"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>First Bite Syndrome</label><select name="first_bite_syndrome"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="submit-btn">Save Parotid Module</button>
+              <button type="button" class="secondary-btn" onclick="resetModuleFormOnly('parotid')">Reset</button>
+              <div id="parotidStatus" class="status"></div>
+            </div>
+          </form>
+        </div>
+
+        <!-- LARYNX PAGE -->
+        <div id="larynxHypoPage" class="page">
+          <div class="top-note">In edit mode, search by Surgery ID, Patient ID or UHID. If the patient has entries for more than one surgery, you will be shown the list.</div>
+          <div class="module-search-panel">
+            <input type="text" id="larynxHypoSearchInput" placeholder="Surgery ID, Patient ID or UHID">
+            <button type="button" class="secondary-btn" onclick="searchModuleBySurgeryId('larynxHypo')">Search Larynx/Hypopharynx</button>
+            <button type="button" class="secondary-btn" onclick="resetModuleFormOnly('larynxHypo')">Reset Form</button>
+          </div>
+
+          <form id="larynxHypoForm">
+            <input type="hidden" name="_rowNumber" id="larynxHypo_rowNumber">
+            <div class="form-block">
+              <div class="section-title">Larynx + Hypopharynx Module</div>
+              <div class="grid">
+                <div class="field"><label>Surgery ID</label><input type="text" name="surgery_id" id="larynxHypo_surgery_id" required></div>
+                <div class="field"><label>Patient ID</label><input type="text" name="patient_id" id="larynxHypo_patient_id" required></div>
+                <div class="field"><label>Primary Site Group</label><select name="primary_site_group"><option value="">Select</option><option value="1">Larynx</option><option value="2">Hypopharynx</option></select></div>
+                <div class="field"><label>Subsite</label><select name="lh_subsite"><option value="">Select</option><option value="1">Supraglottic</option><option value="2">Glottic</option><option value="3">Subglottic</option><option value="4">Transglottic</option><option value="5">Pyriform sinus</option><option value="6">Postcricoid</option><option value="7">Posterior pharyngeal wall</option></select></div>
+                <div class="field"><label>Pathology Type</label><select name="lh_pathology_type"><option value="">Select</option><option value="1">Benign</option><option value="2">Malignant</option><option value="3">Other</option></select></div>
+                <div class="field"><label>Clinical T Stage</label><input type="text" name="cT_stage"></div>
+                <div class="field"><label>Clinical N Stage</label><input type="text" name="cN_stage"></div>
+                <div class="field"><label>Cord Mobility</label><select name="cord_mobility"><option value="">Select</option><option value="0">Normal</option><option value="1">Impaired</option><option value="2">Fixed</option></select></div>
+                <div class="field"><label>Airway Compromise</label><select name="airway_compromise"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Preop Tracheostomy</label><select name="tracheostomy_preop"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Preop Feeding Tube</label><select name="feeding_tube_preop"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Aspiration Symptoms</label><select name="aspiration_symptoms"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>VHI-10 Baseline</label><input type="number" name="vhi10_baseline"></div>
+                <div class="field"><label>MDADI Baseline</label><input type="number" step="0.1" name="mdadi_baseline"></div>
+                <div class="field"><label>Prior RT/CRT</label><select name="prior_rt_crt"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Salvage Setting</label><select name="salvage_laryngectomy"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Procedure Type</label><select name="lh_procedure"><option value="">Select</option><option value="1">Endoscopic</option><option value="2">Partial laryngectomy</option><option value="3">Supracricoid</option><option value="4">Total laryngectomy</option><option value="5">TL + pharyngectomy</option><option value="6">Other</option></select></div>
+                <div class="field"><label>Neck Dissection Done</label><select name="neck_dissection_lh"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Flap Reconstruction</label><select name="flap_reconstruction_lh"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Primary TEP</label><select name="primary_tep"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Salivary Bypass Tube</label><select name="salivary_bypass_tube"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Pharyngeal Closure Type</label><input type="text" name="pharyngeal_closure_type"></div>
+                <div class="field"><label>Pharyngocutaneous Fistula</label><select name="pharyngocutaneous_fistula"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Salivary Leak</label><select name="salivary_leak"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Postop Dysphagia</label><select name="dysphagia_postop"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>NG Tube Days</label><input type="number" name="ng_tube_days"></div>
+                <div class="field"><label>Gastrostomy Dependence</label><select name="gastrostomy_dependence"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Time to Oral Intake (days)</label><input type="number" name="time_to_oral_intake"></div>
+                <div class="field"><label>Speech Mode</label><select name="speech_mode"><option value="">Select</option><option value="1">Native voice</option><option value="2">Electrolarynx</option><option value="3">Esophageal speech</option><option value="4">TEP</option><option value="5">Aphonic</option></select></div>
+                <div class="field"><label>VHI-10 Follow-up</label><input type="number" name="vhi10_followup"></div>
+                <div class="field"><label>MDADI Follow-up</label><input type="number" step="0.1" name="mdadi_followup"></div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="submit-btn">Save Larynx-Hypopharynx Module</button>
+              <button type="button" class="secondary-btn" onclick="resetModuleFormOnly('larynxHypo')">Reset</button>
+              <div id="larynxHypoStatus" class="status"></div>
+            </div>
+          </form>
+        </div>
+
+        <!-- PATHOLOGY PAGE -->
+        <div id="pathologyPage" class="page">
+          <div class="top-note">In edit mode, search by Surgery ID, Patient ID or UHID. If the patient has entries for more than one surgery, you will be shown the list.</div>
+          <div class="module-search-panel">
+            <input type="text" id="pathologySearchInput" placeholder="Surgery ID, Patient ID or UHID">
+            <button type="button" class="secondary-btn" onclick="searchModuleBySurgeryId('pathology')">Search Pathology</button>
+            <button type="button" class="secondary-btn" onclick="resetModuleFormOnly('pathology')">Reset Form</button>
+          </div>
+
+          <form id="pathologyForm">
+            <input type="hidden" name="_rowNumber" id="pathology_rowNumber">
+            <div class="form-block">
+              <div class="section-title">Pathology-Oncology</div>
+              <div class="grid">
+                <div class="field"><label>Surgery ID</label><input type="text" name="surgery_id" id="pathology_surgery_id" required></div>
+                <div class="field"><label>Patient ID</label><input type="text" name="patient_id" id="pathology_patient_id" required></div>
+                <div class="field span-2"><label>Final Histopathology</label><input type="text" name="path_final_histology" required></div>
+                <div class="field"><label>Tumor Size Pathology (cm)</label><input type="number" step="0.1" name="tumor_size_path_cm"></div>
+                <div class="field"><label>Margin Status</label><select name="margin_status"><option value="">Select</option><option value="0">Negative</option><option value="1">Close</option><option value="2">Positive</option></select></div>
+                <div class="field"><label>Closest Margin (mm)</label><input type="number" step="0.1" name="closest_margin_mm"></div>
+                <div class="field"><label>Lymphovascular Invasion</label><select name="lymphovascular_invasion"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Perineural Invasion</label><select name="perineural_invasion"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Extranodal Extension</label><select name="extranodal_extension"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Nodes Examined</label><input type="number" name="nodes_examined"></div>
+                <div class="field"><label>Nodes Positive</label><input type="number" name="nodes_positive"></div>
+                <div class="field"><label>Pathologic T Stage</label><input type="text" name="path_t_stage"></div>
+                <div class="field"><label>Pathologic N Stage</label><input type="text" name="path_n_stage"></div>
+                <div class="field"><label>Final Stage Group</label><input type="text" name="stage_group_final"></div>
+                <div class="field"><label>Adjuvant Treatment Planned</label><select name="adjuvant_treatment"><option value="">Select</option><option value="0">None</option><option value="1">RT</option><option value="2">CRT</option><option value="3">RAI</option><option value="4">Other</option></select></div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="submit-btn">Save Pathology-Oncology</button>
+              <button type="button" class="secondary-btn" onclick="resetModuleFormOnly('pathology')">Reset</button>
+              <div id="pathologyStatus" class="status"></div>
+            </div>
+          </form>
+        </div>
+
+        <!-- FOLLOWUP PAGE -->
+        <div id="followupPage" class="page">
+          <div class="top-note">For edit, enter Surgery ID, Patient ID or UHID plus the Follow-up Date.</div>
+          <div class="module-search-panel">
+            <input type="text" id="followupSearchSurgeryInput" placeholder="Surgery ID, Patient ID or UHID">
+            <input type="date" id="followupSearchDateInput">
+            <button type="button" class="secondary-btn" onclick="searchFollowupFormRecord()">Search Follow-up</button>
+            <button type="button" class="secondary-btn" onclick="resetModuleFormOnly('followup')">Reset Form</button>
+          </div>
+
+          <form id="followupForm">
+            <input type="hidden" name="_rowNumber" id="followup_rowNumber">
+            <div class="form-block">
+              <div class="section-title">Follow-up Outcomes</div>
+              <div class="grid">
+                <div class="field"><label>Surgery ID</label><input type="text" name="surgery_id" id="followup_surgery_id" required></div>
+                <div class="field"><label>Patient ID</label><input type="text" name="patient_id" id="followup_patient_id" required></div>
+                <div class="field"><label>Follow-up Date</label><input type="date" name="followup_date" id="followup_date_field" required></div>
+                <div class="field"><label>Follow-up Timepoint</label><select name="followup_timepoint"><option value="">Select</option><option value="1">Discharge</option><option value="2">30 days</option><option value="3">90 days</option><option value="4">6 months</option><option value="5">12 months</option><option value="6">Other</option></select></div>
+                <div class="field"><label>Vital Status</label><select name="alive_status"><option value="">Select</option><option value="1">Alive</option><option value="0">Dead</option></select></div>
+                <div class="field"><label>Any Readmission</label><select name="readmission_any"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Any Reoperation</label><select name="reoperation_any"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Any Overall Complication</label><select name="overall_complication"><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="field"><label>Highest Clavien-Dindo Grade</label><select name="clavien_dindo_max"><option value="">Select</option><option value="0">None</option><option value="I">I</option><option value="II">II</option><option value="IIIa">IIIa</option><option value="IIIb">IIIb</option><option value="IVa">IVa</option><option value="IVb">IVb</option><option value="V">V</option></select></div>
+                <div class="field"><label>Disease Status</label><select name="disease_status"><option value="">Select</option><option value="1">NED</option><option value="2">AWD</option><option value="3">Recurrence</option><option value="4">Progression</option><option value="5">NA</option></select></div>
+                <div class="field"><label>Recurrence Site</label><select name="recurrence_site"><option value="">Select</option><option value="1">Local</option><option value="2">Regional</option><option value="3">Distant</option><option value="4">Multiple</option></select></div>
+                <div class="field span-2"><label>Late Functional Issue</label><input type="text" name="late_functional_issue"></div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="submit-btn">Save Follow-up</button>
+              <button type="button" class="secondary-btn" onclick="resetModuleFormOnly('followup')">Reset</button>
+              <div id="followupStatus" class="status"></div>
+            </div>
+          </form>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <div id="loginOverlay" class="login-overlay" hidden>
+    <form class="login-card" onsubmit="event.preventDefault(); doLogin();">
+      <h2>Head &amp; Neck Surgery Registry</h2>
+      <p>Department of Head and Neck Surgery, BBCI. Enter the registry password to continue.</p>
+      <label for="loginPassword">Password</label>
+      <input type="password" id="loginPassword" autocomplete="current-password" required>
+      <button type="submit" class="submit-btn" id="loginBtn">Log in</button>
+      <div id="loginMessage" class="status error"></div>
+      <a href="index.html" class="login-back">&larr; Back to BBCI H&amp;N Portal</a>
+    </form>
+  </div>
+
+  <div id="busyIndicator" class="busy-indicator" aria-live="polite">Working&hellip;</div>
+
+  <script>
+    /* =====================================================
+       SERVER CONNECTION
+       Paste the Apps Script web app URL (ends in /exec)
+       between the quotes below.
+       ===================================================== */
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxPesVW3pu1tWBGBf0m7f2-3a_3OeedpZowUp7Gd0azalZqoBg04UvHjLqy2_QhgaBdOQ/exec';
+
+    const SESSION_KEY = 'hn_registry_session';
+    let userToken = '';
+    let appStarted = false;
+    let pendingRequests = 0;
+
+    function readSession() {
+      try {
+        const raw = sessionStorage.getItem(SESSION_KEY);
+        if (!raw) return null;
+        const session = JSON.parse(raw);
+        if (!session.token || !session.expiresAt || Date.now() > session.expiresAt) return null;
+        return session;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function saveSession(session) {
+      try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch (e) {}
+    }
+
+    function clearSession() {
+      try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {}
+    }
+
+    function setBusy(delta) {
+      pendingRequests = Math.max(0, pendingRequests + delta);
+      document.getElementById('busyIndicator').classList.toggle('show', pendingRequests > 0);
+    }
+
+    async function callApi(action, args) {
+      if (!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(API_URL)) {
+        throw new Error('The registry is not connected yet: the server address (API_URL) has not been set in this page.');
+      }
+
+      setBusy(1);
+      try {
+        let res;
+        try {
+          res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: action, args: args || [], token: userToken })
+          });
+        } catch (e) {
+          throw new Error('Could not reach the registry server. Check the internet connection and try again.');
+        }
+
+        let payload;
+        try {
+          payload = await res.json();
+        } catch (e) {
+          throw new Error('The registry server sent an unexpected reply (HTTP ' + res.status + '). Check the deployment access is set to "Anyone".');
+        }
+
+        if (!payload.ok) {
+          const err = new Error(payload.error || 'Unknown server error.');
+          err.code = payload.code || '';
+          if (err.code === 'AUTH') handleSessionExpired();
+          throw err;
+        }
+
+        return payload.data;
+      } finally {
+        setBusy(-1);
+      }
+    }
+
+    // Same call style the page used with Apps Script:
+    // server().withSuccessHandler(fn).withFailureHandler(fn).functionName(args)
+    function server(onSuccess, onFailure) {
+      return new Proxy({}, {
+        get: function(_, prop) {
+          if (prop === 'withSuccessHandler') return function(fn) { return server(fn, onFailure); };
+          if (prop === 'withFailureHandler') return function(fn) { return server(onSuccess, fn); };
+          if (typeof prop !== 'string' || prop === 'then') return undefined;
+          return function() {
+            const args = Array.prototype.slice.call(arguments);
+            callApi(prop, args).then(
+              function(result) { if (onSuccess) onSuccess(result); },
+              function(err) { if (onFailure) onFailure(err); else console.error(err); }
+            );
+          };
+        }
+      });
+    }
+
+    function showLogin(message) {
+      document.getElementById('loginOverlay').hidden = false;
+      document.getElementById('loginMessage').innerText = message || '';
+      const pw = document.getElementById('loginPassword');
+      pw.value = '';
+      setTimeout(function() { pw.focus(); }, 50);
+    }
+
+    function hideLogin() {
+      document.getElementById('loginOverlay').hidden = true;
+      document.getElementById('loginMessage').innerText = '';
+    }
+
+    async function doLogin() {
+      const pw = document.getElementById('loginPassword').value;
+      const btn = document.getElementById('loginBtn');
+      if (!pw) return;
+
+      btn.disabled = true;
+      document.getElementById('loginMessage').innerText = '';
+
+      try {
+        const result = await callApi('login', [pw]);
+        userToken = result.token;
+        saveSession({
+          token: result.token,
+          role: result.role,
+          expiresAt: Date.now() + (Number(result.expiresInSeconds || 0) * 1000) - 60000
+        });
+        hideLogin();
+        startApp(result);
+      } catch (err) {
+        document.getElementById('loginMessage').innerText = err.message;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function startApp(session) {
+      if (session && session.role === 'admin' && session.adminToken) {
+        adminToken = session.adminToken;
+        currentRoleMode = 'admin';
+        applyRoleStyles('admin');
+      } else if (!adminToken) {
+        currentRoleMode = 'resident';
+        applyRoleStyles('resident');
+      }
+
+      // First start only; after a re-login, keep whatever is on screen so unsaved work isn't lost.
+      if (!appStarted) {
+        appStarted = true;
+        setEntryMode('new');
+      }
+    }
+
+    function handleSessionExpired() {
+      userToken = '';
+      adminToken = '';
+      clearSession();
+      currentRoleMode = 'resident';
+      applyRoleStyles('resident');
+      showLogin('Your session has expired. Log in again, then save again; the form has been kept.');
+    }
+
+    function logout() {
+      clearSession();
+      location.reload();
+    }
+
+    function multipleSurgeriesMessage(response) {
+      let msg = response.message + '\n\nSurgeries:\n';
+      (response.surgeryIds || []).forEach(function(item) {
+        msg += '- ' + item.surgery_id;
+        if (item.date_of_surgery) msg += ' | ' + item.date_of_surgery;
+        if (item.anatomical_site_text) msg += ' | ' + item.anatomical_site_text;
+        msg += '\n';
+      });
+      return msg;
+    }
+
+    // Server found a possible duplicate and did not save. Ask, and re-send if confirmed.
+    function handleNeedsConfirm(response, form, formData, statusId, resend) {
+      if (!response || !response.needsConfirm) return false;
+
+      if (confirm(response.message + '\n\nSave anyway?')) {
+        formData[response.confirmKey] = '1';
+        lockSubmit(form, true);
+        setStatus(statusId, 'Saving...', 'loading');
+        resend();
+      } else {
+        setStatus(statusId, 'Not saved. ' + response.message, 'error');
+      }
+      return true;
+    }
+
+    function lockSubmit(form, locked) {
+      const btn = form.querySelector('[type="submit"]');
+      if (btn) btn.disabled = locked;
+    }
+
+    let currentRoleMode = 'resident';
+    let adminToken = '';
+    let currentPatientRecord = null;
+    let currentSurgeryRecord = null;
+    let entryMode = 'new';
+
+    const pageMeta = {
+      patientPage: {
+        title: 'Patient Master Entry',
+        subtitle: 'Enter baseline demographic, clinical, and comorbidity details for the registry.',
+        cardText: 'Use this section to enter the core patient-level fields before proceeding to surgery and site-specific modules.'
+      },
+      surgeryPage: {
+        title: 'Surgery Index Entry',
+        subtitle: 'Capture primary surgical details and perioperative measures.',
+        cardText: 'Patient ID and Surgery ID are automatically carried forward in new mode.'
+      },
+      ssiPage: {
+        title: 'SSI Module Entry',
+        subtitle: 'Record surgical site infection events and related outcomes.',
+        cardText: 'Search by Surgery ID to edit an existing SSI record.'
+      },
+      thyroidPage: {
+        title: 'Thyroid Module Entry',
+        subtitle: 'Capture thyroid-specific operative and complication data.',
+        cardText: 'Search by Surgery ID to edit thyroid records.'
+      },
+      parotidPage: {
+        title: 'Parotid Module Entry',
+        subtitle: 'Record facial nerve, procedure, and postoperative complications.',
+        cardText: 'Search by Surgery ID to edit parotid records.'
+      },
+      larynxHypoPage: {
+        title: 'Larynx + Hypopharynx Module Entry',
+        subtitle: 'Document airway, swallowing, voice, reconstructive, and salvage details.',
+        cardText: 'Search by Surgery ID to edit larynx/hypopharynx records.'
+      },
+      pathologyPage: {
+        title: 'Pathology-Oncology Entry',
+        subtitle: 'Enter final histopathology and adjuvant treatment planning data.',
+        cardText: 'Search by Surgery ID to edit pathology records.'
+      },
+      followupPage: {
+        title: 'Follow-up Outcomes Entry',
+        subtitle: 'Track readmission, complications, recurrence, and survival.',
+        cardText: 'Search by Surgery ID + Follow-up Date to edit a specific follow-up record.'
+      }
+    };
+
+    const moduleConfig = {
+      ssi: {
+        formId: 'ssiForm',
+        searchInputId: 'ssiSearchInput',
+        statusId: 'ssiStatus',
+        searchFn: 'searchSSIModule',
+        saveFn: 'submitSSIModule',
+        updateFn: 'updateSSIModule',
+        surgeryFieldId: 'ssi_surgery_id',
+        patientFieldId: 'ssi_patient_id'
+      },
+      thyroid: {
+        formId: 'thyroidForm',
+        searchInputId: 'thyroidSearchInput',
+        statusId: 'thyroidStatus',
+        searchFn: 'searchThyroidModule',
+        saveFn: 'submitThyroidModule',
+        updateFn: 'updateThyroidModule',
+        surgeryFieldId: 'thyroid_surgery_id',
+        patientFieldId: 'thyroid_patient_id'
+      },
+      parotid: {
+        formId: 'parotidForm',
+        searchInputId: 'parotidSearchInput',
+        statusId: 'parotidStatus',
+        searchFn: 'searchParotidModule',
+        saveFn: 'submitParotidModule',
+        updateFn: 'updateParotidModule',
+        surgeryFieldId: 'parotid_surgery_id',
+        patientFieldId: 'parotid_patient_id'
+      },
+      larynxHypo: {
+        formId: 'larynxHypoForm',
+        searchInputId: 'larynxHypoSearchInput',
+        statusId: 'larynxHypoStatus',
+        searchFn: 'searchLarynxHypopharynxModule',
+        saveFn: 'submitLarynxHypopharynxModule',
+        updateFn: 'updateLarynxHypopharynxModule',
+        surgeryFieldId: 'larynxHypo_surgery_id',
+        patientFieldId: 'larynxHypo_patient_id'
+      },
+      pathology: {
+        formId: 'pathologyForm',
+        searchInputId: 'pathologySearchInput',
+        statusId: 'pathologyStatus',
+        searchFn: 'searchPathologyOncology',
+        saveFn: 'submitPathologyOncology',
+        updateFn: 'updatePathologyOncology',
+        surgeryFieldId: 'pathology_surgery_id',
+        patientFieldId: 'pathology_patient_id'
+      },
+      followup: {
+        formId: 'followupForm',
+        statusId: 'followupStatus',
+        saveFn: 'submitFollowupOutcomes',
+        updateFn: 'updateFollowupOutcomes',
+        surgeryFieldId: 'followup_surgery_id',
+        patientFieldId: 'followup_patient_id'
+      }
+    };
+
+    function setStatus(id, text, type) {
+      const el = document.getElementById(id);
+      el.innerText = text;
+      el.className = 'status ' + (type || '');
+    }
+
+    function applyRoleStyles(mode) {
+      document.body.classList.toggle('admin-mode', mode === 'admin');
+
+      const residentBtn = document.getElementById('residentModeBtn');
+      const adminBtn = document.getElementById('adminModeBtn');
+
+      if (mode === 'admin') {
+        residentBtn.style.background = 'rgba(255,255,255,0.12)';
+        residentBtn.style.color = '#fff';
+        adminBtn.style.background = '#ffffff';
+        adminBtn.style.color = '#143d6b';
+      } else {
+        adminBtn.style.background = 'rgba(255,255,255,0.12)';
+        adminBtn.style.color = '#fff';
+        residentBtn.style.background = '#ffffff';
+        residentBtn.style.color = '#143d6b';
+      }
+    }
+
+    function setRoleMode(mode) {
+      if (mode === 'admin') {
+        const password = prompt('Enter admin password');
+        if (!password) return;
+
+        server()
+          .withSuccessHandler(function(response) {
+            adminToken = response.token;
+            currentRoleMode = 'admin';
+            applyRoleStyles('admin');
+            alert('Admin access granted.');
+          })
+          .withFailureHandler(function(error) {
+            alert('Admin login failed: ' + error.message);
+            currentRoleMode = 'resident';
+            adminToken = '';
+            applyRoleStyles('resident');
+          })
+          .verifyAdminPassword(password);
+      } else {
+        currentRoleMode = 'resident';
+        adminToken = '';
+        applyRoleStyles('resident');
+      }
+    }
+
+    function setEntryMode(mode) {
+      entryMode = mode;
+      const banner = document.getElementById('entryModeBanner');
+      const mini = document.getElementById('entryModeMini');
+
+      if (mode === 'edit') {
+        banner.className = 'mode-banner edit';
+        banner.innerText = 'Mode: Edit Existing — search within the current module and update the loaded row.';
+        mini.innerText = 'Edit';
+        setReadonlyById('patient_id_field', true);
+      } else {
+        banner.className = 'mode-banner new';
+        banner.innerText = 'Mode: Add New — fresh entry.';
+        mini.innerText = 'New';
+        clearAllContext();
+        setReadonlyById('patient_id_field', true);
+      }
+    }
+
+    function showPage(pageId, btn) {
+      document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+      document.getElementById(pageId).classList.add('active');
+
+      document.querySelectorAll('.nav-btn').forEach(button => button.classList.remove('active'));
+      if (btn) {
+        btn.classList.add('active');
+      } else {
+        const autoBtn = document.querySelector('.nav-btn[data-page="' + pageId + '"]');
+        if (autoBtn) autoBtn.classList.add('active');
+      }
+
+      const meta = pageMeta[pageId];
+      if (meta) {
+        document.getElementById('pageTitle').innerText = meta.title;
+        document.getElementById('pageSubtitle').innerText = meta.subtitle;
+        document.getElementById('cardTitle').innerText = meta.title;
+        document.getElementById('cardText').innerText = meta.cardText;
+      }
+
+      document.getElementById('currentPageMini').innerText = meta ? meta.title.split(' ')[0] : 'Page';
+
+      if (pageId === 'surgeryPage' && entryMode === 'new' && !document.getElementById('surgery_rowNumber').value) {
+        initSurgeryForm();
+      }
+    }
+
+    function initPatientForm() {
+      if (entryMode === 'edit') return;
+
+      server().withSuccessHandler(function(id) {
+        const field = document.getElementById('patient_id_field');
+        if (field) field.value = id;
+      }).getNextPatientId();
+    }
+
+    function initSurgeryForm() {
+      if (entryMode === 'edit') return;
+
+      server().withSuccessHandler(function(id) {
+        const field = document.getElementById('surgery_id');
+        if (field) field.value = id;
+      }).getNextSurgeryId();
+
+      if (currentPatientRecord && currentPatientRecord.patient_id) {
+        const pidField = document.getElementById('surgery_patient_id');
+        if (pidField) pidField.value = currentPatientRecord.patient_id;
+      }
+    }
+
+    function setReadonlyById(id, flag) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (flag) el.setAttribute('readonly', 'readonly');
+      else el.removeAttribute('readonly');
+    }
+
+    function fillPatientIdAcrossModules(patientId) {
+      ['surgery_patient_id','ssi_patient_id','thyroid_patient_id','parotid_patient_id','larynxHypo_patient_id','pathology_patient_id','followup_patient_id']
+        .forEach(id => {
+          const el = document.getElementById(id);
+          if (el && !el.hasAttribute('readonly')) el.value = patientId || '';
+        });
+    }
+
+    function fillSurgeryIdAcrossModules(surgeryId) {
+      ['ssi_surgery_id','thyroid_surgery_id','parotid_surgery_id','larynxHypo_surgery_id','pathology_surgery_id','followup_surgery_id']
+        .forEach(id => {
+          const el = document.getElementById(id);
+          if (el && !el.hasAttribute('readonly')) el.value = surgeryId || '';
+        });
+    }
+
+    function updatePatientSummary(record) {
+      document.getElementById('currentPatientId').innerText = record && record.patient_id ? record.patient_id : '—';
+      document.getElementById('currentPatientHospital').innerText =
+        record && record.hospital_id ? ('Hospital ID: ' + record.hospital_id) : 'No patient selected';
+    }
+
+    function updateSurgerySummary(record) {
+      document.getElementById('currentSurgeryId').innerText = record && record.surgery_id ? record.surgery_id : '—';
+      document.getElementById('currentSurgerySub').innerText =
+        record && record.patient_id ? ('Patient ID: ' + record.patient_id) : 'No surgery selected';
+    }
+
+    function populateForm(formId, record) {
+      const form = document.getElementById(formId);
+      Object.keys(record).forEach(function(key) {
+        const field = form.querySelector('[name="' + key + '"]');
+        if (field) field.value = record[key];
+      });
+    }
+
+    function resetFormAndKeys(formId, keepAutoFillPatient) {
+      const form = document.getElementById(formId);
+      form.reset();
+      const hidden = form.querySelector('[name="_rowNumber"]');
+      if (hidden) hidden.value = '';
+
+      if (keepAutoFillPatient && currentPatientRecord && currentPatientRecord.patient_id) {
+        const pidField = form.querySelector('[name="patient_id"]');
+        if (pidField && !pidField.hasAttribute('readonly')) {
+          pidField.value = currentPatientRecord.patient_id;
+        }
+      }
+    }
+
+    function clearAllContext() {
+      currentPatientRecord = null;
+      currentSurgeryRecord = null;
+
+      updatePatientSummary(null);
+      updateSurgerySummary(null);
+
+      document.getElementById('patientSearchInput').value = '';
+      document.getElementById('surgerySearchInput').value = '';
+      document.getElementById('ssiSearchInput').value = '';
+      document.getElementById('thyroidSearchInput').value = '';
+      document.getElementById('parotidSearchInput').value = '';
+      document.getElementById('larynxHypoSearchInput').value = '';
+      document.getElementById('pathologySearchInput').value = '';
+      document.getElementById('followupSearchSurgeryInput').value = '';
+      document.getElementById('followupSearchDateInput').value = '';
+
+      resetPatientFormOnly();
+      resetSurgeryFormOnly();
+      resetModuleFormOnly('ssi');
+      resetModuleFormOnly('thyroid');
+      resetModuleFormOnly('parotid');
+      resetModuleFormOnly('larynxHypo');
+      resetModuleFormOnly('pathology');
+      resetModuleFormOnly('followup');
+
+      setReadonlyById('patient_id_field', true);
+      setReadonlyById('surgery_id', false);
+      setReadonlyById('surgery_patient_id', false);
+      setReadonlyById('ssi_surgery_id', false);
+      setReadonlyById('ssi_patient_id', false);
+      setReadonlyById('thyroid_surgery_id', false);
+      setReadonlyById('thyroid_patient_id', false);
+      setReadonlyById('parotid_surgery_id', false);
+      setReadonlyById('parotid_patient_id', false);
+      setReadonlyById('larynxHypo_surgery_id', false);
+      setReadonlyById('larynxHypo_patient_id', false);
+      setReadonlyById('pathology_surgery_id', false);
+      setReadonlyById('pathology_patient_id', false);
+      setReadonlyById('followup_surgery_id', false);
+      setReadonlyById('followup_patient_id', false);
+      setReadonlyById('followup_date_field', false);
+    }
+
+    function resetPatientFormOnly() {
+      resetFormAndKeys('patientForm', false);
+      setReadonlyById('patient_id_field', true);
+      setStatus('patientStatus', '', '');
+
+      if (entryMode === 'new') {
+        initPatientForm();
+      }
+    }
+
+    function resetSurgeryFormOnly() {
+      resetFormAndKeys('surgeryForm', true);
+      setReadonlyById('surgery_id', false);
+      setReadonlyById('surgery_patient_id', false);
+      setStatus('surgeryStatus', '', '');
+      if (entryMode === 'new') initSurgeryForm();
+    }
+
+    function resetModuleFormOnly(moduleKey) {
+      const cfg = moduleConfig[moduleKey];
+      if (!cfg) return;
+
+      resetFormAndKeys(cfg.formId, true);
+      if (cfg.surgeryFieldId) setReadonlyById(cfg.surgeryFieldId, false);
+      if (cfg.patientFieldId) setReadonlyById(cfg.patientFieldId, false);
+
+      if (moduleKey === 'followup') {
+        setReadonlyById('followup_date_field', false);
+      }
+
+      setStatus(cfg.statusId, '', '');
+
+      if (entryMode === 'new') {
+        if (currentPatientRecord && currentPatientRecord.patient_id && cfg.patientFieldId) {
+          document.getElementById(cfg.patientFieldId).value = currentPatientRecord.patient_id;
+        }
+        if (currentSurgeryRecord && currentSurgeryRecord.surgery_id && cfg.surgeryFieldId) {
+          document.getElementById(cfg.surgeryFieldId).value = currentSurgeryRecord.surgery_id;
+        }
+      }
+    }
+
+    function searchPatientAndAutofill() {
+      const query = document.getElementById('patientSearchInput').value.trim();
+      if (!query) {
+        alert('Please enter Patient ID or UHID.');
+        return;
+      }
+      if (entryMode !== 'edit') {
+        alert('Please switch to Edit Existing first.');
+        return;
+      }
+
+      server()
+        .withSuccessHandler(function(response) {
+          if (!response.found) {
+            alert('No matching patient found.');
+            return;
+          }
+
+          populateForm('patientForm', response.record);
+          document.getElementById('patient_rowNumber').value = response.record._rowNumber || '';
+          currentPatientRecord = response.record;
+          updatePatientSummary(response.record);
+          fillPatientIdAcrossModules(response.record.patient_id || '');
+          setReadonlyById('patient_id_field', true);
+          showPage('patientPage');
+        })
+        .withFailureHandler(function(error) {
+          alert('Search failed: ' + error.message);
+        })
+        .searchPatientMaster(query);
+    }
+
+    function searchSurgeryFormRecord() {
+      const searchValue = document.getElementById('surgerySearchInput').value.trim();
+      if (!searchValue) {
+        alert('Please enter Surgery ID, Patient ID or UHID.');
+        return;
+      }
+      if (entryMode !== 'edit') {
+        alert('Please switch to Edit Existing first.');
+        return;
+      }
+
+      server()
+        .withSuccessHandler(function(response) {
+          if (response.multiple) {
+            alert(multipleSurgeriesMessage(response));
+            return;
+          }
+
+          if (!response.found) {
+            alert('No matching surgery found.');
+            return;
+          }
+
+          populateForm('surgeryForm', response.record);
+          document.getElementById('surgery_rowNumber').value = response.record._rowNumber || '';
+          currentSurgeryRecord = response.record;
+          updateSurgerySummary(response.record);
+          fillSurgeryIdAcrossModules(response.record.surgery_id || '');
+
+          if (response.record.patient_id) {
+            currentPatientRecord = { patient_id: response.record.patient_id, hospital_id: '' };
+            updatePatientSummary(currentPatientRecord);
+            fillPatientIdAcrossModules(response.record.patient_id);
+          }
+
+          setReadonlyById('surgery_id', true);
+          setReadonlyById('surgery_patient_id', true);
+          showPage('surgeryPage');
+        })
+        .withFailureHandler(function(error) {
+          alert('Search failed: ' + error.message);
+        })
+        .searchSurgeryIndex(searchValue);
+    }
+
+    function searchModuleBySurgeryId(moduleKey) {
+      const cfg = moduleConfig[moduleKey];
+      const surgeryId = document.getElementById(cfg.searchInputId).value.trim();
+
+      if (!surgeryId) {
+        alert('Please enter Surgery ID, Patient ID or UHID.');
+        return;
+      }
+      if (entryMode !== 'edit') {
+        alert('Please switch to Edit Existing first.');
+        return;
+      }
+
+      server()
+        .withSuccessHandler(function(response) {
+          if (response.multiple) {
+            alert(multipleSurgeriesMessage(response));
+            return;
+          }
+          if (!response.found) {
+            alert('No matching record found.');
+            return;
+          }
+
+          populateForm(cfg.formId, response.record);
+          document.getElementById(moduleKey + '_rowNumber').value = response.record._rowNumber || '';
+
+          setReadonlyById(cfg.surgeryFieldId, true);
+          setReadonlyById(cfg.patientFieldId, true);
+
+          currentSurgeryRecord = {
+            surgery_id: response.record.surgery_id || '',
+            patient_id: response.record.patient_id || ''
+          };
+          updateSurgerySummary(currentSurgeryRecord);
+          fillSurgeryIdAcrossModules(response.record.surgery_id || '');
+
+          if (response.record.patient_id) {
+            currentPatientRecord = { patient_id: response.record.patient_id, hospital_id: '' };
+            updatePatientSummary(currentPatientRecord);
+          }
+
+          if (response.record.patient_id) {
+            fillPatientIdAcrossModules(response.record.patient_id);
+          }
+        })
+        .withFailureHandler(function(error) {
+          alert('Search failed: ' + error.message);
+        })
+        [cfg.searchFn](surgeryId);
+    }
+
+    function searchFollowupFormRecord() {
+      const surgeryId = document.getElementById('followupSearchSurgeryInput').value.trim();
+      const followupDate = document.getElementById('followupSearchDateInput').value;
+
+      if (!surgeryId || !followupDate) {
+        alert('Please enter Surgery ID, Patient ID or UHID, and the Follow-up Date.');
+        return;
+      }
+      if (entryMode !== 'edit') {
+        alert('Please switch to Edit Existing first.');
+        return;
+      }
+
+      server()
+        .withSuccessHandler(function(response) {
+          if (response.multiple) {
+            alert(multipleSurgeriesMessage(response));
+            return;
+          }
+          if (!response.found) {
+            alert('No matching follow-up found.');
+            return;
+          }
+
+          populateForm('followupForm', response.record);
+          document.getElementById('followup_rowNumber').value = response.record._rowNumber || '';
+
+          setReadonlyById('followup_surgery_id', true);
+          setReadonlyById('followup_patient_id', true);
+          setReadonlyById('followup_date_field', true);
+
+          currentSurgeryRecord = {
+            surgery_id: response.record.surgery_id || '',
+            patient_id: response.record.patient_id || ''
+          };
+          updateSurgerySummary(currentSurgeryRecord);
+          fillSurgeryIdAcrossModules(response.record.surgery_id || '');
+
+          if (response.record.patient_id) {
+            currentPatientRecord = { patient_id: response.record.patient_id, hospital_id: '' };
+            updatePatientSummary(currentPatientRecord);
+          }
+
+          fillPatientIdAcrossModules(response.record.patient_id || '');
+        })
+        .withFailureHandler(function(error) {
+          alert('Search failed: ' + error.message);
+        })
+        .searchFollowupOutcomes(surgeryId, followupDate);
+    }
+
+    function getActiveSheetKey() {
+      const activePage = document.querySelector('.page.active');
+      if (!activePage) return null;
+
+      const map = {
+        patientPage: 'patient',
+        surgeryPage: 'surgery',
+        ssiPage: 'ssi',
+        thyroidPage: 'thyroid',
+        parotidPage: 'parotid',
+        larynxHypoPage: 'larynxHypo',
+        pathologyPage: 'pathology',
+        followupPage: 'followup'
+      };
+
+      return map[activePage.id] || null;
+    }
+
+    function downloadTextFile(content, fileName, mimeType) {
+      const blob = new Blob([content], { type: mimeType || 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadBase64File(base64Data, fileName, mimeType) {
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    function exportActiveSheetFromBackend() {
+      if (!adminToken) {
+        alert('Please login to Admin mode first.');
+        return;
+      }
+
+      const sheetKey = getActiveSheetKey();
+      if (!sheetKey) {
+        alert('No active registry module found.');
+        return;
+      }
+
+      server()
+        .withSuccessHandler(function(response) {
+          downloadTextFile(response.csvContent, response.fileName, 'text/csv;charset=utf-8;');
+        })
+        .withFailureHandler(function(error) {
+          alert('Export failed: ' + error.message);
+        })
+        .exportRegistrySheetCsv(sheetKey, adminToken);
+    }
+
+    function exportAllSheetsZip() {
+      if (!adminToken) {
+        alert('Please login to Admin mode first.');
+        return;
+      }
+
+      server()
+        .withSuccessHandler(function(response) {
+          downloadBase64File(response.base64Data, response.fileName, response.mimeType);
+        })
+        .withFailureHandler(function(error) {
+          alert('ZIP export failed: ' + error.message);
+        })
+        .exportAllRegistrySheetsZip(adminToken);
+    }
+
+    function handlePatientFormSubmit() {
+      const patientForm = document.getElementById('patientForm');
+      const formData = Object.fromEntries(new FormData(patientForm).entries());
+      const isEditMode = entryMode === 'edit' && String(formData._rowNumber || '').trim() !== '';
+
+      setStatus('patientStatus', 'Saving...', 'loading');
+      lockSubmit(patientForm, true);
+
+      const runner = server()
+        .withSuccessHandler(function(response) {
+          lockSubmit(patientForm, false);
+          if (response.patient_id) {
+            formData.patient_id = response.patient_id;
+            document.getElementById('patient_id_field').value = response.patient_id;
+          }
+          setStatus('patientStatus', response.message, 'success');
+          document.getElementById('patient_rowNumber').value = response.rowNumber || '';
+          currentPatientRecord = Object.assign({}, formData, { _rowNumber: response.rowNumber || '' });
+          updatePatientSummary(currentPatientRecord);
+          fillPatientIdAcrossModules(formData.patient_id || '');
+        })
+        .withFailureHandler(function(error) {
+          lockSubmit(patientForm, false);
+          setStatus('patientStatus', 'Error: ' + error.message, 'error');
+        });
+
+      if (isEditMode) runner.updatePatientMaster(formData);
+      else runner.submitPatientMaster(formData);
+    }
+
+    function handleSurgeryFormSubmit() {
+      const form = document.getElementById('surgeryForm');
+      const formData = Object.fromEntries(new FormData(form).entries());
+      const isEditMode = entryMode === 'edit' && String(formData._rowNumber || '').trim() !== '';
+
+      const fnName = isEditMode ? 'updateSurgeryIndex' : 'submitSurgeryIndex';
+      setStatus('surgeryStatus', 'Saving...', 'loading');
+      lockSubmit(form, true);
+
+      const runner = server()
+        .withSuccessHandler(function(response) {
+          lockSubmit(form, false);
+          if (handleNeedsConfirm(response, form, formData, 'surgeryStatus', function() { runner[fnName](formData); })) return;
+          if (response.surgery_id) formData.surgery_id = response.surgery_id;
+          setStatus('surgeryStatus', response.message, 'success');
+          document.getElementById('surgery_rowNumber').value = response.rowNumber || '';
+
+          currentSurgeryRecord = Object.assign({}, formData, { _rowNumber: response.rowNumber || '' });
+          updateSurgerySummary(currentSurgeryRecord);
+
+          fillSurgeryIdAcrossModules(formData.surgery_id || '');
+          fillPatientIdAcrossModules(formData.patient_id || '');
+
+          if (!isEditMode) {
+            const savedSurgeryId = formData.surgery_id || '';
+            const savedPatientId = formData.patient_id || '';
+
+            resetSurgeryFormOnly();
+            setStatus('surgeryStatus', response.message, 'success');
+
+            document.getElementById('surgery_patient_id').value = savedPatientId;
+
+            document.getElementById('currentSurgeryId').innerText = savedSurgeryId || '—';
+            document.getElementById('currentSurgerySub').innerText = savedPatientId ? ('Patient ID: ' + savedPatientId) : 'No surgery selected';
+
+            fillSurgeryIdAcrossModules(savedSurgeryId);
+            fillPatientIdAcrossModules(savedPatientId);
+          }
+        })
+        .withFailureHandler(function(error) {
+          lockSubmit(form, false);
+          setStatus('surgeryStatus', 'Error: ' + error.message, 'error');
+        });
+
+      runner[fnName](formData);
+    }
+
+    function handleGenericModuleSubmit(moduleKey) {
+      const cfg = moduleConfig[moduleKey];
+      const form = document.getElementById(cfg.formId);
+      const formData = Object.fromEntries(new FormData(form).entries());
+      const isEditMode = entryMode === 'edit' && String(formData._rowNumber || '').trim() !== '';
+
+      const fnName = isEditMode ? cfg.updateFn : cfg.saveFn;
+      setStatus(cfg.statusId, 'Saving...', 'loading');
+      lockSubmit(form, true);
+
+      const runner = server()
+        .withSuccessHandler(function(response) {
+          lockSubmit(form, false);
+          if (handleNeedsConfirm(response, form, formData, cfg.statusId, function() { runner[fnName](formData); })) return;
+          setStatus(cfg.statusId, response.message, 'success');
+          document.getElementById(moduleKey + '_rowNumber').value = response.rowNumber || '';
+
+          currentSurgeryRecord = {
+            surgery_id: formData.surgery_id || '',
+            patient_id: formData.patient_id || ''
+          };
+          updateSurgerySummary(currentSurgeryRecord);
+
+          if (!isEditMode) {
+            const keepSurgeryId = formData.surgery_id || '';
+            const keepPatientId = formData.patient_id || '';
+            resetModuleFormOnly(moduleKey);
+            setStatus(cfg.statusId, response.message, 'success');
+
+            if (cfg.surgeryFieldId) document.getElementById(cfg.surgeryFieldId).value = keepSurgeryId;
+            if (cfg.patientFieldId) document.getElementById(cfg.patientFieldId).value = keepPatientId;
+
+            if (moduleKey === 'followup') {
+              setReadonlyById('followup_date_field', false);
+            }
+          }
+        })
+        .withFailureHandler(function(error) {
+          lockSubmit(form, false);
+          setStatus(cfg.statusId, 'Error: ' + error.message, 'error');
+        });
+
+      runner[fnName](formData);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('patientForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        handlePatientFormSubmit();
+      });
+
+      document.getElementById('surgeryForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        handleSurgeryFormSubmit();
+      });
+
+      document.getElementById('ssiForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        handleGenericModuleSubmit('ssi');
+      });
+
+      document.getElementById('thyroidForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        handleGenericModuleSubmit('thyroid');
+      });
+
+      document.getElementById('parotidForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        handleGenericModuleSubmit('parotid');
+      });
+
+      document.getElementById('larynxHypoForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        handleGenericModuleSubmit('larynxHypo');
+      });
+
+      document.getElementById('pathologyForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        handleGenericModuleSubmit('pathology');
+      });
+
+      document.getElementById('followupForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        handleGenericModuleSubmit('followup');
+      });
+
+      applyRoleStyles('resident');
+
+      const session = readSession();
+      if (session) {
+        userToken = session.token;
+        startApp(session);
+      } else {
+        showLogin('');
+      }
+    });
+  </script>
+</body>
+</html>
