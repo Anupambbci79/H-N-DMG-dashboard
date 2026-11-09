@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BBCI Visit Slip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: staff form on the left, live paper slip on the right; one column on phones.
+   The slip stays paper-coloured in both themes because it is what gets printed or sent. */
+:root{
+  --bg:#EDF1EE; --surface:#FFFFFF; --surface-2:#F5F8F6; --ink:#17211D; --muted:#55625C; --line:#D3DBD6;
+  --accent:#1F5A48; --accent-ink:#FFFFFF; --accent-soft:#E0ECE6;
+  --warn:#835400; --warn-soft:#FAEFD6;
+  --paper:#FFFFFF; --paper-ink:#1A1D1B; --paper-muted:#585E5A; --paper-line:#DEDAD2; --paper-tint:#F6F3EC;
+  --gamosa:#A32A26; --shadow:rgba(23,40,32,.10);
+  --f-latin:"Atkinson Hyperlegible","Noto Sans Bengali","Segoe UI",system-ui,sans-serif;
+  --f-as:"Noto Sans Bengali","Nirmala UI","Vrinda","Shonar Bangla",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1412; --surface:#18201C; --surface-2:#1E2723; --ink:#E4ECE8; --muted:#9AA8A1; --line:#2B3731;
+    --accent:#7CCAAE; --accent-ink:#0D1A14; --accent-soft:#1B3128;
+    --warn:#F0C46E; --warn-soft:#382C12;
+    --paper:#F2F0EB; --paper-ink:#1A1D1B; --paper-muted:#535955; --paper-line:#D5D1C8; --paper-tint:#E8E4DB;
+    --gamosa:#A32A26; --shadow:rgba(0,0,0,.45);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1412; --surface:#18201C; --surface-2:#1E2723; --ink:#E4ECE8; --muted:#9AA8A1; --line:#2B3731;
+  --accent:#7CCAAE; --accent-ink:#0D1A14; --accent-soft:#1B3128;
+  --warn:#F0C46E; --warn-soft:#382C12;
+  --paper:#F2F0EB; --paper-ink:#1A1D1B; --paper-muted:#535955; --paper-line:#D5D1C8; --paper-tint:#E8E4DB;
+  --gamosa:#A32A26; --shadow:rgba(0,0,0,.45);
+  color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-latin);font-size:15px;line-height:1.45}
+.as{font-family:var(--f-as)}
+.app{max-width:1200px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 16px}
+.top h1{font-size:26px;line-height:1.15;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.top p{margin:3px 0 0;color:var(--muted)}
+.pill-demo{font-size:12px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;color:var(--warn);background:var(--warn-soft);padding:5px 11px;border-radius:999px;white-space:nowrap}
+
+.grid{display:grid;grid-template-columns:minmax(0,460px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:920px){.grid{grid-template-columns:minmax(0,1fr)}}
+
+/* ---------- form ---------- */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:2px 18px 10px;display:flex;flex-direction:column;min-width:0}
+.sec{padding-block:16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px;min-width:0}
+.sec:first-child{border-top:0}
+.sec h2{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.sec h2 em{font-style:normal;text-transform:none;letter-spacing:0;font-weight:400}
+.hint{margin:0;font-size:13px;color:var(--muted)}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:400px){.fields{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field.full{grid-column:1/-1}
+.lb{font-size:13px;color:var(--muted);font-weight:700}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:58px}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+
+.groups{display:flex;flex-direction:column;gap:12px}
+.group{display:flex;flex-direction:column;gap:6px}
+.group-l{font-size:13px;font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:14px;line-height:1.25;display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);cursor:pointer;text-align:left}
+.chip:hover{border-color:var(--accent)}
+.chip:focus-visible,.mini:focus-visible,.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.chip-r{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.chip-ord,.chip-ck{display:none;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:12px;font-weight:700;flex:none}
+.chip[aria-pressed="true"] .chip-ord,.chip[aria-pressed="true"] .chip-ck{display:inline-grid}
+
+.presets{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.presets span{font-size:13px;color:var(--muted)}
+.mini{font:inherit;font-size:13px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
+.mini:hover{border-color:var(--accent);color:var(--accent)}
+.warn{margin:0;font-size:13px;color:var(--warn);background:var(--warn-soft);padding:6px 10px;border-radius:8px}
+
+/* ---------- output ---------- */
+.out{display:flex;flex-direction:column;gap:12px;min-width:0;position:sticky;top:12px}
+@media (max-width:920px){.out{position:static}}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg label{position:relative;cursor:pointer}
+.seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.seg span{display:block;padding:7px 12px;font-size:14px}
+.seg label+label span{border-left:1px solid var(--line)}
+.seg input:checked+span{background:var(--accent);color:var(--accent-ink);font-weight:700}
+.seg input:focus-visible+span{outline:2px solid var(--accent);outline-offset:-3px}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.btn{font:inherit;font-size:14px;font-weight:700;padding:8px 14px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.quiet{border-color:var(--line);background:transparent;color:var(--muted);font-weight:400}
+.status{margin:0;font-size:13px;color:var(--muted);min-height:1.3em}
+#fb{min-height:130px;font-size:13px}
+
+/* ---------- the slip ---------- */
+.slip{background:var(--paper);color:var(--paper-ink);border-radius:4px;box-shadow:0 1px 2px var(--shadow),0 10px 28px var(--shadow);width:100%;max-width:640px;margin-inline:auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.band{height:14px;background:
+  linear-gradient(var(--gamosa),var(--gamosa)) 0 0/100% 4px no-repeat,
+  repeating-linear-gradient(90deg,var(--gamosa) 0 6px,transparent 6px 11px) 0 7px/100% 3px no-repeat,
+  linear-gradient(var(--gamosa),var(--gamosa)) 0 12px/100% 2px no-repeat}
+.band.btm{transform:scaleY(-1)}
+.slip-in{padding:18px 22px 20px;display:flex;flex-direction:column;gap:16px}
+@media (max-width:480px){.slip-in{padding:14px 14px 16px}}
+.sh{display:flex;justify-content:space-between;gap:8px 14px;align-items:flex-start;flex-wrap:wrap}
+.inst{font-weight:700;font-size:16px;line-height:1.3}
+.dept{font-size:13.5px;color:var(--paper-muted);display:flex;flex-direction:column}
+.sdate{font-size:13px;text-align:right;font-variant-numeric:tabular-nums;display:flex;flex-direction:column}
+.sdate b{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--paper-muted)}
+.pt{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 16px;padding:10px 12px;background:var(--paper-tint);border-radius:6px}
+.pt .k{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--paper-muted)}
+.pt .k .as{text-transform:none;letter-spacing:0}
+.pt .v{font-size:16px;font-weight:700;overflow-wrap:anywhere}
+.pt .v.blank{color:var(--paper-line);font-weight:400}
+.st{margin:0;font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--gamosa);display:flex;flex-wrap:wrap;gap:2px 10px}
+.st .as{text-transform:none;letter-spacing:0;font-size:13.5px}
+.blk{display:flex;flex-direction:column;gap:8px}
+.bi{display:flex;flex-direction:column}
+.bi .as{font-size:1.02em;line-height:1.5}
+
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.step{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:2px 12px;padding:12px 0;border-top:1px solid var(--paper-line);align-items:start}
+.step:first-child{border-top:0;padding-top:2px}
+.num{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--paper-ink);display:grid;place-items:center;font-weight:700;font-size:13.5px;font-variant-numeric:tabular-nums;margin-top:1px}
+.sb{display:flex;flex-direction:column;gap:3px;min-width:0}
+.svc{font-weight:700;font-size:16px;line-height:1.3}
+.svc .as{font-weight:600}
+.where{font-size:14px}
+.when{font-size:13.5px;font-weight:700;color:var(--gamosa)}
+.prep{margin-top:4px;font-size:13.5px;padding:6px 9px;background:var(--paper-tint);border-radius:5px}
+.room{text-align:center;border:1.5px solid var(--paper-ink);border-radius:6px;padding:4px 10px 6px;min-width:66px}
+.room.ext{border-style:dashed;max-width:110px}
+.room-l{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--paper-muted);line-height:1.3}
+.room-l .as{text-transform:none;letter-spacing:0;font-size:11.5px}
+.room-n{display:block;font-size:26px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
+.room-n.sm{font-size:14px;line-height:1.3;padding-top:3px}
+.empty{margin:0;font-size:14px;color:var(--paper-muted);padding:12px;border:1px dashed var(--paper-line);border-radius:6px}
+
+.next{border:1.5px solid var(--paper-ink);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:7px}
+.next-date{font-size:20px;font-weight:700;line-height:1.25}
+.next-date .as{font-size:18.5px}
+.next .where{font-size:14.5px}
+.in-days{font-size:13px;color:var(--paper-muted)}
+
+.ticks{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px 18px}
+.ticks li{display:grid;grid-template-columns:12px minmax(0,1fr);gap:9px;font-size:14px;align-items:start}
+.ticks li::before{content:"";width:11px;height:11px;border:1.5px solid var(--paper-ink);border-radius:2px;margin-top:4px}
+.adv{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.adv li{display:grid;grid-template-columns:8px minmax(0,1fr);gap:10px;font-size:14px}
+.adv li::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--gamosa);margin-top:8px}
+
+.sfoot{border-top:1px dashed var(--paper-line);padding-top:12px;display:flex;flex-direction:column;gap:8px;font-size:13.5px}
+.sfoot .ph{font-variant-numeric:tabular-nums}
+.demo-mark{font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--gamosa);text-align:center}
+.ver{font-size:11px;color:var(--paper-muted);text-align:center}
+
+/* Print: only the slip, on white paper, no browser header/footer (page margin 0, padding on .app instead). */
+@page{margin:0}
+@media print{
+  :root,:root[data-theme="dark"],:root:not([data-theme="light"]){
+    --bg:#FFFFFF; --paper:#FFFFFF; --paper-ink:#000000; --paper-muted:#444444; --paper-line:#BBBBBB; --paper-tint:#F1EFEA; --gamosa:#A32A26;
+    color-scheme:light;
+  }
+  body{background:#fff}
+  .top,.panel,.toolbar,.status,#fb{display:none!important}
+  .app{display:block;max-width:none;padding:9mm 11mm!important}
+  .grid{display:block}
+  .out{position:static;display:block}
+  .slip{box-shadow:none;max-width:none;border-radius:0}
+  .slip-in{gap:12px;padding:14px 18px}
+  .step{padding:8px 0}
+  .prep{margin-top:2px;padding:4px 8px}
+  .sh,.pt,.step,.next,.ticks li,.adv li{break-inside:avoid}
+  .st{break-after:avoid}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <h1>Visit Slip</h1>
+      <p>Department of Head &amp; Neck Surgery, BBCI. Tick where the patient goes next and the bilingual slip fills in.</p>
+    </div>
+    <span class="pill-demo">Draft for review</span>
+  </header>
+
+  <main class="grid">
+    <form id="form" class="panel" autocomplete="off">
+      <section class="sec">
+        <h2>Patient <em>sample values</em></h2>
+        <div class="fields">
+          <div class="field full"><label class="lb" for="pName">Name</label><input id="pName" type="text"></div>
+          <div class="field"><label class="lb" for="pHosp">UHID / Hospital no.</label><input id="pHosp" type="text"></div>
+          <div class="field"><label class="lb" for="pMob">Mobile (for WhatsApp)</label><input id="pMob" type="tel" inputmode="numeric" placeholder="10 digits"></div>
+        </div>
+      </section>
+
+      <section class="sec">
+        <h2>Send the patient to <em>room list, Nov 2026</em></h2>
+        <p class="hint">Tick in the order the patient should go. The numbers show that order on the slip. Preparation notes are drafts until each department confirms them.</p>
+        <div id="svcGroups" class="groups"></div>
+        <p class="warn" id="sWarn" hidden></p>
+      </section>
+
+      <section class="sec">
+        <h2>Next visit</h2>
+        <div class="presets" id="presets">
+          <span>After</span>
+          <button type="button" class="mini" data-add="7d">1 week</button>
+          <button type="button" class="mini" data-add="14d">2 weeks</button>
+          <button type="button" class="mini" data-add="1m">1 month</button>
+          <button type="button" class="mini" data-add="3m">3 months</button>
+        </div>
+        <div class="fields">
+          <div class="field"><label class="lb" for="nDate">Date</label><input id="nDate" type="date"></div>
+          <div class="field"><label class="lb" for="nTime">Time</label><input id="nTime" type="time"></div>
+          <div class="field"><label class="lb" for="nRoom">H&amp;N OPD room no.</label><input id="nRoom" type="text" placeholder="Leave blank if not needed"></div>
+          <div class="field"><label class="lb" for="nDoc">Doctor (optional)</label><input id="nDoc" type="text"></div>
+        </div>
+        <p class="warn" id="nWarn" hidden></p>
+      </section>
+
+      <section class="sec">
+        <h2>Bring with you</h2>
+        <div class="chips" id="bringChips"></div>
+      </section>
+
+      <section class="sec">
+        <h2>Advice</h2>
+        <div class="chips" id="advChips"></div>
+        <div class="fields">
+          <div class="field full"><label class="lb" for="noteEn">Other advice, English</label><textarea id="noteEn"></textarea></div>
+          <div class="field full"><label class="lb" for="noteAs">Other advice, Assamese</label><textarea id="noteAs" class="as" lang="as"></textarea></div>
+        </div>
+      </section>
+    </form>
+
+    <section class="out" aria-label="Patient slip">
+      <div class="toolbar">
+        <div class="seg" role="radiogroup" aria-label="Slip language">
+          <label><input type="radio" name="lang" value="both" id="lgBoth" checked><span>Both</span></label>
+          <label><input type="radio" name="lang" value="en" id="lgEn"><span>English</span></label>
+          <label><input type="radio" name="lang" value="as" id="lgAs"><span class="as">অসমীয়া</span></label>
+        </div>
+        <div class="actions">
+          <button type="button" class="btn" id="printBtn" hidden>Print slip</button>
+          <button type="button" class="btn" id="copyBtn">Copy text</button>
+          <a class="btn ghost" id="waLink" href="https://wa.me/" target="_blank" rel="noopener">Open WhatsApp</a>
+          <button type="button" class="btn quiet" id="clearBtn">Clear</button>
+          <button type="button" class="btn quiet" id="sampleBtn">Load sample</button>
+        </div>
+      </div>
+      <p class="status" id="status" aria-live="polite"></p>
+      <textarea id="fb" hidden readonly aria-label="Slip text to copy"></textarea>
+      <article class="slip" id="slip"></article>
+    </section>
+  </main>
+</div>
+
+<script>
+(() => {
+  /* =========================================================
+     ROOM DIRECTORY: BBCI room list, November 2026.
+     Edit this block when a room changes.
+     b = block, f = floor (0 ground, 1 first), no = room number,
+     near = landmark, when = fixed days/times, pe/pa = preparation (EN/AS).
+     ========================================================= */
+  const LIST_DATE = "November 2026";
+  const PHONE = "";            // OPD helpline: add the real number here; the line stays hidden while blank
+
+  const BLD = {
+    opd:{en:"OPD Block", as:"OPD ব্লক"},
+    ipd:{en:"IPD Block", as:"IPD ব্লক"}
+  };
+  const FLR = [
+    {en:"Ground floor", as:"তলৰ মহলা"},
+    {en:"1st floor", as:"প্ৰথম মহলা"}
+  ];
+  const NEAR = {
+    behind20:{en:"Behind Room 20 (Billing counter)", as:"20 নং কোঠাৰ (বিলিং কাউণ্টাৰ) পিছফালে"},
+    park:{en:"Near BBCI Park", as:"BBCI পাৰ্কৰ ওচৰত"},
+    nuclomed:{en:"Outside BBCI, at Nuclomed near ABC bus stop", as:"BBCI-ৰ বাহিৰত, ABC বাছ ষ্টপৰ ওচৰৰ নিউক্ল'মেডত"}
+  };
+  const GROUPS = [
+    {id:"pay", label:"Payment & pharmacy"},
+    {id:"lab", label:"Lab & pathology"},
+    {id:"img", label:"Imaging & guided biopsy"},
+    {id:"proc", label:"Endoscopy, echo & OT"},
+    {id:"care", label:"Supportive care"}
+  ];
+  const FAST6_EN = "Eat nothing for 6 hours before. Come with one family member.";
+  const FAST6_AS = "৬ ঘণ্টা আগৰ পৰা একো নাখাব। পৰিয়ালৰ এজন লোক লগত আনিব।";
+  const DIET_EN = "Bring a list of what you eat in a day.";
+  const DIET_AS = "দিনটোত কি কি খায় তাৰ তালিকা লগত আনিব।";
+
+  const SVC = [
+    /* Payment & pharmacy */
+    {id:"billing", g:"pay", en:"Billing counter", as:"বিলিং কাউণ্টাৰ", no:"20", f:0},
+    {id:"card", g:"pay", en:"Smart card recharge / cash counter", as:"স্মাৰ্ট কাৰ্ড ৰিচাৰ্জ / নগদ ধনৰ কাউণ্টাৰ", no:"07", b:"opd", f:0},
+    {id:"pharmacy", g:"pay", en:"Pharmacy", as:"ফাৰ্মেচী (ঔষধৰ দোকান)", no:"", b:"opd", f:0,
+      pe:"Show your prescription.", pa:"ডাক্তৰে লিখি দিয়া প্ৰেছক্ৰিপচন দেখুৱাব।"},
+
+    /* Lab & pathology */
+    {id:"blood", g:"lab", en:"Blood test", as:"তেজ পৰীক্ষা", no:"32", b:"opd", f:0,
+      pe:"If a fasting test is advised, eat nothing after 10 PM the night before. You may drink water.",
+      pa:"খালী পেটত পৰীক্ষা কৰিব লাগিলে আগৰ ৰাতি ১০ বজাৰ পিছত একো নাখাব। পানী খাব পাৰে।"},
+    {id:"slide", g:"lab", en:"Slide / block review", as:"স্লাইড / ব্লক ৰিভিউ", no:"117", b:"opd", f:1,
+      pe:"Bring the slides, blocks and biopsy report from the other hospital.",
+      pa:"আন হাস্পতালৰ পৰা অনা স্লাইড, ব্লক আৰু বায়প্সি ৰিপ'ৰ্ট লগত আনিব।"},
+    {id:"sputum", g:"lab", en:"Sputum and swab tests", as:"খেকাৰ (স্পুটাম) আৰু ছোৱাব পৰীক্ষা", no:"118", b:"opd", f:1},
+    {id:"bloodbank", g:"lab", en:"Blood bank", as:"ব্লাড বেংক (তেজ বেংক)", no:"122", b:"opd", f:1},
+
+    /* Imaging & guided biopsy */
+    {id:"ct", g:"img", en:"CT scan", as:"চিটি স্কেন", no:"705", b:"ipd", f:1,
+      pe:"Eat nothing for 4 hours before the scan. Bring your creatinine report and old CT films or CD.",
+      pa:"স্কেনৰ ৪ ঘণ্টা আগৰ পৰা একো নাখাব। ক্ৰিয়েটিনিন ৰিপ'ৰ্ট আৰু পুৰণি চিটি ফিল্ম বা চিডি লগত আনিব।"},
+    {id:"usg", g:"img", en:"Ultrasound (USG)", as:"আল্ট্ৰাছাউণ্ড (USG)", no:"705", b:"ipd", f:1},
+    {id:"ctfnac", g:"img", en:"CT-guided FNAC / core biopsy", as:"চিটি-নিৰ্দেশিত FNAC / ক'ৰ বায়প্সি", no:"705", b:"ipd", f:1,
+      pe:"Tell the doctor if you take blood thinners such as aspirin or clopidogrel.",
+      pa:"এছপিৰিন বা ক্ল'পিড'গ্ৰেলৰ দৰে তেজ পাতল কৰা ঔষধ খালে ডাক্তৰক জনাব।"},
+    {id:"mri", g:"img", en:"MRI", as:"এম আৰ আই (MRI)", no:"", ext:true, near:"nuclomed",
+      pe:"Get the MRI bill made at Room 20 (Billing counter) in BBCI first. Remove all metal items, and tell the staff if you have a pacemaker or any metal implant.",
+      pa:"প্ৰথমে BBCI-ৰ 20 নং কোঠাৰ বিলিং কাউণ্টাৰত MRI-ৰ বিল কৰাব। গাৰ পৰা সকলো ধাতুৰ বস্তু খুলি থ'ব। পেচমেকাৰ বা শৰীৰত কোনো ধাতুৰ বস্তু থাকিলে কৰ্মচাৰীক জনাব।"},
+    {id:"xray", g:"img", en:"X-ray", as:"এক্স-ৰে", no:"501", b:"ipd", f:0},
+    {id:"nuclear", g:"img", en:"Nuclear scan", as:"নিউক্লিয়াৰ স্কেন", no:"703", b:"ipd", f:1},
+    {id:"mmg", g:"img", en:"Mammography", as:"মেম'গ্ৰাফী", no:"506", b:"ipd", f:0},
+
+    /* Endoscopy, echo & OT */
+    {id:"laryngo", g:"proc", en:"Laryngoscopy", as:"লেৰিংগ'স্কপি", no:"708", b:"ipd", f:1},
+    {id:"broncho", g:"proc", en:"Bronchoscopy", as:"ব্ৰংক'স্কপি", no:"708", b:"ipd", f:1, pe:FAST6_EN, pa:FAST6_AS},
+    {id:"ugie", g:"proc", en:"Upper GI endoscopy (UGIE)", as:"আপাৰ জি আই এণ্ড'স্কপি (UGIE)", no:"708", b:"ipd", f:1, pe:FAST6_EN, pa:FAST6_AS},
+    {id:"colono", g:"proc", en:"Colonoscopy", as:"কলনস্কপি", no:"708", b:"ipd", f:1,
+      pe:"Follow the bowel preparation advice you were given. Come with one family member.",
+      pa:"আপোনাক দিয়া পেট চাফা কৰাৰ নিৰ্দেশনা মানি চলিব। পৰিয়ালৰ এজন লোক লগত আনিব।"},
+    {id:"echo", g:"proc", en:"2D Echo", as:"টু-ডি ইক' (2D Echo)", no:"760", b:"ipd", f:1, days:[3,5],
+      when:{en:"Only on Wednesday and Friday, 9 to 11 AM", as:"কেৱল বুধবাৰ আৰু শুকুৰবাৰ, পুৱা ৯ বজাৰ পৰা ১১ বজালৈ"}},
+    {id:"ot", g:"proc", en:"Major / Minor OT", as:"অপাৰেচন থিয়েটাৰ (মেজৰ / মাইনৰ OT)", no:"731", b:"ipd", f:1},
+
+    /* Supportive care */
+    {id:"dental", g:"care", en:"Dental OPD", as:"দাঁতৰ OPD", no:"31", b:"opd", f:0},
+    {id:"speech", g:"care", en:"Speech and swallowing therapy", as:"কথা কোৱা আৰু গিলাৰ থেৰাপী", no:"37", near:"behind20", f:0},
+    {id:"dietA", g:"care", en:"Dietitian (adults)", as:"ডায়েটিচিয়ান (ডাঙৰ মানুহৰ বাবে)", no:"572", b:"ipd", f:0, pe:DIET_EN, pa:DIET_AS},
+    {id:"dietC", g:"care", en:"Dietitian (children)", as:"ডায়েটিচিয়ান (শিশুৰ বাবে)", no:"504", b:"ipd", f:0, pe:DIET_EN, pa:DIET_AS},
+    {id:"physio", g:"care", en:"Physiotherapy", as:"ফিজিঅ'থেৰাপী", no:"36", near:"behind20", f:0},
+    {id:"psych", g:"care", en:"Clinical psychologist", as:"ক্লিনিকেল চাইক'লজিষ্ট (মনোবিজ্ঞানী)", no:"35", near:"behind20", f:0},
+    {id:"occ", g:"care", en:"Occupational therapy", as:"অকুপেচনেল থেৰাপী", no:"34", near:"park"}
+    /* Pulmonologist (Room 760) left out: no clinician appointed at present. */
+  ];
+  const BRING = [
+    {id:"card", en:"Hospital card", as:"হাস্পতালৰ কাৰ্ড"},
+    {id:"reports", en:"All old reports", as:"সকলো পুৰণি ৰিপ'ৰ্ট"},
+    {id:"biopsy", en:"Biopsy report and slides or blocks", as:"বায়প্সি ৰিপ'ৰ্ট আৰু স্লাইড বা ব্লক"},
+    {id:"films", en:"CT or MRI films / CD", as:"চিটি বা এম আৰ আইৰ ফিল্ম / চিডি"},
+    {id:"meds", en:"The medicines you take now", as:"এতিয়া খাই থকা ঔষধবোৰ"},
+    {id:"family", en:"One family member", as:"পৰিয়ালৰ এজন লোক"}
+  ];
+  const ADVICE = [
+    {id:"tobacco", short:"Stop tobacco", en:"Stop tobacco, gutkha, betel nut (tamul) and alcohol completely.", as:"ধঁপাত, গুটখা, তামোল আৰু মদ সম্পূৰ্ণ বন্ধ কৰিব।"},
+    {id:"rinse", short:"Mouth rinse", en:"Rinse your mouth with salt-and-soda water 4 to 5 times a day.", as:"দিনটোত ৪–৫ বাৰ নিমখ-চোডা পানীৰে মুখ কুলি কৰিব।"},
+    {id:"wound", short:"Wound care", en:"Keep the wound clean and dry. Come back early if you have fever, bleeding or swelling.", as:"ঘাঁ চাফা আৰু শুকান কৰি ৰাখিব। জ্বৰ, তেজ ওলালে বা ফুলিলে সোনকালে আহিব।"},
+    {id:"meds", short:"Medicines", en:"Take medicines exactly as prescribed. Do not stop them on your own.", as:"ডাক্তৰে দিয়া ধৰণে ঔষধ খাব। নিজে ঔষধ বন্ধ নকৰিব।"}
+  ];
+
+  /* ---------- helpers ---------- */
+  const byId = Object.fromEntries(SVC.map(s => [s.id, s]));
+  const AS_D = "০১২৩৪৫৬৭৮৯";
+  const asNum = s => String(s).replace(/[0-9]/g, d => AS_D[d]);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const pad = n => String(n).padStart(2, "0");
+  const iso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const parse = s => { if (!s) return null; const [y,m,d] = s.split("-").map(Number); return (y && m && d) ? new Date(y, m-1, d) : null; };
+  const today = (() => { const d = new Date(); d.setHours(0,0,0,0); return d; })();
+
+  const WD_EN = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const MO_EN = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const WD_AS = ["দেওবাৰ","সোমবাৰ","মঙলবাৰ","বুধবাৰ","বৃহস্পতিবাৰ","শুকুৰবাৰ","শনিবাৰ"];
+  const MO_AS = ["জানুৱাৰী","ফেব্ৰুৱাৰী","মাৰ্চ","এপ্ৰিল","মে","জুন","জুলাই","আগষ্ট","ছেপ্তেম্বৰ","অক্টোবৰ","নৱেম্বৰ","ডিচেম্বৰ"];
+
+  const tEn = hm => { const [h,m] = hm.split(":").map(Number); return `${h%12||12}:${pad(m)} ${h<12?"AM":"PM"}`; };
+  const tAs = hm => { const [h,m] = hm.split(":").map(Number);
+    const p = h<12 ? "পুৱা" : h<16 ? "দুপৰীয়া" : h<18 ? "আবেলি" : h<20 ? "সন্ধিয়া" : "ৰাতি";
+    return `${p} ${asNum(h%12||12)}:${asNum(pad(m))}`; };
+  const dEnLong = d => `${WD_EN[d.getDay()]}, ${d.getDate()} ${MO_EN[d.getMonth()]} ${d.getFullYear()}`;
+  const dAsLong = d => `${WD_AS[d.getDay()]}, ${asNum(d.getDate())} ${MO_AS[d.getMonth()]} ${asNum(d.getFullYear())}`;
+  const dEnShort = d => `${d.getDate()} ${MO_EN[d.getMonth()].slice(0,3)} ${d.getFullYear()}`;
+  const dAsShort = d => `${asNum(d.getDate())} ${MO_AS[d.getMonth()]} ${asNum(d.getFullYear())}`;
+
+  /* Room numbers stay in English digits in Assamese text so they match the signboards. */
+  const roomEn = s => s.no ? `Room ${s.no}` : "";
+  const roomAs = s => s.no ? `${s.no} নং কোঠা` : "";
+  const whereEn = s => [s.near && NEAR[s.near].en, s.b && BLD[s.b].en, s.f != null ? FLR[s.f].en : ""].filter(Boolean).join(", ");
+  const whereAs = s => [s.near && NEAR[s.near].as, s.b && BLD[s.b].as, s.f != null ? FLR[s.f].as : ""].filter(Boolean).join(", ");
+
+  /* ---------- state ---------- */
+  const $ = id => document.getElementById(id);
+  let order = [];
+  let bring = new Set();
+  let advice = new Set();
+  const lang = () => (document.querySelector('input[name="lang"]:checked') || {}).value || "both";
+
+  function addTime(kind) {
+    const d = new Date(today);
+    if (kind === "7d") d.setDate(d.getDate() + 7);
+    if (kind === "14d") d.setDate(d.getDate() + 14);
+    if (kind === "1m") d.setMonth(d.getMonth() + 1);
+    if (kind === "3m") d.setMonth(d.getMonth() + 3);
+    return d;
+  }
+
+  function loadSample() {
+    $("pName").value = "Bhaskar Saikia";
+    $("pHosp").value = "104812";
+    $("pMob").value = "";
+    order = ["billing", "blood", "ct"];
+    bring = new Set(["card", "reports", "films"]);
+    advice = new Set(["tobacco"]);
+    $("nDate").value = iso(addTime("7d"));
+    $("nTime").value = "09:30";
+    $("nRoom").value = "";
+    $("nDoc").value = "";
+    $("noteEn").value = "";
+    $("noteAs").value = "";
+  }
+  function clearAll() {
+    ["pName","pHosp","pMob","nRoom","nDoc","noteEn","noteAs","nTime"].forEach(id => $(id).value = "");
+    order = []; bring = new Set(); advice = new Set();
+    $("nDate").value = iso(addTime("7d"));
+  }
+
+  /* ---------- form chips ---------- */
+  function chipTag(s) { return s.no ? s.no : s.ext ? "Outside" : (s.b ? BLD[s.b].en.replace(" Block", "") : ""); }
+  function renderChips() {
+    $("svcGroups").innerHTML = GROUPS.map(g => `
+      <div class="group">
+        <div class="group-l">${esc(g.label)}</div>
+        <div class="chips">${SVC.filter(s => s.g === g.id).map(s => {
+          const i = order.indexOf(s.id);
+          return `<button type="button" class="chip" data-svc="${s.id}" aria-pressed="${i > -1}">
+            <span class="chip-ord">${i > -1 ? i + 1 : ""}</span>
+            <span>${esc(s.en)}</span><span class="chip-r">${esc(chipTag(s))}</span></button>`;
+        }).join("")}</div>
+      </div>`).join("");
+    $("bringChips").innerHTML = BRING.map(b =>
+      `<button type="button" class="chip" data-bring="${b.id}" aria-pressed="${bring.has(b.id)}"><span class="chip-ck">✓</span><span>${esc(b.en)}</span></button>`).join("");
+    $("advChips").innerHTML = ADVICE.map(a =>
+      `<button type="button" class="chip" data-adv="${a.id}" aria-pressed="${advice.has(a.id)}"><span class="chip-ck">✓</span><span>${esc(a.short)}</span></button>`).join("");
+  }
+
+  /* ---------- slip ---------- */
+  function bi(en, as, cls) {
+    const L = lang(), c = cls ? " " + cls : "";
+    if (L === "en") return `<span class="bi${c}"><span class="en">${en}</span></span>`;
+    if (L === "as") return `<span class="bi${c}"><span class="as" lang="as">${as}</span></span>`;
+    return `<span class="bi${c}"><span class="en">${en}</span><span class="as" lang="as">${as}</span></span>`;
+  }
+  function title(en, as) {
+    const L = lang();
+    const e = `<span>${en}</span>`, a = `<span class="as" lang="as">${as}</span>`;
+    return `<h3 class="st">${L === "en" ? e : L === "as" ? a : e + a}</h3>`;
+  }
+  function inline(en, as) {
+    const L = lang();
+    if (L === "en") return en;
+    if (L === "as") return `<span class="as" lang="as">${as}</span>`;
+    return `${en} <span class="as" lang="as">/ ${as}</span>`;
+  }
+
+  function nextInfo() {
+    const d = parse($("nDate").value);
+    if (!d) return null;
+    return { d, time: $("nTime").value || "", room: $("nRoom").value.trim(),
+             diff: Math.round((d - today) / 86400000), doc: $("nDoc").value.trim() };
+  }
+  const nextWhereEn = r => `Come to the Head &amp; Neck OPD${r ? `, Room ${esc(r)}` : ""}.`;
+  const nextWhereAs = r => r ? `মূৰ আৰু ডিঙি বিভাগৰ OPD-ৰ ${esc(r)} নং কোঠালৈ আহিব।` : `মূৰ আৰু ডিঙি বিভাগৰ OPD-লৈ আহিব।`;
+  const daysEn = n => n === 0 ? "Today" : n === 1 ? "Tomorrow" : n < 0 ? `${-n} days ago` : `In ${n} days`;
+  const daysAs = n => n === 0 ? "আজি" : n === 1 ? "কাইলৈ" : n < 0 ? `${asNum(-n)} দিন আগতে` : `${asNum(n)} দিনৰ পিছত`;
+
+  function roomBox(s) {
+    if (s.ext) return `<div class="room ext"><span class="room-l">${inline("Outside BBCI", "BBCI-ৰ বাহিৰত")}</span><span class="room-n sm">Nuclomed</span></div>`;
+    if (!s.no) return "";
+    return `<div class="room"><span class="room-l">${inline("Room", "কোঠা")}</span><span class="room-n">${s.no}</span></div>`;
+  }
+
+  function renderSlip() {
+    const name = $("pName").value.trim(), hosp = $("pHosp").value.trim();
+    const nx = nextInfo();
+    const steps = order.map(id => byId[id]);
+    const notes = ADVICE.filter(a => advice.has(a.id));
+    const nEn = $("noteEn").value.trim(), nAs = $("noteAs").value.trim();
+
+    let h = `<div class="band"></div><div class="slip-in">`;
+    h += `<div class="sh">
+      <div>${bi("Dr. B. Borooah Cancer Institute, Guwahati", "ডাঃ ভুবনেশ্বৰ বৰুৱা কৰ্কট সংস্থান, গুৱাহাটী", "inst")}
+      <div class="dept">${bi("Department of Head &amp; Neck Surgery", "মূৰ আৰু ডিঙিৰ অস্ত্ৰোপচাৰ বিভাগ")}</div></div>
+      <div class="sdate"><b>${inline("Date", "তাৰিখ")}</b>${bi(dEnShort(today), dAsShort(today))}</div>
+    </div>`;
+    h += `<div class="pt">
+      <span class="k">${inline("Name", "নাম")}</span><span class="k">${inline("UHID", "হাস্পতালৰ নম্বৰ")}</span>
+      <span class="v${name ? "" : " blank"}">${name ? esc(name) : "______________"}</span>
+      <span class="v${hosp ? "" : " blank"}">${hosp ? esc(hosp) : "__________"}</span>
+    </div>`;
+
+    h += `<div class="blk">${title("Go to these places in this order", "এই ক্ৰম অনুসৰি তলৰ ঠাইবোৰলৈ যাব")}`;
+    if (steps.length) {
+      h += `<ol class="steps">` + steps.map((s, i) => `
+        <li class="step">
+          <span class="num">${lang() === "as" ? asNum(i + 1) : i + 1}</span>
+          <div class="sb">
+            ${bi(esc(s.en), s.as, "svc")}
+            ${bi(esc([roomEn(s), whereEn(s)].filter(Boolean).join(", ")), [roomAs(s), whereAs(s)].filter(Boolean).join(", "), "where")}
+            ${s.when ? bi(s.when.en, s.when.as, "when") : ""}
+            ${s.pe ? `<div class="prep">${bi(esc(s.pe), s.pa)}</div>` : ""}
+          </div>
+          ${roomBox(s)}
+        </li>`).join("") + `</ol>`;
+    } else {
+      h += `<p class="empty">Tick a test, department or counter on the left to add it here.</p>`;
+    }
+    h += `</div>`;
+
+    if (nx) {
+      const timeEn = nx.time ? ` at ${tEn(nx.time)}` : "";
+      const timeAs = nx.time ? `, ${tAs(nx.time)} বজাত` : "";
+      h += `<div class="next">${title("Your next visit", "পৰৱৰ্তী সাক্ষাৎ")}
+        ${bi(dEnLong(nx.d) + timeEn, dAsLong(nx.d) + timeAs, "next-date")}
+        ${bi(nextWhereEn(nx.room), nextWhereAs(nx.room), "where")}
+        ${nx.doc ? bi(`Doctor: ${esc(nx.doc)}`, `ডাক্তৰ: ${esc(nx.doc)}`, "where") : ""}
+        <span class="in-days">${inline(daysEn(nx.diff), daysAs(nx.diff))}</span>
+      </div>`;
+    }
+
+    const bringList = BRING.filter(b => bring.has(b.id));
+    if (bringList.length) {
+      h += `<div class="blk">${title("Bring with you", "লগত আনিব")}
+        <ul class="ticks">${bringList.map(b => `<li>${bi(esc(b.en), b.as)}</li>`).join("")}</ul></div>`;
+    }
+
+    if (notes.length || nEn || nAs) {
+      h += `<div class="blk">${title("Advice", "পৰামৰ্শ")}<ul class="adv">`;
+      h += notes.map(a => `<li>${bi(esc(a.en), a.as)}</li>`).join("");
+      const L = lang(), e = nEn ? esc(nEn) : "", a = nAs ? esc(nAs) : "";
+      if (L === "en" && e) h += `<li>${bi(e, "")}</li>`;
+      else if (L === "as" && a) h += `<li>${bi("", a)}</li>`;
+      else if (L === "both" && (e || a)) h += `<li><span class="bi">${e ? `<span class="en">${e}</span>` : ""}${a ? `<span class="as" lang="as">${a}</span>` : ""}</span></li>`;
+      h += `</ul></div>`;
+    }
+
+    h += `<div class="sfoot">
+      ${bi("Show this slip at every counter.", "প্ৰতিটো কাউণ্টাৰত এই কাগজখন দেখুৱাব।")}
+      ${PHONE ? bi(`Head &amp; Neck OPD phone: <b class="ph">${esc(PHONE)}</b>`, `মূৰ আৰু ডিঙি বিভাগৰ OPD ফোন: <b class="ph">${esc(PHONE)}</b>`) : ""}
+      <div class="demo-mark">Draft for review · preparation notes not yet confirmed</div>
+      <div class="ver">Room list as of ${LIST_DATE}</div>
+    </div>`;
+    h += `</div><div class="band btm"></div>`;
+    $("slip").innerHTML = h;
+  }
+
+  /* ---------- plain text for WhatsApp / SMS ---------- */
+  function buildText() {
+    const L = lang(), E = L !== "as", A = L !== "en";
+    const lbl = (en, as) => L === "both" ? `${en} / ${as}` : E ? en : as;
+    const out = [];
+    const name = $("pName").value.trim(), hosp = $("pHosp").value.trim();
+    if (E) out.push("*Dr. B. Borooah Cancer Institute, Guwahati*", "Department of Head & Neck Surgery");
+    if (A) out.push("*ডাঃ ভুবনেশ্বৰ বৰুৱা কৰ্কট সংস্থান, গুৱাহাটী*", "মূৰ আৰু ডিঙিৰ অস্ত্ৰোপচাৰ বিভাগ");
+    if (name) out.push(`${lbl("Name", "নাম")}: ${name}`);
+    if (hosp) out.push(`${lbl("UHID", "হাস্পতালৰ নম্বৰ")}: ${hosp}`);
+    out.push(`${lbl("Date", "তাৰিখ")}: ${E ? dEnShort(today) : dAsShort(today)}`);
+    out.push("");
+    if (order.length) {
+      out.push(`*${lbl("Go to these places in this order", "এই ক্ৰম অনুসৰি যাব")}*`);
+      order.forEach((id, i) => {
+        const s = byId[id];
+        if (E) {
+          out.push(`${i + 1}. ${s.en}: ${[roomEn(s), whereEn(s)].filter(Boolean).join(", ")}.`);
+          if (s.when) out.push(`   ${s.when.en}.`);
+          if (s.pe) out.push(`   ${s.pe}`);
+        }
+        if (A) {
+          out.push(`${asNum(i + 1)}. ${s.as}: ${[roomAs(s), whereAs(s)].filter(Boolean).join(", ")}।`);
+          if (s.when) out.push(`   ${s.when.as}।`);
+          if (s.pa) out.push(`   ${s.pa}`);
+        }
+        out.push("");
+      });
+    }
+    const nx = nextInfo();
+    if (nx) {
+      out.push(`*${lbl("Your next visit", "পৰৱৰ্তী সাক্ষাৎ")}*`);
+      if (E) out.push(`${dEnLong(nx.d)}${nx.time ? " at " + tEn(nx.time) : ""}. ${nextWhereEn(nx.room).replace("&amp;", "&")}`);
+      if (A) out.push(`${dAsLong(nx.d)}${nx.time ? ", " + tAs(nx.time) + " বজাত" : ""}। ${nextWhereAs(nx.room)}`);
+      if (nx.doc) out.push(`${lbl("Doctor", "ডাক্তৰ")}: ${nx.doc}`);
+      out.push("");
+    }
+    const bl = BRING.filter(b => bring.has(b.id));
+    if (bl.length) {
+      out.push(`*${lbl("Bring with you", "লগত আনিব")}*`);
+      bl.forEach(b => out.push(`- ${L === "both" ? `${b.en} / ${b.as}` : E ? b.en : b.as}`));
+      out.push("");
+    }
+    const al = ADVICE.filter(a => advice.has(a.id));
+    const nEn = $("noteEn").value.trim(), nAs = $("noteAs").value.trim();
+    if (al.length || (E && nEn) || (A && nAs)) {
+      out.push(`*${lbl("Advice", "পৰামৰ্শ")}*`);
+      al.forEach(a => { if (E) out.push(`- ${a.en}`); if (A) out.push(`  ${a.as}`); });
+      if (E && nEn) out.push(`- ${nEn}`);
+      if (A && nAs) out.push(`  ${nAs}`);
+      out.push("");
+    }
+    if (PHONE) out.push(`${lbl("Head & Neck OPD phone", "মূৰ আৰু ডিঙি বিভাগৰ OPD ফোন")}: ${PHONE}`);
+    return out.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  }
+
+  function updateWarn() {
+    const nx = nextInfo(), w = $("nWarn");
+    let msg = "";
+    if (nx && nx.diff < 0) msg = "This date is in the past.";
+    else if (nx && nx.d.getDay() === 0) msg = "This date is a Sunday. Check that the OPD is open.";
+    w.textContent = msg; w.hidden = !msg;
+
+    const sw = $("sWarn");
+    const clash = order.map(id => byId[id]).filter(s => s.days && !s.days.includes(today.getDay()));
+    sw.textContent = clash.map(s => `${s.en}: ${s.when.en}. Today is ${WD_EN[today.getDay()]}, so tell the patient which day to come.`).join(" ");
+    sw.hidden = !clash.length;
+  }
+  function updateWa() {
+    const digits = $("pMob").value.replace(/\D/g, "");
+    const num = digits.length === 10 ? "91" + digits : (digits.length === 12 && digits.startsWith("91")) ? digits : "";
+    $("waLink").href = `https://wa.me/${num}?text=${encodeURIComponent(buildText())}`;
+  }
+  function renderAll() { renderChips(); renderSlip(); updateWarn(); updateWa(); }
+  function renderOut() { renderSlip(); updateWarn(); updateWa(); }
+
+  /* ---------- wiring ---------- */
+  document.addEventListener("click", e => {
+    const c = e.target.closest("[data-svc],[data-bring],[data-adv],[data-add]");
+    if (!c) return;
+    if (c.dataset.svc) { const id = c.dataset.svc, i = order.indexOf(id); i > -1 ? order.splice(i, 1) : order.push(id); }
+    if (c.dataset.bring) { const id = c.dataset.bring; bring.has(id) ? bring.delete(id) : bring.add(id); }
+    if (c.dataset.adv) { const id = c.dataset.adv; advice.has(id) ? advice.delete(id) : advice.add(id); }
+    if (c.dataset.add) { $("nDate").value = iso(addTime(c.dataset.add)); }
+    const focusKey = c.dataset.svc ? `[data-svc="${c.dataset.svc}"]` : c.dataset.bring ? `[data-bring="${c.dataset.bring}"]` : c.dataset.adv ? `[data-adv="${c.dataset.adv}"]` : null;
+    renderAll();
+    if (focusKey) { const el = document.querySelector(focusKey); if (el) el.focus(); }
+  });
+  $("form").addEventListener("input", renderOut);
+  $("form").addEventListener("change", renderOut);
+  $("form").addEventListener("submit", e => e.preventDefault());
+  document.querySelectorAll('input[name="lang"]').forEach(r => r.addEventListener("change", renderOut));
+
+  /* Print works when the page is opened directly (GitHub Pages). Inside a framed preview it can't, so the button stays hidden there. */
+  const framed = (() => { try { return window.self !== window.top; } catch (err) { return true; } })();
+  if (!framed) { $("printBtn").hidden = false; $("copyBtn").classList.add("ghost"); }
+  $("printBtn").addEventListener("click", () => window.print());
+
+  const status = msg => { $("status").textContent = msg; };
+  $("copyBtn").addEventListener("click", () => {
+    const t = buildText();
+    const fail = () => {
+      const fb = $("fb"); fb.hidden = false; fb.value = t; fb.focus(); fb.select();
+      status("Copying is blocked here. The text is selected below: press Ctrl+C, or long-press and choose Copy.");
+    };
+    $("fb").hidden = true;
+    try {
+      navigator.clipboard.writeText(t).then(() => status("Copied. Paste it into WhatsApp or SMS."), fail);
+    } catch (err) { fail(); }
+  });
+  $("clearBtn").addEventListener("click", () => { clearAll(); $("fb").hidden = true; status("Cleared. Next visit set to 1 week from today."); renderAll(); });
+  $("sampleBtn").addEventListener("click", () => { loadSample(); $("fb").hidden = true; status("Sample loaded."); renderAll(); });
+
+  loadSample();
+  renderAll();
+})();
+</script>
+
+</body>
+</html>
