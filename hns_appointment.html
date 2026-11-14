@@ -423,13 +423,19 @@ S.cons=(function(){var v=lsGet(FKEY);return CONSULTANTS.indexOf(v)>=0?v:""})();
 /* ---------- storage ---------- */
 /* Optional: paste the Apps Script Web app URL (ends in /exec) between the quotes, so every phone
    finds the sheet without typing it. The access key is never kept in this file: each person enters it once. */
-var SHEET_URL="https://script.google.com/macros/s/AKfycbxUjEzr9WtQFC-raCAsbrhdTT9FJvwQynfWxodHkeGEsTdO7ck0-WpoADehmK1EIaHw/exec";
+var SHEET_URL="https://script.google.com/macros/s/AKfycbzhfRxy6RvIBRjIX6Nb0fJVoSyYLilkezU-F8lNQtk8cIutxhPuR40Bb0FuTxGlGvf0/exec";
+/* Earlier sheet addresses. A phone still saved to one of these is moved to SHEET_URL and asked for the access key once. */
+var OLD_SHEET_URLS=["https://script.google.com/macros/s/AKfycbxUjEzr9WtQFC-raCAsbrhdTT9FJvwQynfWxodHkeGEsTdO7ck0-WpoADehmK1EIaHw/exec"];
 
 var LKEY="bbci_ot_appointments_v1",CKEY="bbci_ot_sheet",CACHE="bbci_ot_sheet_cache";
 function lsGet(k){try{return JSON.parse(localStorage.getItem(k)||"null")}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
 function lsDel(k){try{localStorage.removeItem(k)}catch(e){}}
-function sheetCfg(){var o=lsGet(CKEY)||{};if(!o.url&&SHEET_URL)o.url=SHEET_URL;return o}
+function sheetCfg(){
+  var o=lsGet(CKEY)||{};
+  if(o.url&&OLD_SHEET_URLS.indexOf(o.url)>=0){o={by:o.by||""};lsSet(CKEY,o);lsDel(CACHE)}
+  if(!o.url&&SHEET_URL)o.url=SHEET_URL;return o;
+}
 function norm(c){c=Object.assign({},c);c.order=Number(c.order)||0;c.createdAt=Number(c.createdAt)||0;c.updatedAt=Number(c.updatedAt)||0;return c}
 function upsertLocal(rec){var i=S.cases.findIndex(function(x){return x.id===rec.id});if(i>=0)S.cases[i]=rec;else S.cases.push(rec)}
 
@@ -1066,10 +1072,21 @@ var qt;$("q").addEventListener("input",function(){clearTimeout(qt);var v=this.va
 
 var tt;function toast(m){var t=$("toast");t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(function(){t.hidden=true},2200)}
 
+/* Setup link: opening this page with #key=ACCESSKEY on the end connects the phone to the sheet once.
+   The key is saved on the phone and removed from the address bar, so it is never written in this file. */
+var linkJoined=(function(){
+  var m=String(location.hash||"").match(/[#&]key=([A-Za-z0-9]{4,64})/);if(!m||!SHEET_URL)return false;
+  var old=lsGet(CKEY)||{};
+  lsSet(CKEY,{url:SHEET_URL,key:m[1],by:old.by||""});if(old.url!==SHEET_URL)lsDel(CACHE);
+  try{history.replaceState(null,"",location.pathname+location.search)}catch(e){location.hash=""}
+  return true;
+})();
+
 /* start on the next OT day */
 S.sel=nextOT(TODAY);(function(){var d=parse(S.sel);S.y=d.getFullYear();S.m=d.getMonth()})();
 render();
 Store.init();
+if(linkJoined)toast(sheetCfg().by?"Connected to the department diary.":"Connected. Add your name in Sheet settings so others see who made each change.");
 })();
 </script>
 
