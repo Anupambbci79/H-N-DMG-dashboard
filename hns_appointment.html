@@ -785,12 +785,15 @@ function readBarcode(img){
 }
 function callClaude(b64){
   var prompt="This is a photo of a patient registration slip, or a screenshot of the registration screen, from Dr. B. Borooah Cancer Institute, Guwahati. "+
-    "Read the patient's details and call fill_registration. Hospital registration numbers look like 17F2026/007754. "+
+    "Read the patient's details and call fill_registration. Always answer by calling fill_registration, never with text. Hospital registration numbers look like 17F2026/007754. "+
+    "Take the patient's own name, not a father's, husband's or guardian's name (S/O, D/O, W/O, C/O) or a doctor's name. "+
+    "Take only the registration / UHID number, not a bill, visit, token, old CR, ABHA, scheme card or payment transaction number. "+
+    "Take patient or relative mobile numbers only, never hospital helpline or landline numbers. "+
     "Copy only what is printed or written. Leave a field empty rather than guess. If this is not a registration document, return every field empty.";
   return fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{
       "content-type":"application/json","x-api-key":apiKey(),"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
     body:JSON.stringify({model:CLAUDE_MODEL,max_tokens:600,
-      tools:[{name:"fill_registration",description:"Return the patient details read from the registration slip.",input_schema:{type:"object",properties:{
+      tools:[{name:"fill_registration",description:"Return the patient details read from the registration slip.",strict:true,input_schema:{type:"object",additionalProperties:false,properties:{
         name:{type:"string",description:"Patient's full name as written. Empty if not visible."},
         reg_no:{type:"string",description:"Hospital registration / UHID number, e.g. 17F2026/007754. Empty if not visible."},
         age:{type:"string",description:"Age in years, digits only. Empty if not visible."},
@@ -798,7 +801,7 @@ function callClaude(b64){
         phones:{type:"array",items:{type:"string"},description:"Up to two contact phone numbers as written, patient's first."},
         unclear:{type:"string",description:"Very short note on anything hard to read. Empty if all clear."}
       },required:["name","reg_no","age","sex","phones"]}}],
-      tool_choice:{type:"tool",name:"fill_registration"},
+      tool_choice:{type:"auto"},
       messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:"image/jpeg",data:b64}},{type:"text",text:prompt}]}]})
   }).then(function(r){
     return r.json().catch(function(){return {}}).then(function(d){
