@@ -236,6 +236,19 @@ h1 span{color:var(--drape)}
 
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:40;
   background:var(--ink);color:var(--surface);padding:9px 16px;border-radius:999px;font-size:14px;font-weight:700;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
+/* consultant filter and per-consultant groups */
+.cfilter{display:flex;align-items:center;gap:8px;margin:0 0 10px}
+.cfilter label{font-size:13px;font-weight:700;color:var(--ink-2)}
+.cfilter select{flex:1;max-width:260px;padding:7px 10px;border:1px solid var(--rule);border-radius:9px;background:var(--surface)}
+.cfilter select.on{border-color:var(--drape);box-shadow:inset 0 0 0 1px var(--drape);font-weight:700}
+.group{display:flex;flex-direction:column;gap:10px}
+.group+.group{margin-top:18px;padding-top:14px;border-top:1px solid var(--rule)}
+.ghead{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.gtitle{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;min-width:0}
+.gtitle h3{margin:0;font-family:var(--f-display);font-size:17px;font-weight:700}
+.gmeta{font-size:13px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.hrs{display:inline-block;font-size:12.5px;font-weight:700;color:var(--ink-2);margin-left:8px;vertical-align:1px}
+.cons{font-size:13px;color:var(--drape);font-weight:700;margin-top:2px}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(12px);opacity:.6}to{transform:none;opacity:1}}}
 </style>
 
@@ -263,6 +276,7 @@ h1 span{color:var(--drape)}
         <button class="iconbtn" data-act="prev" aria-label="Previous month"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m15 18-6-6 6-6"></path></svg></button>
         <button class="iconbtn" data-act="next" aria-label="Next month"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"></path></svg></button>
       </div>
+      <div class="cfilter"><label for="consf">Consultant</label><select id="consf"></select></div>
       <div class="wk" id="wk"></div>
       <div class="grid" id="grid" style="margin-top:4px"></div>
       <div class="legend">
@@ -278,7 +292,7 @@ h1 span{color:var(--drape)}
 
   <section class="card" aria-label="Waitlist">
     <div class="wl-head">
-      <div><h2>Waitlist</h2><p>Cases awaiting a date</p></div>
+      <div><h2>Waitlist</h2><p id="wlsub">Cases awaiting a date</p></div>
       <button class="sm" data-act="addwait" id="addwait">Add to waitlist</button>
     </div>
     <div id="wl"></div>
@@ -311,6 +325,8 @@ h1 span{color:var(--drape)}
       <input type="file" id="scanfile" accept="image/*" hidden>
     </div>
     <div class="fgrid">
+      <div class="f h4"><label for="f-cons">Consultant</label><select id="f-cons"></select></div>
+      <div class="f h2"><label for="f-hours">Est. hours</label><select id="f-hours"></select></div>
       <div class="f h4"><label for="f-name">Patient name <span style="font-weight:400">(optional)</span></label><input id="f-name" required autocomplete="off"></div>
       <div class="f h2"><label for="f-age">Age / Sex</label>
         <div style="display:flex;gap:6px"><input id="f-age" inputmode="numeric" placeholder="Age" style="min-width:0"><select id="f-sex" aria-label="Sex" style="width:62px;flex:none"><option value="">–</option><option>M</option><option>F</option><option>O</option></select></div></div>
@@ -385,6 +401,11 @@ var FIXED_HOL={"01-26":"Republic Day","08-15":"Independence Day","10-02":"Gandhi
 var DATE_HOL={"2026-11-24":"Guru Nanak's Birthday"};
 var PROC_CHIPS=["TL","TT","HT","CCND","ND","B/L ND","WLE","SM","NTG","BCR","Sup. parotidectomy","Parotidectomy","PC","TEP","Trach"];
 var NOTE_CHIPS=["Post NACT","Check MRI","PAC pending","Biopsy awaited","Consent done","Blood arranged"];
+/* Consultants: edit this list to add or rename. Each case saves the name exactly as written here. */
+var CONSULTANTS=["Dr AK Das","Dr T Rahman","Dr R J Das","Dr K Das","Dr A Das","Dr K Kakati"];
+var LIST_HOURS=8; /* a consultant's day is flagged when estimated hours go over this */
+var HOURS=[];for(var hh=1;hh<=24;hh++)HOURS.push(String(hh/2));
+var FKEY="bbci_ot_consfilter";
 
 function pad(n){return String(n).padStart(2,"0")}
 function ymd(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
@@ -396,7 +417,8 @@ function $(id){return document.getElementById(id)}
 var today=new Date(); today.setHours(0,0,0,0);
 var TODAY=ymd(today);
 
-var S={sync:"",syncedAt:0,lastSnap:null,cases:[],otDays:[3,4],y:today.getFullYear(),m:today.getMonth(),sel:TODAY,q:"",mode:"connecting",loaded:false,canWrite:true,editing:null};
+var S={sync:"",syncedAt:0,lastSnap:null,cases:[],otDays:[3,4],y:today.getFullYear(),m:today.getMonth(),sel:TODAY,q:"",mode:"connecting",loaded:false,canWrite:true,editing:null,cons:""};
+S.cons=(function(){var v=lsGet(FKEY);return CONSULTANTS.indexOf(v)>=0?v:""})();
 
 /* ---------- storage ---------- */
 /* Optional: paste the Apps Script Web app URL (ends in /exec) between the quotes, so every phone
@@ -514,13 +536,26 @@ function phones(c){return [c.ph1,c.ph2].filter(function(p){return p&&String(p).t
 function fmtDay(s){var d=parse(s);return WDL[d.getDay()]+", "+d.getDate()+" "+MON[d.getMonth()]}
 function fmtShort(s){var d=parse(s);return WD[d.getDay()]+" "+d.getDate()+" "+MON[d.getMonth()].slice(0,3)+" "+d.getFullYear()}
 function nextOT(from){var d=parse(from);for(var i=0;i<21;i++){var s=ymd(d);if(isOT(s)&&!hol(s))return s;d.setDate(d.getDate()+1)}return from}
+function consOf(c){return String(c.consultant||"")}
+function inFilter(c){return !S.cons||consOf(c)===S.cons}
+function hrs(c){var n=parseFloat(c.hours);return isFinite(n)&&n>0?n:0}
+function sumH(list){return list.reduce(function(t,c){return t+hrs(c)},0)}
+function fmtH(n){return (Math.round(n*2)/2)+" h"}
+function groupsOf(list){
+  var by={},keys=[];
+  list.forEach(function(c){var k=consOf(c);if(!by[k]){by[k]=[];keys.push(k)}by[k].push(c)});
+  var order=S.cons?[S.cons].concat(CONSULTANTS.filter(function(x){return x!==S.cons})):CONSULTANTS;
+  function rank(k){if(!k)return 999;var i=order.indexOf(k);return i<0?500:i}
+  keys.sort(function(a,b){return rank(a)-rank(b)||a.localeCompare(b)});
+  return keys.map(function(k){return {cons:k,cases:by[k]}});
+}
 
 /* ---------- render ---------- */
 function render(){renderSummary();renderCal();renderPanel();renderWait();renderFoot()}
 
 function renderSummary(){
   var pre=S.y+"-"+pad(S.m+1)+"-";
-  var mc=S.cases.filter(function(c){return c.date&&c.date.indexOf(pre)===0&&!OFF[c.status]});
+  var mc=S.cases.filter(function(c){return c.date&&c.date.indexOf(pre)===0&&!OFF[c.status]&&inFilter(c)});
   var fl=mc.filter(function(c){return FREE[c.flap]}).length;
   var dn=mc.filter(function(c){return c.status==="done"}).length;
   var wl=waitList().length;
@@ -536,7 +571,7 @@ function renderCal(){
   for(var i=0;i<start;i++)h+="<div class=\"cell blank\"></div>";
   for(var d=1;d<=n;d++){
     var s=S.y+"-"+pad(S.m+1)+"-"+pad(d);
-    var list=activeOf(dayCases(s)),ho=hol(s);
+    var list=activeOf(dayCases(s)).filter(inFilter),ho=hol(s);
     var cls="cell"+(isOT(s)&&!ho?" ot":"")+(s===S.sel?" sel":"")+(s===TODAY?" today":"")+(s<TODAY?" past":"");
     var minis=list.slice(0,3).map(function(c){
       return "<span class=\"mi"+(FREE[c.flap]?" free":"")+(CLOSED[c.status]?" done":"")+"\">"+esc(shortLabel(c))+"</span>"}).join("");
@@ -566,8 +601,9 @@ function caseCard(c,num,opts){
   var ord=opts.noNum?"":"<div class=\"ord\" aria-label=\""+(num?"Case "+num:"Off the list")+"\">"+(num||"–")+"</div>";
   return "<article class=\"case"+(off?" off":"")+"\">"+ord+"<div style=\"min-width:0\">"+
     "<div class=\"crow\"><h3 class=\"pname"+(c.name?"":" mono")+"\">"+esc(label(c))+"</h3>"+(agesex(c)?"<span class=\"agesex\">"+esc(agesex(c))+"</span>":"")+"</div>"+
+    (opts.showCons?"<div class=\"cons\">"+esc(consOf(c)||"No consultant")+"</div>":"")+
     (c.reg&&c.name?"<div class=\"reg\"><span class=\"mono\">"+esc(c.reg)+"</span> <button class=\"linkbtn\" data-act=\"copy\" data-text=\""+esc(c.reg)+"\" aria-label=\"Copy reg no\">Copy</button></div>":"")+
-    "<p class=\"proc\">"+(c.proc?esc(c.proc):"<span style=\"color:var(--ink-2);font-weight:400\">Procedure not entered</span>")+fl+"</p>"+
+    "<p class=\"proc\">"+(c.proc?esc(c.proc):"<span style=\"color:var(--ink-2);font-weight:400\">Procedure not entered</span>")+fl+(hrs(c)?"<span class=\"hrs\">~"+fmtH(hrs(c))+"</span>":"")+"</p>"+
     (ph?"<div class=\"phones\">"+ph+"</div>":"")+
     (c.notes?"<p class=\"notes\">"+esc(c.notes)+"</p>":"")+
     "<div class=\"cfoot\">"+sel+"<span class=\"grow\"></span>"+ctl+"</div></div></article>";
@@ -578,23 +614,29 @@ function renderPanel(){
   if(S.q.trim()){p.innerHTML=renderSearch();return}
   var s=S.sel,ho=hol(s),ot=isOT(s);
   var all=dayCases(s),act=activeOf(all),off=all.filter(function(c){return OFF[c.status]});
-  var nf=act.filter(function(c){return FREE[c.flap]}).length;
   var tags="";
   if(ho)tags+="<span class=\"tag hol\">"+esc(ho)+"</span>";
   tags+=ot?"<span class=\"tag ot\">OT day</span>":"<span class=\"tag\">Not a regular OT day</span>";
   if(s===TODAY)tags+="<span class=\"tag\">Today</span>";
-  if(nf>1)tags+="<span class=\"tag warn\">"+nf+" free flaps on this list</span>";
+  if(act.length)tags+="<span class=\"tag\">"+act.length+" case"+(act.length>1?"s":"")+(sumH(act)?" · "+fmtH(sumH(act)):"")+"</span>";
   var w=writable();
   var h="<div class=\"dhead\"><div><h2>"+fmtDay(s)+"</h2><div class=\"tags\">"+tags+"</div></div><div class=\"dactions\">"+
-    (act.length?"<button class=\"sm\" data-act=\"copylist\">Copy OT list</button>":"")+
     (w?"<button class=\"primary\" data-act=\"book\">Book case</button>":"")+"</div></div>";
   if(!S.loaded){h+="<div class=\"empty\"><b>Opening the diary…</b>Booked cases will appear here.</div>"}
   else if(!act.length){
-    h+="<div class=\"empty\"><b>No cases booked for this day.</b>"+(w?(ot?"Tap Book case to add the first patient. Cases are numbered in OT order.":"Pick a highlighted OT day, or book here for an extra list."):"Nothing on the list yet.")+"</div>";
+    h+="<div class=\"empty\"><b>No cases booked for this day.</b>"+(w?(ot?"Tap Book case to add the first patient. Cases are grouped by consultant and numbered in OT order.":"Pick a highlighted OT day, or book here for an extra list."):"Nothing on the list yet.")+"</div>";
   } else {
-    h+="<div class=\"list\">"+act.map(function(c,i){return caseCard(c,i+1,{reorder:true,isFirst:i===0,isLast:i===act.length-1})}).join("")+"</div>";
+    h+=groupsOf(act).map(function(g){
+      var n=g.cases.length,tot=sumH(g.cases),miss=g.cases.filter(function(c){return !hrs(c)}).length;
+      var nf=g.cases.filter(function(c){return FREE[c.flap]}).length;
+      var meta=n+" case"+(n>1?"s":"")+(tot?" · "+fmtH(tot):"")+(miss&&tot?" + "+miss+" not estimated":"");
+      var gt=(tot>LIST_HOURS?"<span class=\"tag warn\">Over "+LIST_HOURS+" h</span>":"")+(nf>1?"<span class=\"tag warn\">"+nf+" free flaps</span>":"");
+      return "<section class=\"group\"><div class=\"ghead\"><div class=\"gtitle\"><h3>"+esc(g.cons||"No consultant")+"</h3><span class=\"gmeta\">"+esc(meta)+"</span>"+gt+"</div>"+
+        "<button class=\"sm\" data-act=\"copylist\" data-cons=\""+esc(g.cons)+"\">Copy list</button></div>"+
+        "<div class=\"list\">"+g.cases.map(function(c,i){return caseCard(c,i+1,{reorder:true,isFirst:i===0,isLast:i===n-1})}).join("")+"</div></section>";
+    }).join("");
   }
-  if(off.length){h+="<p class=\"subhead\">Off this list</p><div class=\"list\">"+off.map(function(c){return caseCard(c,0,{})}).join("")+"</div>"}
+  if(off.length){h+="<p class=\"subhead\">Off this list</p><div class=\"list\">"+off.map(function(c){return caseCard(c,0,{showCons:true})}).join("")+"</div>"}
   p.innerHTML=h;
 }
 
@@ -610,16 +652,17 @@ function renderSearch(){
   if(!hits.length)return h+"<div class=\"empty\"><b>No case matches “"+esc(S.q.trim())+"”.</b>Try a surname, the last digits of a reg no, or a phone number.</div>";
   return h+"<div class=\"res\">"+hits.map(function(c){
     var when=c.date?"<b>"+esc(fmtShort(c.date).replace(/ \d{4}$/,""))+"</b>"+parse(c.date).getFullYear():"<b>Waitlist</b>no date";
-    return "<button class=\"ritem\" data-act=\"jump\" data-id=\""+c.id+"\"><span class=\"rdate\">"+when+"</span><span style=\"min-width:0\"><b>"+esc(label(c))+"</b> <span class=\"mono\" style=\"color:var(--ink-2);font-size:13px\">"+esc(c.reg||"")+"</span><br><span style=\"color:var(--pen);font-weight:700\">"+esc(c.proc||"")+"</span>"+(c.flap&&c.flap!=="None"?" <span class=\"flap "+(FREE[c.flap]?"free":"ped")+"\">"+esc(c.flap)+"</span>":"")+" · <span style=\"color:var(--ink-2)\">"+esc(STL[c.status||"booked"])+"</span></span></button>";
+    return "<button class=\"ritem\" data-act=\"jump\" data-id=\""+c.id+"\"><span class=\"rdate\">"+when+"</span><span style=\"min-width:0\"><b>"+esc(label(c))+"</b> <span class=\"mono\" style=\"color:var(--ink-2);font-size:13px\">"+esc(c.reg||"")+"</span><br><span style=\"color:var(--pen);font-weight:700\">"+esc(c.proc||"")+"</span>"+(c.flap&&c.flap!=="None"?" <span class=\"flap "+(FREE[c.flap]?"free":"ped")+"\">"+esc(c.flap)+"</span>":"")+" · <span style=\"color:var(--ink-2)\">"+esc(STL[c.status||"booked"])+(consOf(c)?" · "+esc(consOf(c)):"")+"</span></span></button>";
   }).join("")+"</div>";
 }
 
-function waitList(){return S.cases.filter(function(c){return !c.date&&!CLOSED[c.status]}).sort(function(a,b){return (a.createdAt||0)-(b.createdAt||0)})}
+function waitList(){return S.cases.filter(function(c){return !c.date&&!CLOSED[c.status]&&inFilter(c)}).sort(function(a,b){return (a.createdAt||0)-(b.createdAt||0)})}
 function renderWait(){
   $("addwait").hidden=!writable();
+  $("wlsub").textContent="Cases awaiting a date"+(S.cons?" · "+S.cons:"");
   var l=waitList();
-  $("wl").innerHTML=!S.loaded?"":l.length?"<div class=\"wl\">"+l.map(function(c){return caseCard(c,0,{noNum:true,schedule:true})}).join("")+"</div>":
-    "<div class=\"empty\"><b>No one is waiting for a date.</b>Patients still in work-up, or awaiting NACT, can wait here until they're ready to book.</div>";
+  $("wl").innerHTML=!S.loaded?"":l.length?"<div class=\"wl\">"+l.map(function(c){return caseCard(c,0,{noNum:true,schedule:true,showCons:true})}).join("")+"</div>":
+    "<div class=\"empty\"><b>No one is waiting for a date"+(S.cons?" for "+esc(S.cons):"")+".</b>Patients still in work-up, or awaiting NACT, can wait here until they're ready to book.</div>";
 }
 
 function renderFoot(){
@@ -692,14 +735,27 @@ $("g-off").addEventListener("click",function(){
 $("gscrim").addEventListener("click",function(e){if(e.target===this)closeG()});
 
 /* ---------- form ---------- */
-var F={};["name","age","sex","reg","ph1","ph2","flap","proc","date","wait","status","notes"].forEach(function(k){F[k]=$("f-"+k)});
+var F={};["cons","hours","name","age","sex","reg","ph1","ph2","flap","proc","date","wait","status","notes"].forEach(function(k){F[k]=$("f-"+k)});
 F.status.innerHTML=STATUS.map(function(s){return "<option value=\""+s[0]+"\">"+s[1]+"</option>"}).join("");
+F.hours.innerHTML="<option value=\"\">–</option>"+HOURS.map(function(v){return "<option value=\""+v+"\">"+v+" h</option>"}).join("");
+function consOptions(extra){
+  var names=CONSULTANTS.slice();if(extra&&names.indexOf(extra)<0)names.push(extra);
+  F.cons.innerHTML="<option value=\"\">Choose consultant</option>"+names.map(function(n){return "<option>"+esc(n)+"</option>"}).join("");
+}
+consOptions();
+$("consf").innerHTML="<option value=\"\">All consultants</option>"+CONSULTANTS.map(function(n){return "<option"+(n===S.cons?" selected":"")+">"+esc(n)+"</option>"}).join("");
+$("consf").classList.toggle("on",!!S.cons);
+$("consf").addEventListener("change",function(){
+  S.cons=this.value;this.classList.toggle("on",!!S.cons);lsSet(FKEY,S.cons);render();
+});
 $("pchips").innerHTML=PROC_CHIPS.map(function(p){return "<button type=\"button\" data-chip=\"proc\" data-v=\""+esc(p)+"\">"+esc(p)+"</button>"}).join("");
 $("nchips").innerHTML=NOTE_CHIPS.map(function(p){return "<button type=\"button\" data-chip=\"notes\" data-v=\""+esc(p)+"\">"+esc(p)+"</button>"}).join("");
 
 function openForm(c,focus){
   S.editing=c;
   $("ftitle").textContent=c.id?"Edit case":(c.date?"Book case · "+fmtShort(c.date):"Add to waitlist");
+  consOptions(consOf(c));F.cons.value=c.id?consOf(c):(consOf(c)||S.cons);
+  var hv=hrs(c)?String(Math.round(hrs(c)*2)/2):"";F.hours.value=HOURS.indexOf(hv)>=0?hv:"";
   F.name.value=c.name||"";F.age.value=c.age||"";F.sex.value=c.sex||"";F.reg.value=c.reg||"";
   F.ph1.value=c.ph1||"";F.ph2.value=c.ph2||"";F.flap.value=c.flap||"None";F.proc.value=c.proc||"";
   F.date.value=c.date||"";F.wait.checked=!c.date;F.date.disabled=!c.date&&!focus;
@@ -716,28 +772,39 @@ function closeForm(){$("scrim").hidden=true;S.editing=null;scanPending=null}
 function dateHint(){
   var v=F.date.value,h="";
   if(v&&!F.wait.checked){var ho=hol(v);if(ho)h=ho+" is a holiday.";else if(!isOT(v))h=WDL[parse(v).getDay()]+" is not a regular OT day.";
-    var n=activeOf(dayCases(v)).filter(function(c){return !S.editing||c.id!==S.editing.id}).length;
-    if(n)h+=(h?" ":"")+n+" case"+(n>1?"s":"")+" already booked.";}
+    var others=activeOf(dayCases(v)).filter(function(c){return !S.editing||c.id!==S.editing.id});
+    var cons=F.cons.value;
+    if(cons){
+      var mine=others.filter(function(c){return consOf(c)===cons}),t=sumH(mine),add=parseFloat(F.hours.value)||0;
+      if(mine.length)h+=(h?" ":"")+cons+" already has "+mine.length+" case"+(mine.length>1?"s":"")+(t?" ("+fmtH(t)+")":"")+" that day.";
+      if(t+add>LIST_HOURS)h+=(h?" ":"")+"With this case: "+fmtH(t+add)+", over "+LIST_HOURS+" h.";
+    } else if(others.length)h+=(h?" ":"")+others.length+" case"+(others.length>1?"s":"")+" already booked.";}
   $("f-hint").textContent=h;
 }
 F.date.addEventListener("input",dateHint);
+F.cons.addEventListener("change",dateHint);
+F.hours.addEventListener("change",dateHint);
 F.wait.addEventListener("change",function(){F.date.disabled=F.wait.checked;if(F.wait.checked)F.date.value="";else if(!F.date.value)F.date.value=S.sel;dateHint()});
 F.reg.addEventListener("blur",function(){F.reg.value=F.reg.value.trim().toUpperCase()});
 
 /* ---------- registration slip scanner ---------- */
-/* The photo goes to Claude (your API key, saved on this device under bbci_hn_apikey, shared with the
-   department's other tools on the same site). Only the extracted text is kept; the image is discarded. */
+/* When the diary is connected to the Google Sheet, the photo goes to the sheet's Apps Script (action "scan"),
+   which calls Claude with the API key kept in its Script Properties, so no key is needed on the phone.
+   Without the sheet, the photo goes straight to Claude with the API key saved on this device under
+   bbci_hn_apikey (shared with the department's other tools on the same site).
+   Only the extracted text is kept; the image is discarded. */
 var CLAUDE_MODEL="claude-sonnet-5-5",AKEY="bbci_hn_apikey";
 var SCAN_HINT="Take a photo of the slip, or paste a screenshot of the registration screen. Name, reg no, age/sex and phone are filled for you.";
 var REG_RE=/^(\d{2}[A-Z]\d{4})\/?(\d{3,8})$/;
 var scanPending=null,scanBusy=false;
 function apiKey(){try{return (localStorage.getItem(AKEY)||"").trim()}catch(e){return ""}}
+function viaServer(){return !!(S.mode==="sheet"&&Store.cfg&&Store.cfg.url&&Store.cfg.key&&S.sync!=="badkey")}
 function setApiKey(k){try{localStorage.setItem(AKEY,k);return true}catch(e){return false}}
 function scanMsg(html,k){var m=$("scanmsg");m.innerHTML=html;m.className="scanmsg"+(k?" "+k:"")}
 function resetScan(){
   scanPending=null;$("scanthumb").hidden=true;$("scanthumb").removeAttribute("src");$("scankey").hidden=true;
   $("scanbox").classList.remove("busy");$("scanbtn").disabled=false;scanMsg(esc(SCAN_HINT));
-  $("scankeylink").hidden=!apiKey();
+  $("scankeylink").hidden=viaServer()||!apiKey();
   Object.keys(F).forEach(function(k){F[k].classList.remove("scanned")});
 }
 function showKeyBox(msg){
@@ -812,10 +879,23 @@ function callClaude(b64){
     });
   },function(){throw {kind:"network"}});
 }
+function callServer(b64){
+  var cfg=Store.cfg,ctl=window.AbortController?new AbortController():null,to=setTimeout(function(){if(ctl)ctl.abort()},60000);
+  return fetch(cfg.url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify({action:"scan",key:cfg.key,by:cfg.by||"",image:b64}),signal:ctl?ctl.signal:undefined})
+    .then(function(r){return r.json().catch(function(){return null})},function(){throw {kind:"network"}})
+    .then(function(d){
+      clearTimeout(to);
+      if(!d)throw {kind:"server",code:"not_set_up"};
+      if(!d.ok)throw {kind:"server",code:d.error||"",msg:d.message||""};
+      if(!d.fields)throw {kind:"server",code:"not_set_up"};
+      return d.fields;
+    },function(e){clearTimeout(to);throw e});
+}
 function startScan(file){
   if(scanBusy)return;
   if(!file||!/^image\//.test(file.type||"")){scanMsg("That file isn't a photo. Choose a JPG or PNG image.","err");return}
-  if(!apiKey()){scanPending=file;showKeyBox("Enter the Claude API key once on this device, then the slip is read straight away.");return}
+  if(!viaServer()&&!apiKey()){scanPending=file;showKeyBox("Enter the Claude API key once on this device, then the slip is read straight away.");return}
   runScan(file);
 }
 function runScan(file){
@@ -825,10 +905,18 @@ function runScan(file){
   var prep=null;
   prepImage(file).then(function(p){
     prep=p;var th=$("scanthumb");th.src=p.dataUrl;th.hidden=false;
-    return Promise.all([callClaude(p.b64),readBarcode(p.img)]);
+    return Promise.all([viaServer()?callServer(p.b64):callClaude(p.b64),readBarcode(p.img)]);
   }).then(function(r){applyScan(r[0]||{},r[1])},function(e){
     e=e||{};
-    if(e.kind==="image")scanMsg("Couldn't open that image. Take the photo again.","err");
+    if(e.kind==="server"){
+      if(e.code==="bad_key")scanMsg("The sheet rejected the access key. Open Sheet settings and enter it again.","err");
+      else if(e.code==="no_api_key")scanMsg("Scanning isn't set up on the sheet yet. Add the Claude API key to the Apps Script project.","err");
+      else if(e.code==="not_set_up")scanMsg("The sheet isn't set up for scanning yet. Add Scan.gs to the Apps Script project and deploy a new version.","err");
+      else if(e.code==="rate_limited")scanMsg("Too many scans at once. Wait a few seconds and try again.","err");
+      else if(e.code==="empty")scanMsg("Claude didn't return any details. Try again.","err");
+      else scanMsg("Claude couldn't read the photo"+(e.msg?": "+esc(e.msg):e.code?" ("+esc(e.code)+").":".")+"","err");
+    }
+    else if(e.kind==="image")scanMsg("Couldn't open that image. Take the photo again.","err");
     else if(e.kind==="network")scanMsg("Couldn't reach Claude. Check the internet connection and try again.","err");
     else if(e.kind==="empty")scanMsg("Claude didn't return any details. Try again.","err");
     else if(e.status===401||e.status===403){scanPending=file;showKeyBox("The API key was rejected. Enter a valid Claude API key.")}
@@ -837,7 +925,7 @@ function runScan(file){
     else scanMsg("Claude couldn't read the photo"+(e.msg?": "+esc(e.msg):".")+"","err");
   }).then(function(){
     if(prep)URL.revokeObjectURL(prep.url);
-    scanBusy=false;box.classList.remove("busy");$("scanbtn").disabled=false;$("scankeylink").hidden=!apiKey();
+    scanBusy=false;box.classList.remove("busy");$("scanbtn").disabled=false;$("scankeylink").hidden=viaServer()||!apiKey();
   });
 }
 function applyScan(ai,barcodeReg){
@@ -887,14 +975,15 @@ function saveCase(){
   if($("f-save").disabled)return;
   var c=Object.assign({},S.editing||{});
   var name=F.name.value.trim();
+  if(!F.cons.value){$("f-err").textContent="Choose the consultant.";F.cons.focus();return}
   if(!name&&!F.reg.value.trim()){$("f-err").textContent="Enter a name or a reg no.";F.name.focus();return}
   var date=F.wait.checked?"":F.date.value;
   if(!F.wait.checked&&!date){$("f-err").textContent="Pick an OT date, or tick Waitlist.";F.date.focus();return}
-  var moved=c.date!==date;
-  Object.assign(c,{name:name,age:F.age.value.trim(),sex:F.sex.value,reg:F.reg.value.trim().toUpperCase(),ph1:F.ph1.value.trim(),ph2:F.ph2.value.trim(),
+  var moved=c.date!==date||consOf(c)!==F.cons.value;
+  Object.assign(c,{consultant:F.cons.value,hours:F.hours.value,name:name,age:F.age.value.trim(),sex:F.sex.value,reg:F.reg.value.trim().toUpperCase(),ph1:F.ph1.value.trim(),ph2:F.ph2.value.trim(),
     flap:F.flap.value,proc:F.proc.value.trim(),date:date,status:F.status.value,notes:F.notes.value.trim()});
   if(!c.id){c.id=Store.newId();c.createdAt=Date.now()}
-  if(date&&(moved||!c.order)){var others=dayCases(date).filter(function(x){return x.id!==c.id});c.order=others.reduce(function(m,x){return Math.max(m,x.order||0)},0)+1}
+  if(date&&(moved||!c.order)){var others=dayCases(date).filter(function(x){return x.id!==c.id&&consOf(x)===c.consultant});c.order=others.reduce(function(m,x){return Math.max(m,x.order||0)},0)+1}
   if(!date)c.order=0;
   var btn=$("f-save");btn.disabled=true;btn.textContent="Saving…";
   Store.save(c).then(function(){
@@ -919,20 +1008,20 @@ document.addEventListener("click",function(e){
 /* ---------- actions ---------- */
 function reorder(id,dir){
   var c=S.cases.find(function(x){return x.id===id});if(!c)return;
-  var act=activeOf(dayCases(c.date)),i=act.findIndex(function(x){return x.id===id}),j=i+dir;
+  var act=activeOf(dayCases(c.date)).filter(function(x){return consOf(x)===consOf(c)}),i=act.findIndex(function(x){return x.id===id}),j=i+dir;
   if(j<0||j>=act.length)return;
   var tmp=act[i];act[i]=act[j];act[j]=tmp;
   var items=[];act.forEach(function(x,k){if((x.order||0)!==k+1)items.push({id:x.id,fields:{order:k+1}})});
   if(items.length)Store.patchMany(items).catch(function(){});
 }
-function listText(s){
-  var act=activeOf(dayCases(s));
-  var lines=["H&N OT list · "+fmtShort(s)];
+function listText(s,cons){
+  var act=activeOf(dayCases(s)).filter(function(c){return consOf(c)===cons}),tot=sumH(act);
+  var lines=["H&N OT list · "+(cons||"No consultant")+" · "+fmtShort(s)+(tot?" · est. "+fmtH(tot):"")];
   act.forEach(function(c,i){
     var as=agesex(c);
     lines.push("");
     lines.push((i+1)+". "+label(c)+(as?", "+as:"")+(c.reg&&c.name?" · "+c.reg:""));
-    lines.push("   "+(c.proc||"Procedure TBD")+(c.flap&&c.flap!=="None"&&String(c.proc||"").indexOf(c.flap)<0?" + "+c.flap:""));
+    lines.push("   "+(c.proc||"Procedure TBD")+(c.flap&&c.flap!=="None"&&String(c.proc||"").indexOf(c.flap)<0?" + "+c.flap:"")+(hrs(c)?" (~"+fmtH(hrs(c))+")":""));
     var p=phones(c);if(p.length)lines.push("   Ph: "+p.join(", "));
     if(c.notes)lines.push("   Note: "+c.notes);
   });
@@ -955,7 +1044,7 @@ document.addEventListener("click",function(e){
   else if(a==="edit"){var c=S.cases.find(function(x){return x.id===id});if(c)openForm(c,b.getAttribute("data-focus"))}
   else if(a==="up"||a==="down"){reorder(id,a==="up"?-1:1)}
   else if(a==="copy"){copyText(b.getAttribute("data-text"))}
-  else if(a==="copylist"){copyText(listText(S.sel),"OT list copied")}
+  else if(a==="copylist"){copyText(listText(S.sel,b.getAttribute("data-cons")||""),"OT list copied")}
   else if(a==="close"){closeForm()}
   else if(a==="cclose"){$("cscrim").hidden=true}
   else if(a==="sheetcfg"){openG()}
