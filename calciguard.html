@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CalciGuard — Post-thyroidectomy hypocalcaemia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#1F3864; --teal:#2E7D7A; --ink:#1d2433; --muted:#5d6678; --line:#dfe4ec;
+    --bg:#f5f7fa; --card:#ffffff; --soft:#eef2f8;
+    --low:#2e7d4f; --lowbg:#e8f5ed; --mid:#b7791f; --midbg:#fdf4e3; --high:#c0392b; --highbg:#fbeaea;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:14px;line-height:1.5}
+  header{background:var(--navy);color:#fff;padding:14px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  header h1{margin:0;font-size:20px;font-weight:700}
+  header h1 span{font-weight:400;opacity:.8;font-size:15px}
+  header .sp{flex:1}
+  .conn{display:flex;align-items:center;gap:8px;font-size:13px}
+  .dot{width:9px;height:9px;border-radius:50%;background:#f0b429;display:inline-block}
+  .dot.on{background:#4ade80}
+  .wrap{max-width:1320px;margin:0 auto;padding:18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+  .card h2{margin:0 0 10px;font-size:15px;color:var(--navy);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+  @media (max-width:960px){.grid2{grid-template-columns:1fr}}
+  .fgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px 12px}
+  .fgrid .w2{grid-column:span 2}
+  @media (max-width:640px){.fgrid{grid-template-columns:1fr 1fr}}
+  label{display:block;font-size:12px;color:var(--muted);font-weight:500;margin-bottom:2px}
+  input[type=number],input[type=text],input[type=date],input[type=datetime-local],input[type=password],input[type=url],select,textarea{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:7px;font:inherit;background:#fff;color:var(--ink)}
+  textarea{min-height:56px;resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:2px solid #bcd0ee;border-color:#8fb0e0}
+  .checks{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin-top:8px}
+  .checks label{display:flex;gap:7px;align-items:flex-start;color:var(--ink);font-size:13px;font-weight:400;margin:0;cursor:pointer}
+  .checks input{margin-top:3px}
+  @media (max-width:640px){.checks{grid-template-columns:1fr}}
+  .btn{border:1px solid var(--navy);background:var(--navy);color:#fff;border-radius:7px;padding:7px 13px;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+  .btn.ghost{background:#fff;color:var(--navy)}
+  .btn.small{padding:4px 9px;font-size:12px}
+  .btn.warn{background:var(--high);border-color:var(--high)}
+  .btn:disabled{opacity:.5;cursor:default}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+  .seg button{border:0;background:#fff;padding:5px 11px;font:inherit;font-size:12.5px;cursor:pointer;color:var(--muted)}
+  .seg button.on{background:var(--navy);color:#fff}
+  table.list{width:100%;border-collapse:collapse;font-size:13px}
+  table.list th{text-align:left;font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;padding:6px 8px;border-bottom:1px solid var(--line)}
+  table.list td{padding:6px 6px;border-bottom:1px solid #eef1f5;vertical-align:top}
+  table.list tr.pt{cursor:pointer}
+  table.list tr.pt:hover{background:#f6f9fd}
+  table.list tr.sel{background:#eaf1fb}
+  .badge{display:inline-block;border-radius:20px;padding:1px 9px;font-size:11.5px;font-weight:600}
+  .b-low{background:var(--lowbg);color:var(--low)} .b-mid{background:var(--midbg);color:var(--mid)} .b-high{background:var(--highbg);color:var(--high)} .b-none{background:var(--soft);color:var(--muted)}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+  .muted{color:var(--muted)}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+  @media (max-width:640px){.stats{grid-template-columns:1fr 1fr}}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+  .stat .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .stat .v{font-family:"JetBrains Mono",monospace;font-size:17px;font-weight:500;margin-top:2px}
+  .stat .s{font-size:11.5px;color:var(--muted)}
+  .risk{border-radius:10px;padding:13px 15px;margin-bottom:14px;border:1px solid}
+  .risk .lvl{font-size:20px;font-weight:700;margin:2px 0 4px}
+  .risk.low{background:var(--lowbg);border-color:#bfe2cb;color:var(--low)}
+  .risk.mid{background:var(--midbg);border-color:#f0d9a8;color:var(--mid)}
+  .risk.high{background:var(--highbg);border-color:#efc2bd;color:var(--high)}
+  .risk.none{background:var(--soft);border-color:var(--line);color:var(--muted)}
+  .risk ul{margin:6px 0 0;padding-left:18px;color:var(--ink);font-size:13px}
+  .risk .tag{font-size:11px;text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+  .plan h3{font-size:13.5px;margin:12px 0 5px;color:var(--navy)}
+  .plan h3:first-child{margin-top:0}
+  .plan ul{margin:0;padding-left:18px}
+  .plan li{margin-bottom:4px}
+  .alert{background:var(--highbg);border-left:4px solid var(--high);padding:9px 12px;border-radius:6px;margin-bottom:10px;color:#7a1f16;font-weight:500}
+  .note{background:var(--soft);border-left:4px solid var(--navy);padding:9px 12px;border-radius:6px;font-size:13px}
+  .warnbox{background:var(--midbg);border-left:4px solid var(--mid);padding:9px 12px;border-radius:6px;font-size:13px;margin-bottom:10px}
+  .step{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:13px}
+  .step.now{border-color:var(--navy);background:#eef3fb}
+  .step b.n{display:inline-block;background:var(--muted);color:#fff;border-radius:50%;width:20px;height:20px;text-align:center;font-size:11.5px;line-height:20px;margin-right:6px}
+  .step.now b.n{background:var(--navy)}
+  details summary{cursor:pointer;color:var(--navy);font-weight:600;font-size:13px}
+  .modal{position:fixed;inset:0;background:rgba(20,30,50,.45);display:none;align-items:flex-start;justify-content:center;padding:30px 12px;z-index:50;overflow:auto}
+  .modal.on{display:flex}
+  .modal .box{background:#fff;border-radius:12px;max-width:760px;width:100%;padding:18px 20px}
+  .modal h3{margin:0 0 12px;color:var(--navy)}
+  .msg{font-size:12.5px;margin-top:6px}
+  .msg.err{color:var(--high)} .msg.ok{color:var(--low)}
+  .pthead{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap}
+  .pthead .nm{font-size:17px;font-weight:700}
+  .chip{display:inline-block;background:var(--soft);border-radius:6px;padding:1px 7px;font-size:12px;margin:2px 4px 2px 0}
+  .chartp{margin-bottom:10px}
+  .chartp .ct{font-size:12.5px;font-weight:600;color:var(--ink);margin:0 0 2px}
+  .chartp .cs{font-size:11.5px;color:var(--muted);margin-bottom:2px}
+  .chartp svg text{font-family:Inter,sans-serif}
+  #tip{position:fixed;pointer-events:none;background:#1d2433;color:#fff;font-size:12px;padding:6px 9px;border-radius:6px;display:none;z-index:60;max-width:260px;line-height:1.4}
+  footer{max-width:1320px;margin:0 auto;padding:0 18px 28px;font-size:12px;color:var(--muted)}
+  .empty{color:var(--muted);font-size:13px;padding:10px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>CalciGuard <span>· post-thyroidectomy calcium tracker</span></h1>
+  <div class="sp"></div>
+  <span class="seg" id="unitSeg"><button data-u="mg" class="on">mg/dL</button><button data-u="mmol">mmol/L</button></span>
+  <div class="conn"><span class="dot" id="connDot"></span><span id="connTxt">Offline — not saved</span>
+    <button class="btn ghost small" id="connBtn">Connect</button></div>
+</header>
+
+<div class="wrap">
+  <!-- PATIENT LIST -->
+  <div class="card">
+    <h2>Patients
+      <span class="muted" style="font-weight:400;font-size:12.5px" id="listInfo"></span>
+      <span style="flex:1"></span>
+      <input type="text" id="search" placeholder="Search name, UHID, ID" style="width:200px">
+      <select id="fStatus" style="width:130px"><option value="active">Active</option><option value="discharged">Discharged</option><option value="all">All</option></select>
+      <select id="fCons" style="width:150px"><option value="">All consultants</option></select>
+      <button class="btn ghost small" id="refresh">Refresh</button>
+      <button class="btn small" id="newPt">+ New patient</button>
+    </h2>
+    <div style="overflow-x:auto"><table class="list" id="ptTable">
+      <thead><tr><th>Patient</th><th>UHID</th><th>Age/Sex</th><th>Surgery</th><th>Consultant</th><th>Operation</th><th>Latest Ca</th><th>Trend</th><th>Risk</th><th>Status</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <div class="empty" id="ptEmpty">No patients yet. Add one with “+ New patient”.</div>
+  </div>
+
+  <!-- WORKSPACE -->
+  <div id="ws" style="display:none">
+    <div class="grid2">
+      <div>
+        <div class="card">
+          <div class="pthead">
+            <div style="flex:1">
+              <div class="nm" id="wsName"></div>
+              <div id="wsMeta" class="muted" style="font-size:12.5px"></div>
+              <div id="wsChips" style="margin-top:4px"></div>
+            </div>
+            <div class="btns">
+              <button class="btn ghost small" id="editPt">Edit</button>
+              <button class="btn ghost small" id="dischargePt">Mark discharged</button>
+            </div>
+          </div>
+          <div class="btns" style="margin-top:10px">
+            <span class="muted" style="font-size:12.5px">Protocol:</span>
+            <span class="seg" id="protoSeg"><button data-p="guideline" class="on">Guideline (ATA 2018 + Task Force 2022)</button><button data-p="iowa">Iowa (routine supplementation)</button></span>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 id="rTitle">Add reading</h2>
+          <div class="fgrid">
+            <div class="w2"><label for="rDt">Date and time</label><input type="datetime-local" id="rDt"></div>
+            <div class="w2"><label for="rTp"><b style="color:var(--navy)">Time point</b> (pre-op values are baseline only)</label>
+              <select id="rTp">
+                <option>Pre-op</option><option>Intra-op / 1 h</option><option>4 h</option><option>6 h</option><option>8 h</option><option>12 h</option><option>16 h</option>
+                <option>POD 1</option><option>POD 2</option><option>POD 3</option><option>At discharge</option>
+                <option>Week 1</option><option>Week 2</option><option>Week 4–6</option><option>Month 3</option><option>Month 6</option><option>Month 12</option><option>Other</option>
+              </select></div>
+            <div><label for="rCa">Total Ca (<span class="uCa">mg/dL</span>)</label><input type="number" id="rCa" step="0.01"></div>
+            <div><label for="rAlb">Albumin (<span class="uAlb">g/dL</span>)</label><input type="number" id="rAlb" step="0.1"></div>
+            <div><label for="rIca">Ionised Ca (mmol/L)</label><input type="number" id="rIca" step="0.01"></div>
+            <div><label for="rMg">Mg (<span class="uMg">mg/dL</span>)</label><input type="number" id="rMg" step="0.01"></div>
+            <div><label for="rPth">Intact PTH (pg/mL)</label><input type="number" id="rPth" step="0.1"></div>
+            <div><label for="rSym">Symptoms / signs</label>
+              <select id="rSym"><option value="none">None</option><option value="mild">Tingling (perioral/fingers)</option><option value="mod">Chvostek/Trousseau, cramps</option><option value="severe">Tetany, laryngospasm, seizure, arrhythmia, long QTc</option></select></div>
+            <div><label for="rOral">Oral intake</label><select id="rOral"><option value="yes">Taking orally</option><option value="no">Not able</option></select></div>
+            <div><label for="rTx">Treatment given</label><input type="text" id="rTx" placeholder="e.g. CaCO3 1 g TID"></div>
+            <div class="w2" style="grid-column:span 4"><label for="rNotes">Notes</label><input type="text" id="rNotes"></div>
+          </div>
+          <div class="btns" style="margin-top:10px"><button class="btn" id="saveReading">Save reading</button><button class="btn ghost" id="cancelEdit" style="display:none">Cancel edit</button><span class="msg" id="rMsg"></span></div>
+          <p class="muted" style="font-size:11.5px;margin:8px 0 0">Albumin is carried forward to later readings until a new value is entered. PTH in pg/mL (× 0.106 = pmol/L).</p>
+        </div>
+
+        <div class="card">
+          <h2>Readings</h2>
+          <div style="overflow-x:auto"><table class="list" id="rdTable">
+            <thead><tr><th>When</th><th>Point</th><th>Corr. Ca</th><th>Alb</th><th>iCa</th><th>Mg</th><th>PTH</th><th>Symptoms</th><th>Treatment / by</th></tr></thead>
+            <tbody></tbody></table></div>
+          <div class="empty" id="rdEmpty">No readings yet.</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="stats">
+          <div class="stat"><div class="k">Corrected Ca</div><div class="v" id="sCa">—</div><div class="s" id="sCaS"></div></div>
+          <div class="stat"><div class="k">Trend</div><div class="v" id="sTr">—</div><div class="s" id="sTrS"></div></div>
+          <div class="stat"><div class="k">Ionised Ca</div><div class="v" id="sIca">—</div><div class="s" id="sIcaS"></div></div>
+          <div class="stat"><div class="k">PTH</div><div class="v" id="sPth">—</div><div class="s" id="sPthS"></div></div>
+        </div>
+        <div class="card" id="trendCard"><h2>Trend</h2><div id="charts"></div>
+          <details style="margin-top:4px"><summary>Table view</summary><div id="chartTable" style="overflow-x:auto;font-size:12.5px"></div></details></div>
+        <div class="risk none" id="riskBox"><div class="tag">Risk of acute hypoparathyroidism</div><div class="lvl" id="riskLvl">Awaiting data</div><div id="riskWhy" style="color:var(--ink);font-size:13px"></div></div>
+        <div class="card plan">
+          <h2 id="planTitle">Suggested management</h2>
+          <div id="planBody" class="note">Add a calcium or PTH reading to see the plan.</div>
+          <div class="btns" style="margin-top:10px"><button class="btn" id="copy">Copy summary for case notes</button><span id="copied" class="msg"></span></div>
+        </div>
+        <div class="card">
+          <details><summary>How the risk is worked out</summary>
+            <ul style="padding-left:18px;margin:8px 0 0;font-size:13px">
+              <li><b>PTH carries most weight.</b> ATA 2018: PTH ≥ 15 pg/mL at ≥ 20 min after thyroidectomy makes intensive monitoring and supplementation unnecessary; &lt; 15 pg/mL means increased risk. Below 10 pg/mL is treated here as high risk (International Task Force 2022).</li>
+              <li><b>Calcium.</b> ATA 2018: consider oral calcium if serum Ca &lt; 8.5 mg/dL or ionised Ca &lt; 1.1 mmol/L. A rise between 6 and 12 h is reassuring; a fall, or corrected Ca &lt; 8.0 mg/dL, raises the risk.</li>
+              <li><b>Operative factors</b> move the estimate up one step when two or more are present.</li>
+              <li>Lobectomy alone is low risk.</li>
+            </ul>
+            <p class="muted" style="font-size:12px">Rule-based stratification from guideline thresholds, not a statistically validated model. Check doses against your local protocol and formulary.</p>
+          </details>
+        </div>
+        <div class="card">
+          <details><summary>References</summary>
+            <ol style="padding-left:18px;margin:8px 0 0;font-size:12.5px">
+              <li>Orloff LA, et al. American Thyroid Association statement on postoperative hypoparathyroidism: diagnosis, prevention, and management in adults. <i>Thyroid</i> 2018;28(7):830–841.</li>
+              <li>Khan AA, et al. Evaluation and management of hypoparathyroidism: summary statement and guidelines from the Second International Workshop. <i>J Bone Miner Res</i> 2022;37(12):2568–2585.</li>
+              <li>Turner J, et al. Society for Endocrinology emergency guidance: acute hypocalcaemia in adult patients. <i>Endocr Connect</i> 2016;5(5):G7–G8; addendum 2019;8(6):X1.</li>
+              <li>Wiseman JE, et al. An algorithm informed by the parathyroid hormone level reduces hypocalcemic complications of thyroidectomy. <i>World J Surg</i> 2010;34(3):532–537.</li>
+              <li>University of Iowa Head and Neck Protocols. Calcium management after thyroidectomy (elemental calcium protocol; albumin-corrected protocol, 9/9/14).</li>
+              <li>Qiu Y, et al. Duration of parathyroid function recovery in protracted hypoparathyroidism after total thyroidectomy. <i>Front Endocrinol</i> 2021;12:665190.</li>
+            </ol>
+          </details>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<footer>Decision support for qualified clinicians; it does not replace clinical judgement. Adults only. In offline mode nothing is stored; when connected, data is saved to your own Google Sheet.</footer>
+
+<div id="tip"></div>
+<!-- PATIENT MODAL -->
+<div class="modal" id="ptModal"><div class="box">
+  <h3 id="ptModalTitle">New patient</h3>
+  <div class="fgrid">
+    <div class="w2"><label for="pName">Name</label><input type="text" id="pName"></div>
+    <div><label for="pUhid">Hospital number (UHID)</label><input type="text" id="pUhid"></div>
+    <div><label for="pAge">Age</label><input type="number" id="pAge" min="0" max="120"></div>
+    <div><label for="pSex">Sex</label><select id="pSex"><option value="">—</option><option>F</option><option>M</option><option>Other</option></select></div>
+    <div><label for="pDate">Surgery date</label><input type="date" id="pDate"></div>
+    <div class="w2"><label for="pCons">Consultant</label><select id="pCons"></select></div>
+    <div class="w2"><label for="pProc">Procedure</label>
+      <select id="pProc"><option value="tt">Total thyroidectomy</option><option value="ct">Completion thyroidectomy</option><option value="lob">Lobectomy / hemithyroidectomy</option></select></div>
+    <div><label for="pCnd">Central neck dissection</label><select id="pCnd"><option value="none">None</option><option value="uni">Unilateral</option><option value="bi">Bilateral</option></select></div>
+    <div><label for="pGlands">Glands preserved in situ</label><select id="pGlands"><option value="">Not recorded</option><option>4</option><option>3</option><option>2</option><option>1</option><option>0</option></select></div>
+    <div><label for="pAuto">Autotransplanted</label><select id="pAuto"><option value="0">0</option><option value="1">1</option><option value="2">2 or more</option></select></div>
+  </div>
+  <div class="checks">
+    <label><input type="checkbox" id="pLnd"> Lateral neck dissection</label>
+    <label><input type="checkbox" id="pGraves"> Graves’ disease</label>
+    <label><input type="checkbox" id="pRetro"> Retrosternal / large goitre</label>
+    <label><input type="checkbox" id="pReop"> Re-operative central neck</label>
+    <label><input type="checkbox" id="pIncid"> Parathyroid in specimen (histology)</label>
+    <label><input type="checkbox" id="pVitd"> Pre-op vitamin D deficient (&lt;20 ng/mL)</label>
+    <label><input type="checkbox" id="pRenal"> Renal failure / dialysis</label>
+  </div>
+  <div style="margin-top:8px"><label for="pNotes">Notes</label><textarea id="pNotes"></textarea></div>
+  <div class="btns" style="margin-top:12px"><button class="btn" id="ptSave">Save patient</button><button class="btn ghost" id="ptCancel">Cancel</button><span class="msg" id="ptMsg"></span></div>
+</div></div>
+
+<!-- CONNECT MODAL -->
+<div class="modal" id="cnModal"><div class="box" style="max-width:520px">
+  <h3>Connect to Google Sheet</h3>
+  <p class="muted" style="font-size:13px;margin-top:0">Paste the Apps Script web-app URL (ending in /exec) and sign in with the CalciGuard password. You stay signed in for 12 hours on this device.</p>
+  <label for="cnUrl">Apps Script /exec URL</label><input type="url" id="cnUrl" placeholder="https://script.google.com/macros/s/…/exec">
+  <div class="fgrid" style="margin-top:8px">
+    <div class="w2"><label for="cnName">Your name</label><input type="text" id="cnName"></div>
+    <div class="w2"><label for="cnPw">Password</label><input type="password" id="cnPw"></div>
+  </div>
+  <div class="btns" style="margin-top:12px"><button class="btn" id="cnGo">Connect</button><button class="btn ghost" id="cnOff">Work offline</button><button class="btn ghost" id="cnClose">Close</button><span class="msg" id="cnMsg"></span></div>
+</div></div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const num = v => { const x = parseFloat(v); return isNaN(x) ? null : x; };
+  const ls = { get:k=>{try{return localStorage.getItem(k)}catch(e){return null}}, set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}, del:k=>{try{localStorage.removeItem(k)}catch(e){}} };
+  const ss = { get:k=>{try{return sessionStorage.getItem(k)}catch(e){return null}}, set:(k,v)=>{try{sessionStorage.setItem(k,v)}catch(e){}}, del:k=>{try{sessionStorage.removeItem(k)}catch(e){}} };
+
+  const CONSULTANTS = ["Dr AK Das","Dr T Rahman","Dr R J Das","Dr K Das","Dr A Das","Dr K Kakati","Other"];
+  const S = { unit: ls.get("calciguard_unit") || "mg", online:false, url: ls.get("calciguard_api_url") || "", token: ss.get("calciguard_token") || "", user: ss.get("calciguard_user") || "",
+              patients:[], readings:[], sel:null, editing:null, localId:1 };
+
+  // ---------- units ----------
+  const caIn = v => v===null?null:(S.unit==="mg"?v:v/0.2495);
+  const albIn = v => v===null?null:(S.unit==="mg"?v:v/10);
+  const mgIn = v => v===null?null:(S.unit==="mg"?v:v/0.4114);
+  const fCa = mg => mg===null?"—":(S.unit==="mg"?mg.toFixed(2):(mg*0.2495).toFixed(2));
+  const uCa = () => S.unit==="mg"?"mg/dL":"mmol/L";
+  const fAlb = g => g===null?"—":(S.unit==="mg"?g.toFixed(1):(g*10).toFixed(0));
+  const fMg = m => m===null?"—":(S.unit==="mg"?m.toFixed(2):(m*0.4114).toFixed(2));
+  function setUnit(u){
+    S.unit=u; ls.set("calciguard_unit",u);
+    document.querySelectorAll("#unitSeg button").forEach(b=>b.classList.toggle("on",b.dataset.u===u));
+    document.querySelectorAll(".uCa").forEach(e=>e.textContent=uCa());
+    document.querySelectorAll(".uAlb").forEach(e=>e.textContent=u==="mg"?"g/dL":"g/L");
+    document.querySelectorAll(".uMg").forEach(e=>e.textContent=u==="mg"?"mg/dL":"mmol/L");
+    renderAll();
+  }
+  document.querySelectorAll("#unitSeg button").forEach(b=>b.onclick=()=>setUnit(b.dataset.u));
+
+  // ---------- API ----------
+  async function api(action, payload={}){
+    const res = await fetch(S.url, {method:"POST", body: JSON.stringify(Object.assign({action, token:S.token}, payload))});
+    const j = await res.json();
+    if (!j.ok && j.error === "auth"){ setOffline("Session expired — reconnect"); throw new Error("Session expired"); }
+    return j;
+  }
+  function setOnline(on, msg){
+    S.online = on;
+    $("connDot").classList.toggle("on", on);
+    $("connTxt").textContent = on ? ("Connected · " + (S.user||"")) : (msg || "Offline — not saved");
+    $("connBtn").textContent = on ? "Disconnect" : "Connect";
+    $("refresh").style.display = on ? "" : "none";
+  }
+  function setOffline(msg){ S.token=""; ss.del("calciguard_token"); setOnline(false, msg); }
+  async function loadAll(){
+    if (!S.online) return;
+    $("listInfo").textContent = "Loading…";
+    try{
+      const j = await api("getAll");
+      if (!j.ok) throw new Error(j.error);
+      S.patients = j.patients; S.readings = j.readings;
+      $("listInfo").textContent = "";
+    }catch(e){ $("listInfo").textContent = "Could not load: " + e.message; }
+    renderAll();
+  }
+  $("connBtn").onclick = () => {
+    if (S.online){ setOffline(); S.patients=[]; S.readings=[]; S.sel=null; renderAll(); return; }
+    $("cnUrl").value = S.url; $("cnName").value = S.user || ls.get("calciguard_name") || ""; $("cnPw").value=""; $("cnMsg").textContent="";
+    $("cnModal").classList.add("on");
+  };
+  $("cnClose").onclick = () => $("cnModal").classList.remove("on");
+  $("cnOff").onclick = () => { $("cnModal").classList.remove("on"); setOffline(); };
+  $("cnGo").onclick = async () => {
+    const url = $("cnUrl").value.trim(), name = $("cnName").value.trim(), pw = $("cnPw").value;
+    if (!/^https:\/\/script\.google(usercontent)?\.com\//.test(url)){ $("cnMsg").className="msg err"; $("cnMsg").textContent="Enter the Apps Script /exec URL."; return; }
+    if (!name){ $("cnMsg").className="msg err"; $("cnMsg").textContent="Enter your name (recorded with each entry)."; return; }
+    $("cnMsg").className="msg"; $("cnMsg").textContent="Connecting…";
+    try{
+      S.url = url;
+      const res = await fetch(url, {method:"POST", body: JSON.stringify({action:"login", name, password:pw})});
+      const j = await res.json();
+      if (!j.ok) throw new Error(j.error || "Login failed");
+      S.token = j.token; S.user = j.name;
+      ls.set("calciguard_api_url", url); ls.set("calciguard_name", name); ss.set("calciguard_token", j.token); ss.set("calciguard_user", j.name);
+      // local (offline) patients are discarded on connect
+      S.patients=[]; S.readings=[]; S.sel=null;
+      setOnline(true); $("cnModal").classList.remove("on"); loadAll();
+    }catch(e){ $("cnMsg").className="msg err"; $("cnMsg").textContent = e.message.includes("fetch") ? "Could not reach the URL (check the deployment is ‘Anyone’, or this page may not be allowed to call external sites)." : e.message; }
+  };
+  $("refresh").onclick = loadAll;
+
+  // ---------- helpers on data ----------
+  const yes = v => v===true || v==="yes" || v==="TRUE" || v==="true";
+  const readingsOf = pid => S.readings.filter(r=>r.patient_id===pid).sort((a,b)=>String(a.datetime).localeCompare(String(b.datetime)));
+  const procName = p => ({tt:"Total thyroidectomy",ct:"Completion thyroidectomy",lob:"Lobectomy"})[p.procedure] || p.procedure || "";
+  const cndName = c => ({none:"",uni:"+ unilateral CND",bi:"+ bilateral CND"})[c] || "";
+
+  function riskFactors(p){
+    const rf=[];
+    if (p.cnd==="bi") rf.push("bilateral central neck dissection");
+    if (yes(p.reop)) rf.push("re-operative central neck");
+    if (yes(p.graves)) rf.push("Graves’ disease");
+    if (yes(p.retrosternal)) rf.push("retrosternal / large goitre");
+    if (String(p.autotransplanted||"0")!=="0") rf.push("parathyroid autotransplanted");
+    if (yes(p.incidental_pt)) rf.push("parathyroid in specimen");
+    if (p.glands_preserved!=="" && p.glands_preserved!=null && +p.glands_preserved<2) rf.push("fewer than two glands preserved");
+    if (yes(p.vitd_low)) rf.push("vitamin D deficiency");
+    if (p.procedure==="ct") rf.push("completion thyroidectomy");
+    if (yes(p.lateral_nd) && p.cnd!=="none") rf.push("lateral + central neck dissection");
+    return rf;
+  }
+
+  // ---------- analysis engine ----------
+  function analyse(p, rs){
+    const A = {rf: riskFactors(p), why:[]};
+    let alb=null; A.ca=[]; A.ica=[];
+    rs.forEach(r=>{
+      const a=num(r.albumin_gdl); if (a!==null) alb=a;
+      if (r.timepoint==="Pre-op") return;
+      const c=num(r.ca_total_mgdl);
+      if (c!==null) A.ca.push({tp:r.timepoint, dt:r.datetime, raw:c, v: alb===null?c:c+0.8*(4.0-alb), corrected: alb!==null});
+      const i=num(r.ica_mmol); if (i!==null) A.ica.push({tp:r.timepoint, dt:r.datetime, v:i});
+    });
+    const post = rs.filter(r=>r.timepoint!=="Pre-op");
+    const lastWith = k => { for (let i=post.length-1;i>=0;i--) if (num(post[i][k])!==null) return post[i]; return null; };
+    const pr = lastWith("pth_pgml"); A.pth = pr?num(pr.pth_pgml):null; A.pthTp = pr?pr.timepoint:"";
+    const mr = lastWith("mg_mgdl"); A.mg = mr?num(mr.mg_mgdl):null;
+    const lastPost = post[post.length-1];
+    A.sym = lastPost ? (lastPost.symptoms||"none") : "none";
+    A.oral = lastPost ? (lastPost.oral_ok!=="no") : true;
+    A.caL = A.ca.length ? A.ca[A.ca.length-1].v : null;
+    A.icaL = A.ica.length ? A.ica[A.ica.length-1].v : null;
+    A.trend=null;
+    if (A.ca.length>=2){ const d=A.ca[A.ca.length-1].v-A.ca[A.ca.length-2].v; A.trendD=d; A.trend = d>0.1?"rising":d<-0.1?"falling":"stable"; }
+    A.itrend=null;
+    if (A.ica.length>=2){ const d=A.ica[A.ica.length-1].v-A.ica[A.ica.length-2].v; A.itrend = d>0.02?"rising":d<-0.02?"falling":"stable"; }
+    const lobOnly = p.procedure==="lob" && p.cnd==="none" && !yes(p.reop);
+    A.lobOnly = lobOnly;
+    const hasData = A.caL!==null || A.pth!==null || A.icaL!==null || A.sym!=="none";
+
+    // tier
+    if (lobOnly){ A.tier=0; A.why.push("Lobectomy without central dissection leaves the contralateral parathyroids undisturbed; routine calcium checks are not needed."); }
+    else if (!hasData && A.rf.length<2){ A.tier=null; }
+    else {
+      let base=null;
+      if (A.pth!==null){
+        if (A.pth<10){ base=2; A.why.push("PTH "+A.pth+" pg/mL (&lt; 10): marked parathyroid insufficiency."); }
+        else if (A.pth<15){ base=1; A.why.push("PTH "+A.pth+" pg/mL (&lt; 15): increased risk of acute hypoparathyroidism (ATA 2018)."); }
+        else { base=0; A.why.push("PTH "+A.pth+" pg/mL (≥ 15): ATA 2018 — intensive monitoring and supplementation not needed."); }
+      }
+      if (A.caL!==null){
+        let c=0;
+        if (A.caL<8.0){ c=2; A.why.push("Corrected calcium "+fCa(A.caL)+" "+uCa()+" is below 8.0 mg/dL (2.0 mmol/L)."); }
+        else if (A.trend==="falling"){ c = A.caL<8.5?2:1; A.why.push("Calcium is falling between the last two samples."); }
+        else if (A.caL<8.5){ c=1; A.why.push("Corrected calcium below 8.5 mg/dL: ATA 2018 advises considering oral calcium."); }
+        else if (A.trend){ c=0; A.why.push("Calcium is "+A.trend+" on serial values — reassuring."); }
+        else { c=0; A.why.push("Single calcium value; trend not yet known."); }
+        base = base===null?c:Math.max(base,c);
+      }
+      if (A.icaL!==null && A.icaL<1.1){ base=Math.max(base??0, A.icaL<0.94?2:1); A.why.push("Ionised calcium "+A.icaL.toFixed(2)+" mmol/L is below 1.1 (ATA threshold for supplementation)."); }
+      if (A.sym==="mod"||A.sym==="severe"){ base=2; A.why.push("Signs of neuromuscular irritability are present."); }
+      else if (A.sym==="mild"){ base=Math.max(base??1,1); A.why.push("Early symptoms (tingling) reported."); }
+      if (base===null){ base = A.rf.length>=2?1:0; A.why.push("No laboratory values yet — estimate from operative factors only."); }
+      if (A.rf.length>=2 && base<2) base+=1;
+      if (A.rf.length) A.why.push("Operative risk factors: "+A.rf.join(", ")+".");
+      A.tier=Math.min(base,2);
+    }
+    A.severe = A.sym==="severe" || (A.caL!==null&&A.caL<7.5) || (A.icaL!==null&&A.icaL<0.94) || (!A.oral && A.caL!==null && A.caL<8.0);
+    A.moderate = !A.severe && (A.sym==="mod"||A.sym==="mild"||(A.caL!==null&&A.caL<8.0)||(A.icaL!==null&&A.icaL<1.0)||(A.pth!==null&&A.pth<10));
+    A.mild = !A.severe && !A.moderate && ((A.pth!==null&&A.pth<15)||(A.caL!==null&&A.caL<8.5)||(A.icaL!==null&&A.icaL<1.1)||A.trend==="falling");
+    A.hasData = hasData;
+    return A;
+  }
+
+  // ---------- plans ----------
+  function H(t){ return "<h3>"+t+"</h3>"; }
+  function L(a){ return "<ul>"+a.filter(Boolean).map(x=>"<li>"+x+"</li>").join("")+"</ul>"; }
+
+  function planGuideline(p, A){
+    let h="";
+    if (A.lobOnly){ return H("No routine monitoring")+L(["Lobectomy alone: no routine calcium monitoring is required.","Advise the patient about tingling or cramps and how to seek help."]); }
+    if (!A.hasData) return '<div class="note">Add a <b>post-operative</b> calcium or PTH reading to see the plan (pre-op values are used only as a baseline).</div>';
+    if (A.severe){
+      h+='<div class="alert">Severe or symptomatic hypocalcaemia — treat as an emergency with IV calcium and cardiac monitoring.</div>';
+      h+=H("IV calcium");
+      h+=L([
+        "First a <b>12-lead ECG with QTc</b> (ATA 2018).",
+        "<b>Bolus:</b> 1–2 g calcium gluconate (10–20 mL of 10%) in 50 mL of 5% dextrose over 20 min (ATA 2018); the Society for Endocrinology gives the same dose in 50–100 mL over 10 min with ECG monitoring. Repeat until symptoms settle.",
+        "<b>Then infusion:</b> 100 mL of 10% calcium gluconate in 1 L of 0.9% saline or 5% dextrose at <b>50–100 mL/h</b>, titrated to low-normal calcium; ECG monitoring while on the drip; calcium every 4–6 h.",
+        "Large secure cannula — extravasation causes necrosis. Calcium chloride only through a central line.",
+        "Increase oral calcium and calcitriol as soon as feasible and wean the drip."
+      ]);
+    }
+    if (A.severe || A.moderate){
+      h+=H(A.severe?"Oral therapy alongside":"Oral calcium and calcitriol");
+      h+=L([
+        "<b>Elemental calcium 2–3 g/day</b> in divided doses, e.g. 1 g every 8 h (International Task Force 2022 for low PTH).",
+        "<b>Calcitriol 0.25–0.5 µg twice daily</b> (ATA 2018); Task Force range 0.5–1.5 µg/day.",
+        A.moderate ? "Recheck calcium in 6–12 h. If symptoms progress and calcium stays below 7 mg/dL, check magnesium and give IV calcium." : "",
+        "Target: corrected calcium in the <b>low-normal range</b> (lower half of normal or just below), without symptoms."
+      ]);
+      h+=H("If control remains difficult");
+      h+=L(["Hydrochlorothiazide 12.5–50 mg daily, titrated to avoid hypotension (ATA 2018)."]);
+    } else if (A.mild){
+      h+=H("Oral calcium");
+      h+=L([
+        "Start <b>oral elemental calcium 400–1200 mg/day</b> in divided doses (1–3 g calcium carbonate/day) — ATA 2018 for PTH &lt; 15 pg/mL, Ca &lt; 8.5 mg/dL or ionised Ca &lt; 1.1 mmol/L.",
+        A.pth!==null && A.pth<15 ? "Consider adding <b>calcitriol 0.25 µg twice daily</b> (PTH-guided UCLA algorithm). ATA 2018 reserves calcitriol (0.25–0.5 µg twice daily) for symptoms with falling calcium or calcium below 7 mg/dL." : "Add calcitriol 0.25–0.5 µg twice daily if symptoms develop with falling calcium.",
+        "Repeat calcium at the next time point (and on POD 2 after bilateral central dissection)."
+      ]);
+    } else {
+      h+=H("No supplementation needed");
+      h+=L([
+        A.pth!==null && A.pth>=15 ? "PTH ≥ 15 pg/mL: ATA 2018 — intensive calcium monitoring and supplementation are not needed." : "Calcium stable or rising and above 8.5 mg/dL: routine calcium is not required.",
+        "Some units give short-course empiric calcium after every total thyroidectomy; that is acceptable practice.",
+        "Advise the patient about tingling or cramps and how to seek help."
+      ]);
+    }
+    if (A.mg!==null && A.mg<1.6){
+      h+=H("Magnesium");
+      h+=L([
+        "Magnesium "+fMg(A.mg)+" "+(S.unit==="mg"?"mg/dL":"mmol/L")+" is low: low magnesium impairs PTH release and action.",
+        yes(p.renal_failure) ? "Renal failure: replace cautiously and monitor levels." :
+          (A.severe ? "IV magnesium sulphate, e.g. 24 mmol over 24 h (6 g MgSO₄ in 500 mL), with monitoring (Society for Endocrinology)." : "Magnesium oxide 400 mg once or twice daily (ATA 2018, normal renal function).")
+      ]);
+    }
+    if (A.severe||A.moderate||A.mild){
+      h+=H("Practical points");
+      h+=L([
+        "Calcium carbonate with meals; <b>calcium citrate</b> if on a PPI, achlorhydric or after gastric bypass.",
+        "Dose <b>every 8 h</b> rather than with three meals — the overnight gap can cause early-morning hypocalcaemia (ATA 2018).",
+        "Levothyroxine <b>1 h before or 3 h after</b> calcium (ATA 2018).",
+        yes(p.graves) ? "Graves’ disease: watch for hungry-bone syndrome; later rebound hypercalcaemia needs the calcitriol reduced." : ""
+      ]);
+    }
+    h+=H("Monitoring and discharge");
+    h+=L([
+      A.ca.length<2 && A.pth===null ? "Without PTH, take calcium at <b>6 h, 12 h and POD 1</b> to judge the trend." : "",
+      A.rf.length ? "High-risk operation ("+A.rf.join(", ")+"): continue checks to <b>48–72 h</b> — the calcium nadir is often at 24–72 h." : "",
+      "ATA 2018: a rise between 6 and 12 h → safe for discharge with or without supplements; no rise but calcium ≥ 8 mg/dL → safe for discharge <b>with</b> calcium supplements.",
+      "Discharge when symptom-free, calcium stable or rising, corrected Ca ≥ ~8.0 mg/dL (2.0 mmol/L) on the current regimen, and able to take tablets.",
+      "Recheck calcium (with albumin) <b>3–7 days</b> after discharge; written warning symptoms and a contact number."
+    ]);
+    if (A.severe||A.moderate||A.mild||A.tier>=1){
+      h+=H("Follow-up and tapering");
+      const pth1224 = (A.pthTp==="12 h"||A.pthTp==="16 h"||A.pthTp==="POD 1") && A.pth!==null;
+      h+=L([
+        "Check calcium weekly at first; taper calcitriol first, then calcium, keeping calcium low-normal. Reduce calcitriol promptly if rebound hypercalcaemia appears.",
+        pth1224 ? (A.pth>10 ? "PTH at 12–24 h is "+A.pth+" pg/mL (&gt; 10): permanent hypoparathyroidism is unlikely (Task Force 2022)." : "PTH at 12–24 h ≤ 10 pg/mL: less predictive — many still recover; about 70–80% recover within a month (Task Force 2022).") : "A PTH 12–24 h after surgery &gt; 10 pg/mL makes permanent hypoparathyroidism unlikely (Task Force 2022).",
+        "Measure PTH at 4–6 weeks.",
+        "Permanent: ATA 2018 — beyond 6 months; Task Force 2022 — beyond 12 months. Late recovery occurs, so keep trying to taper; refer to endocrinology.",
+        "Long term: calcium low-normal; phosphate no higher than upper normal; 24-h urine calcium &lt; 7.5 mmol/day (ATA) — Task Force &lt; 250 mg (women), &lt; 300 mg (men); Ca × P &lt; 55 mg²/dL²; creatinine, magnesium, 25(OH)D."
+      ]);
+    }
+    return h;
+  }
+
+  function planIowa(p, A){
+    let h="";
+    if (yes(p.renal_failure)) return '<div class="alert">The Iowa protocol does not apply to patients with kidney failure or on dialysis. Use the guideline mode and involve nephrology/endocrinology.</div>';
+    if (p.procedure==="lob") h+='<div class="warnbox">The Iowa protocol applies to total and completion thyroidectomy.</div>';
+    const ica = A.ica.map(x=>({tp:x.tp, mgdl:x.v*4.008}));
+    if (ica.length){
+      const L1=ica[ica.length-1].mgdl, P1=ica.length>1?ica[ica.length-2].mgdl:null;
+      const symp = A.sym!=="none";
+      const severe = (A.sym==="severe" && L1<3.8) || L1<3.2;
+      const falling = P1!==null && L1 < P1 - 0.08;
+      const stable2 = P1!==null && L1>=3.8 && P1>=3.8 && L1 >= P1 - 0.08;
+      let now = 1;
+      if (severe) now=5; else if (L1<3.8 || symp) now=4; else if (falling) now=3; else if (stable2) now=2;
+      h+='<div class="note" style="margin-bottom:10px">Protocol A (elemental calcium), using ionised calcium. Latest iCa '+L1.toFixed(2)+' mg/dL ('+(L1/4.008).toFixed(2)+' mmol/L)'+(P1!==null?'; previous '+P1.toFixed(2)+' mg/dL':'')+'. Thresholds: low &lt; 3.8 mg/dL (0.95 mmol/L); critical &lt; 3.2 mg/dL (0.80 mmol/L).</div>';
+      const steps = [
+        ["Start", "All total/completion thyroidectomies: <b>3 g elemental calcium daily</b> once taking orally (e.g. 1 g three times daily). Ionised calcium every 8 h."],
+        ["Stable or rising", "Two consecutive normal values, stable or rising: stop checks and taper — 1 g TID × 1 week, 1 g BID × 1 week, 1 g daily until clinic. (2.5 g calcium carbonate = 1 g elemental.)"],
+        ["Falling", "Increase to <b>4 g elemental daily</b>. If stable, discharge on a taper from 1 g QID, reducing 1 g per week. Check and correct magnesium; calcium 1 week after discharge."],
+        ["Below 3.8 mg/dL or symptomatic", "Add <b>calcitriol 0.5 µg daily</b>, first dose now. If still falling or symptomatic: 0.5 µg twice daily and consult endocrinology. Discharge on the doses that stabilised calcium; calcium 1 week later."],
+        ["Severe", "Severe symptoms with iCa &lt; 3.8, or iCa &lt; 3.2 mg/dL: <b>IV calcium gluconate 1 g (10 mL of 10%) in 500 mL 5% dextrose over 5 h</b>; confirm good IV access; recheck and repeat if needed; correct magnesium; maximise oral calcium and calcitriol with endocrinology."]
+      ];
+      h+=steps.map((s,i)=>'<div class="step'+(i+1===now?' now':'')+'"><b class="n">'+(i+1)+'</b><b>'+s[0]+'.</b> '+s[1]+(i+1===now?' <span class="badge b-mid">current</span>':'')+'</div>').join("");
+    } else if (A.caL!==null){
+      const c=A.caL; let now;
+      if (c<7 || A.sym!=="none") now=4; else if (c<7.5) now=3; else if (c<=8) now=2; else now=1;
+      h+='<div class="note" style="margin-bottom:10px">No ionised calcium entered — using Protocol B (albumin-corrected total calcium, 9/9/14). Latest corrected Ca '+c.toFixed(2)+' mg/dL'+(A.ca[A.ca.length-1].corrected?'':' (uncorrected — no albumin)')+'.</div>';
+      const steps = [
+        ["Above 8 mg/dL", "No change. Baseline for all: calcium carbonate 1,000 mg TID (Os-Cal with vitamin D, 2 tablets TID), tapered over 3 weeks (TID → BID → daily → stop)."],
+        ["7.5–8 mg/dL", "Add <b>calcitriol 0.25 µg twice daily</b> (units assumed µg; the protocol does not state them)."],
+        ["Below 7.5 mg/dL", "Calcitriol 0.25 µg twice daily <b>plus calcium carbonate 1.5 g TID</b>."],
+        ["Below 7 mg/dL or any symptoms", "Treat as acute hypocalcaemia: ionised calcium, ECG, telemetry, endocrinology, IV calcium as indicated. <b>Do not discharge.</b>"]
+      ];
+      h+=steps.map((s,i)=>'<div class="step'+(i+1===now?' now':'')+'"><b class="n">'+(i+1)+'</b><b>'+s[0]+'.</b> '+s[1]+(i+1===now?' <span class="badge b-mid">current</span>':'')+'</div>').join("");
+      h+=L(["Recheck calcium the next morning; discharge if not significantly declining and no dose change needed.","Patients on calcitriol: serum calcium 1 week before starting the taper."]);
+    } else {
+      return '<div class="note">Add an ionised or total calcium reading to see the Iowa step.</div>';
+    }
+    h+=H("Discharge education (Iowa)");
+    h+=L(["Teach the patient and family hypocalcaemia symptoms on the morning of discharge.","If symptoms occur at home: take an extra 1 g calcium, call the hospital, and get a serum calcium at a nearby laboratory.","Calcium 1 week after discharge."]);
+    if (A.mg!==null && A.mg<1.6) h+=H("Magnesium")+L(["Low magnesium: check and correct (the Iowa protocol gives no threshold; ATA 2018 uses &lt; 1.6 mg/dL — magnesium oxide 400 mg once or twice daily)."]);
+    return h;
+  }
+
+  // ---------- rendering ----------
+  function riskBadge(t){ return t===null||t===undefined ? '<span class="badge b-none">—</span>' : ['<span class="badge b-low">Low</span>','<span class="badge b-mid">Intermediate</span>','<span class="badge b-high">High</span>'][t]; }
+
+  function renderList(){
+    const q = $("search").value.trim().toLowerCase(), st=$("fStatus").value, fc=$("fCons").value;
+    const rows = S.patients.filter(p => (st==="all"|| (p.status||"active")===st) && (!fc || p.consultant===fc) &&
+      (!q || [p.name,p.uhid,p.patient_id].some(x=>String(x||"").toLowerCase().includes(q))))
+      .sort((a,b)=>String(b.surgery_date).localeCompare(String(a.surgery_date)));
+    $("ptTable").querySelector("tbody").innerHTML = rows.map(p=>{
+      const A = analyse(p, readingsOf(p.patient_id));
+      const tr = A.trend==="rising"?"↑":A.trend==="falling"?"↓":A.trend==="stable"?"→":"";
+      return '<tr class="pt'+(S.sel===p.patient_id?' sel':'')+'" data-id="'+esc(p.patient_id)+'"><td><b>'+esc(p.name||"(no name)")+'</b><div class="muted" style="font-size:11.5px">'+esc(p.patient_id)+'</div></td><td>'+esc(p.uhid)+'</td><td>'+esc(p.age)+(p.sex?' / '+esc(p.sex):'')+'</td><td>'+esc(p.surgery_date)+'</td><td>'+esc(p.consultant)+'</td><td>'+esc(procName(p))+' '+esc(cndName(p.cnd))+'</td><td class="mono">'+(A.caL===null?'—':fCa(A.caL))+'</td><td>'+tr+'</td><td>'+riskBadge(A.tier)+'</td><td>'+esc(p.status||"active")+'</td></tr>';
+    }).join("");
+    $("ptEmpty").style.display = rows.length ? "none" : "";
+    $("ptEmpty").textContent = S.patients.length ? "No patients match the filter." : (S.online ? "No patients yet. Add one with “+ New patient”." : "Offline: patients you add here are kept only until the page is closed. Connect to save them to Google Sheets.");
+    document.querySelectorAll("#ptTable tr.pt").forEach(tr=>tr.onclick=()=>{ S.sel=tr.dataset.id; renderAll(); $("ws").scrollIntoView({behavior:"smooth"}); });
+  }
+
+  function renderWorkspace(){
+    const p = S.patients.find(x=>x.patient_id===S.sel);
+    $("ws").style.display = p ? "" : "none";
+    if (!p) return;
+    const rs = readingsOf(p.patient_id), A = analyse(p, rs);
+    $("wsName").textContent = (p.name||"(no name)") + "  ·  " + (p.uhid||"no UHID");
+    $("wsMeta").textContent = [p.patient_id, (p.age?p.age+" y":"")+(p.sex?" "+p.sex:""), p.surgery_date?"surgery "+p.surgery_date:"", p.consultant, (p.status||"active")+(p.discharge_date?" "+p.discharge_date:"")].filter(Boolean).join(" · ");
+    $("wsChips").innerHTML = '<span class="chip">'+esc(procName(p)+" "+cndName(p.cnd))+'</span>' + A.rf.map(r=>'<span class="chip">'+esc(r)+'</span>').join("") + (yes(p.renal_failure)?'<span class="chip" style="background:#fbeaea">renal failure</span>':'');
+    $("dischargePt").textContent = (p.status==="discharged") ? "Mark active" : "Mark discharged";
+    const proto = p.protocol==="iowa"?"iowa":"guideline";
+    document.querySelectorAll("#protoSeg button").forEach(b=>b.classList.toggle("on", b.dataset.p===proto));
+
+    // readings table
+    let alb=null;
+    $("rdTable").querySelector("tbody").innerHTML = rs.map(r=>{
+      const a=num(r.albumin_gdl); if (a!==null) alb=a;
+      const c=num(r.ca_total_mgdl); const cc = c===null?null:(alb===null?c:c+0.8*(4.0-alb));
+      const sym = {none:"—",mild:"tingling",mod:"Chvostek/Trousseau",severe:"<b style='color:var(--high)'>severe</b>"}[r.symptoms||"none"]||"—";
+      return '<tr><td style="white-space:nowrap"><button class="btn ghost small edit" data-id="'+esc(r.reading_id)+'" title="Edit reading">✎</button> <button class="btn ghost small del" data-id="'+esc(r.reading_id)+'" title="Delete reading">✕</button> '+esc(String(r.datetime||"").replace("T"," ").slice(5))+(r.edited_at?'<div class="muted" style="font-size:11px" title="'+esc(r.edit_log||"")+'">edited'+(r.edited_by?' by '+esc(r.edited_by):'')+'</div>':'')+(S.editingReading===r.reading_id?'<div style="font-size:11px;color:var(--mid);font-weight:600">editing…</div>':'')+'</td><td>'+esc(r.timepoint)+'</td><td class="mono">'+(cc===null?'—':fCa(cc)+(alb===null?'*':''))+'</td><td class="mono">'+fAlb(a)+'</td><td class="mono">'+(num(r.ica_mmol)===null?'—':num(r.ica_mmol).toFixed(2))+'</td><td class="mono">'+fMg(num(r.mg_mgdl))+'</td><td class="mono">'+(num(r.pth_pgml)===null?'—':num(r.pth_pgml))+'</td><td>'+sym+'</td><td style="font-size:12px">'+esc(r.treatment_given)+(r.notes?'<div class="muted">'+esc(r.notes)+'</div>':'')+(r.entered_by?'<div class="muted">by '+esc(r.entered_by)+'</div>':'')+'</td></tr>';
+    }).join("");
+    $("rdEmpty").style.display = rs.length ? "none" : "";
+    document.querySelectorAll("#rdTable .del").forEach(b=>b.onclick=()=>delReading(b));
+    document.querySelectorAll("#rdTable .edit").forEach(b=>b.onclick=()=>startEdit(b.dataset.id));
+
+    drawCharts(p, rs);
+    // stats
+    $("sCa").textContent = A.caL===null?"—":fCa(A.caL);
+    $("sCaS").textContent = A.caL===null?"":uCa()+" · "+A.ca[A.ca.length-1].tp+(A.ca[A.ca.length-1].corrected?"":" · uncorrected");
+    if (A.trend){ $("sTr").textContent = A.trend==="rising"?"↑ Rising":A.trend==="falling"?"↓ Falling":"→ Stable"; $("sTrS").textContent = A.ca[A.ca.length-2].tp+" → "+A.ca[A.ca.length-1].tp; }
+    else { $("sTr").textContent="—"; $("sTrS").textContent="needs 2 values"; }
+    $("sIca").textContent = A.icaL===null?"—":A.icaL.toFixed(2);
+    $("sIcaS").textContent = A.icaL===null?"":"mmol/L · "+(A.icaL*4.008).toFixed(2)+" mg/dL";
+    $("sPth").textContent = A.pth===null?"—":A.pth;
+    $("sPthS").textContent = A.pth===null?"":"pg/mL · "+A.pthTp;
+
+    // risk
+    $("riskBox").className = "risk "+(A.tier===null?"none":["low","mid","high"][A.tier]);
+    $("riskLvl").textContent = A.tier===null?"Awaiting data":["Low risk","Intermediate risk","High risk"][A.tier];
+    const onlyPre = rs.length && rs.every(r=>r.timepoint==="Pre-op");
+    $("riskWhy").innerHTML = A.tier===null?(onlyPre?"<b>Only pre-operative readings so far.</b> Pre-op values are a baseline; risk is worked out from post-operative readings. If a reading was taken after surgery, delete it and re-enter it with the correct time point.":"Add a post-operative calcium or PTH reading."):"<ul>"+A.why.map(w=>"<li>"+w+"</li>").join("")+"</ul>";
+
+    // plan
+    $("planTitle").textContent = proto==="iowa" ? "Iowa protocol — current step" : "Suggested management (ATA 2018 · Task Force 2022 · SfE)";
+    const html = proto==="iowa" ? planIowa(p,A) : planGuideline(p,A);
+    $("planBody").innerHTML = html; $("planBody").className = /class="(note|alert)"/.test(html.slice(0,25))&&html.length<200 ? "" : "";
+
+    // summary
+    const lines=[];
+    lines.push("CalciGuard — "+(p.name||"")+" ("+(p.uhid||"no UHID")+", "+p.patient_id+"), "+(p.age||"")+(p.sex?" "+p.sex:""));
+    lines.push(procName(p)+" "+cndName(p.cnd)+(p.surgery_date?" on "+p.surgery_date:"")+(p.consultant?" — "+p.consultant:""));
+    if (A.rf.length) lines.push("Risk factors: "+A.rf.join(", "));
+    if (A.ca.length) lines.push("Corrected Ca: "+A.ca.map(x=>x.tp+" "+fCa(x.v)).join("; ")+" "+uCa()+(A.trend?" ("+A.trend+")":""));
+    if (A.ica.length) lines.push("Ionised Ca: "+A.ica.map(x=>x.tp+" "+x.v.toFixed(2)).join("; ")+" mmol/L");
+    if (A.pth!==null) lines.push("PTH: "+A.pth+" pg/mL ("+A.pthTp+")");
+    if (A.mg!==null) lines.push("Mg: "+fMg(A.mg)+" "+(S.unit==="mg"?"mg/dL":"mmol/L"));
+    lines.push("Symptoms: "+A.sym);
+    lines.push("Risk: "+(A.tier===null?"n/a":["Low","Intermediate","High"][A.tier])+" · Protocol: "+(proto==="iowa"?"Iowa":"Guideline"));
+    lines.push("Plan: "+(proto==="iowa" ? ($("planBody").querySelector(".step.now")?.innerText.replace(/\s*current\s*$/,"") || "see Iowa protocol") :
+      (A.severe?"IV calcium gluconate + oral calcium 2–3 g/day + calcitriol":A.moderate?"Oral calcium 2–3 g/day + calcitriol 0.25–0.5 µg BID; recheck 6–12 h":A.mild?"Oral calcium 400–1200 mg/day ± calcitriol":"No supplements; routine discharge")));
+    window.__summary = lines.join("\n");
+  }
+
+  // ---------- charts ----------
+  const tip = $("tip");
+  function showTip(e, html){ tip.innerHTML=html; tip.style.display="block"; const x=Math.min(e.clientX+12, innerWidth-270); tip.style.left=x+"px"; tip.style.top=(e.clientY+12)+"px"; }
+  function hideTip(){ tip.style.display="none"; }
+  const tparse = d => { const t = Date.parse(String(d||"").length===16 ? d+":00" : d); return isNaN(t)?null:t; };
+  function panel(opts){
+    // opts: title, sub, pts[{t,v,label,pre,tip}], refs[{v,label}], tx[{t,tip}], fmt, domainPad
+    const W=560,H=176,L=44,R=40,T=18,B=30;
+    const pts=opts.pts.filter(p=>p.t!==null);
+    if (!pts.length) return "";
+    let t0=opts.t0, t1=opts.t1; if (t1===t0){ t0-=3600e3; t1+=3600e3; }
+    const vs=pts.map(p=>p.v).concat(opts.refs.map(r=>r.v));
+    let lo=Math.min(...vs), hi=Math.max(...vs); const pad=(hi-lo)*0.12||opts.domainPad||1; lo-=pad; hi+=pad;
+    const sx=t=>L+(t-t0)/(t1-t0)*(W-L-R), sy=v=>T+(1-(v-lo)/(hi-lo))*(H-T-B);
+    let g="";
+    // y ticks
+    const step = niceStep((hi-lo)/4);
+    for (let v=Math.ceil(lo/step)*step; v<=hi; v+=step){ const y=sy(v); g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'" stroke="#eef1f5"/><text x="'+(L-6)+'" y="'+(y+4)+'" font-size="10.5" fill="#5d6678" text-anchor="end">'+opts.fmt(v)+'</text>'; }
+    // reference lines
+    opts.refs.forEach(r=>{ const y=sy(r.v); g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'" stroke="#9aa3b2" stroke-dasharray="4 4" stroke-width="1"/><text x="'+(W-R+4)+'" y="'+(y+3.5)+'" font-size="10" fill="#5d6678">'+r.label+'</text>'; });
+    // treatment markers on baseline
+    opts.tx.forEach(x=>{ if(x.t===null) return; const cx=sx(x.t), y=H-B; g+='<path d="M'+(cx-5)+' '+(y+1)+' L'+(cx+5)+' '+(y+1)+' L'+cx+' '+(y-7)+' Z" fill="#2E7D7A"/><rect class="hit" data-tip="'+esc(x.tip)+'" x="'+(cx-8)+'" y="'+(y-10)+'" width="16" height="14" fill="transparent"/>'; });
+    // axis
+    g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+(H-B)+'" y2="'+(H-B)+'" stroke="#c9d0db"/>';
+    const fmtT = t=>{ const d=new Date(t); return d.toLocaleDateString(undefined,{day:"2-digit",month:"short"})+" "+d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",hour12:false}); };
+    const labelled = pts.length<=7 ? pts : [pts[0], pts[pts.length-1]];
+    let lastX=-99;
+    labelled.forEach(p=>{ const x=sx(p.t); if (x-lastX<46) return; lastX=x; g+='<text x="'+x+'" y="'+(H-B+13)+'" font-size="10" fill="#5d6678" text-anchor="middle">'+esc(p.label)+'</text>'; });
+    g+='<text x="'+L+'" y="'+(H-3)+'" font-size="9.5" fill="#8a93a3">'+fmtT(opts.r0)+'</text><text x="'+(W-R)+'" y="'+(H-3)+'" font-size="9.5" fill="#8a93a3" text-anchor="end">'+fmtT(opts.r1)+'</text>';
+    // line through post-op points
+    const post=pts.filter(p=>!p.pre);
+    if (post.length>1) g+='<polyline fill="none" stroke="#1F3864" stroke-width="2" stroke-linejoin="round" points="'+post.map(p=>sx(p.t)+","+sy(p.v)).join(" ")+'"/>';
+    pts.forEach(p=>{ const cx=sx(p.t), cy=sy(p.v);
+      g+= p.pre ? '<circle cx="'+cx+'" cy="'+cy+'" r="4.5" fill="#fff" stroke="#1F3864" stroke-width="2"/>' : '<circle cx="'+cx+'" cy="'+cy+'" r="4.5" fill="#1F3864" stroke="#fff" stroke-width="2"/>';
+      g+='<circle class="hit" data-tip="'+esc(p.tip)+'" cx="'+cx+'" cy="'+cy+'" r="11" fill="transparent"/>'; });
+    // direct label on latest value
+    const last=pts[pts.length-1];
+    const lx=sx(last.t), nearR = lx > W-R-40;
+    g+='<text x="'+(nearR?lx-8:lx+8)+'" y="'+(sy(last.v)-9)+'" font-size="11" font-weight="600" fill="#1d2433" text-anchor="'+(nearR?"end":"start")+'">'+opts.fmt(last.v)+'</text>';
+    return '<div class="chartp"><div class="ct">'+opts.title+'</div><div class="cs">'+opts.sub+'</div><svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="'+esc(opts.title)+' over time">'+g+'</svg></div>';
+  }
+  function niceStep(raw){ const p=Math.pow(10,Math.floor(Math.log10(raw||1))); const m=raw/p; return (m<1.5?1:m<3?2:m<7?5:10)*p; }
+
+  function drawCharts(p, rs){
+    let alb=null; const ca=[], ica=[], pth=[], tx=[];
+    rs.forEach(r=>{
+      const t=tparse(r.datetime), a=num(r.albumin_gdl); if (a!==null) alb=a;
+      const pre = r.timepoint==="Pre-op", when=esc(String(r.datetime||"").replace("T"," "))+" · "+esc(r.timepoint);
+      const c=num(r.ca_total_mgdl);
+      if (c!==null){ const cc=alb===null?c:c+0.8*(4.0-alb); const v=S.unit==="mg"?cc:cc*0.2495;
+        ca.push({t, v, pre, label:r.timepoint, tip: when+"<br>Corrected Ca <b>"+v.toFixed(2)+" "+uCa()+"</b>"+(alb===null?" (no albumin)":"")+(r.symptoms&&r.symptoms!=="none"?"<br>Symptoms: "+r.symptoms:"")}); }
+      const i=num(r.ica_mmol); if (i!==null) ica.push({t, v:i, pre, label:r.timepoint, tip: when+"<br>Ionised Ca <b>"+i.toFixed(2)+" mmol/L</b> ("+(i*4.008).toFixed(2)+" mg/dL)"});
+      const h=num(r.pth_pgml); if (h!==null) pth.push({t, v:h, pre, label:r.timepoint, tip: when+"<br>PTH <b>"+h+" pg/mL</b>"});
+      if (r.treatment_given) tx.push({t, tip: when+"<br>Treatment: "+esc(r.treatment_given)});
+    });
+    const mg = S.unit==="mg";
+    const allT = rs.map(r=>tparse(r.datetime)).filter(t=>t!==null);
+    let t0=Math.min(...allT), t1=Math.max(...allT); if (!allT.length){ t0=0; t1=1; } if (t1===t0){ t0-=3600e3; t1+=3600e3; }
+    const r0=t0, r1=t1, span=(t1-t0); t0-=span*0.03; t1+=span*0.03;
+    let html="";
+    html += panel({title:"Corrected total calcium ("+uCa()+")", sub:"Dashed lines: 8.5 consider calcium (ATA) · 8.0 discharge threshold · 7.5 severe. Hollow point = pre-op; ▲ = treatment given.",
+      pts:ca, tx, t0, t1, r0, r1, fmt:v=>v.toFixed(mg?1:2), domainPad: mg?0.5:0.12,
+      refs: mg?[{v:8.5,label:"8.5"},{v:8.0,label:"8.0"},{v:7.5,label:"7.5"}]:[{v:2.12,label:"2.12"},{v:2.0,label:"2.00"},{v:1.88,label:"1.88"}]});
+    if (ica.length) html += panel({title:"Ionised calcium (mmol/L)", sub:"Dashed lines: 1.10 ATA supplementation · 0.95 Iowa low · 0.80 Iowa critical.", pts:ica, tx:[], t0, t1, r0, r1, fmt:v=>v.toFixed(2), domainPad:0.1,
+      refs:[{v:1.10,label:"1.10"},{v:0.95,label:"0.95"},{v:0.80,label:"0.80"}]});
+    if (pth.length) html += panel({title:"Intact PTH (pg/mL)", sub:"Dashed lines: 15 ATA low-risk threshold · 10 Task Force threshold.", pts:pth, tx:[], t0, t1, r0, r1, fmt:v=>v.toFixed(0), domainPad:5,
+      refs:[{v:15,label:"15"},{v:10,label:"10"}]});
+    $("charts").innerHTML = html || '<div class="empty">The graph appears once readings with calcium, ionised calcium or PTH are added.</div>';
+    $("charts").querySelectorAll(".hit").forEach(el=>{ el.addEventListener("mousemove", e=>showTip(e, el.dataset.tip)); el.addEventListener("mouseleave", hideTip); el.addEventListener("click", e=>showTip(e, el.dataset.tip)); });
+    // table view
+    const rows = rs.filter(r=>num(r.ca_total_mgdl)!==null||num(r.ica_mmol)!==null||num(r.pth_pgml)!==null);
+    let a2=null;
+    $("chartTable").innerHTML = rows.length ? '<table class="list"><thead><tr><th>When</th><th>Point</th><th>Corr. Ca ('+uCa()+')</th><th>iCa</th><th>PTH</th><th>Treatment</th></tr></thead><tbody>'+rs.map(r=>{ const a=num(r.albumin_gdl); if(a!==null) a2=a; const c=num(r.ca_total_mgdl);
+        if (c===null && num(r.ica_mmol)===null && num(r.pth_pgml)===null) return "";
+        const cc=c===null?null:(a2===null?c:c+0.8*(4.0-a2));
+        return '<tr><td>'+esc(String(r.datetime||"").replace("T"," "))+'</td><td>'+esc(r.timepoint)+'</td><td class="mono">'+(cc===null?"—":fCa(cc))+'</td><td class="mono">'+(num(r.ica_mmol)??"—")+'</td><td class="mono">'+(num(r.pth_pgml)??"—")+'</td><td>'+esc(r.treatment_given)+'</td></tr>'; }).join("")+'</tbody></table>' : '<div class="empty">No values yet.</div>';
+  }
+
+  function renderAll(){
+    const cons = new Set(CONSULTANTS); S.patients.forEach(p=>p.consultant&&cons.add(p.consultant));
+    const cur=$("fCons").value;
+    $("fCons").innerHTML = '<option value="">All consultants</option>'+[...cons].map(c=>'<option'+(c===cur?' selected':'')+'>'+esc(c)+'</option>').join("");
+    renderList(); renderWorkspace();
+  }
+  ["search","fStatus","fCons"].forEach(id=>$(id).addEventListener("input",renderList));
+
+  // ---------- patient modal ----------
+  $("pCons").innerHTML = '<option value="">—</option>'+CONSULTANTS.map(c=>'<option>'+c+'</option>').join("");
+  const PF = {name:"pName",uhid:"pUhid",age:"pAge",sex:"pSex",surgery_date:"pDate",consultant:"pCons",procedure:"pProc",cnd:"pCnd",glands_preserved:"pGlands",autotransplanted:"pAuto",notes:"pNotes"};
+  const PC = {lateral_nd:"pLnd",graves:"pGraves",retrosternal:"pRetro",reop:"pReop",incidental_pt:"pIncid",vitd_low:"pVitd",renal_failure:"pRenal"};
+  function openPt(p){
+    S.editing = p ? p.patient_id : null;
+    $("ptModalTitle").textContent = p ? "Edit patient" : "New patient";
+    Object.entries(PF).forEach(([k,id])=>{ $(id).value = p ? (p[k]??"") : ""; });
+    if (!p){ $("pProc").value="tt"; $("pCnd").value="none"; $("pAuto").value="0"; $("pDate").value=new Date().toISOString().slice(0,10); }
+    Object.entries(PC).forEach(([k,id])=>{ $(id).checked = p ? yes(p[k]) : false; });
+    $("ptMsg").textContent=""; $("ptSave").disabled=false;
+    $("ptModal").classList.add("on");
+  }
+  $("newPt").onclick = ()=>openPt(null);
+  $("editPt").onclick = ()=>openPt(S.patients.find(x=>x.patient_id===S.sel));
+  $("ptCancel").onclick = ()=>$("ptModal").classList.remove("on");
+  let forceDup=false;
+  $("ptSave").onclick = async ()=>{
+    const p = {};
+    Object.entries(PF).forEach(([k,id])=>p[k]=$(id).value.trim());
+    Object.entries(PC).forEach(([k,id])=>p[k]=$(id).checked?"yes":"");
+    if (!p.name && !p.uhid){ $("ptMsg").className="msg err"; $("ptMsg").textContent="Enter at least a name or hospital number."; return; }
+    $("ptSave").disabled=true; $("ptMsg").className="msg"; $("ptMsg").textContent="Saving…";
+    try{
+      if (S.editing){
+        p.patient_id = S.editing;
+        if (S.online){ const j=await api("updatePatient",{patient:p}); if(!j.ok) throw new Error(j.error); Object.assign(S.patients.find(x=>x.patient_id===S.editing), j.patient); }
+        else Object.assign(S.patients.find(x=>x.patient_id===S.editing), p);
+      } else {
+        p.protocol="guideline"; p.status="active";
+        if (S.online){
+          const j=await api("addPatient",{patient:p, force:forceDup});
+          if (!j.ok && j.error==="duplicate"){ forceDup=true; $("ptSave").disabled=false; $("ptMsg").className="msg err"; $("ptMsg").textContent="A patient with this UHID and surgery date already exists ("+j.existing+"). Press Save again to add anyway."; return; }
+          if (!j.ok) throw new Error(j.error);
+          S.patients.push(j.patient); S.sel=j.patient.patient_id;
+        } else { p.patient_id="LOCAL-"+(S.localId++); S.patients.push(p); S.sel=p.patient_id; }
+      }
+      forceDup=false; $("ptModal").classList.remove("on"); renderAll();
+    }catch(e){ $("ptSave").disabled=false; $("ptMsg").className="msg err"; $("ptMsg").textContent="Not saved: "+e.message; }
+  };
+
+  async function updateField(fields){
+    const p = S.patients.find(x=>x.patient_id===S.sel); if(!p) return;
+    const prev = Object.assign({}, p);
+    Object.assign(p, fields); renderAll();
+    if (S.online){
+      try{ const j=await api("updatePatient",{patient:Object.assign({patient_id:p.patient_id}, fields)}); if(!j.ok) throw new Error(j.error); }
+      catch(e){ Object.assign(p, prev); renderAll(); $("listInfo").textContent="Not saved: "+e.message; }
+    }
+  }
+  document.querySelectorAll("#protoSeg button").forEach(b=>b.onclick=()=>updateField({protocol:b.dataset.p}));
+  $("dischargePt").onclick = ()=>{
+    const p = S.patients.find(x=>x.patient_id===S.sel); if(!p) return;
+    if (p.status==="discharged") updateField({status:"active", discharge_date:""});
+    else updateField({status:"discharged", discharge_date:new Date().toISOString().slice(0,10)});
+  };
+
+  // ---------- readings ----------
+  function nowLocal(){ const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); }
+  $("rDt").value = nowLocal();
+  const TPS = [...$("rTp").options].map(o=>o.value);
+  function suggestTp(p){
+    const rs = readingsOf(p.patient_id);
+    if (!rs.length){
+      const today = new Date().toISOString().slice(0,10);
+      $("rTp").value = (p.surgery_date && today < p.surgery_date) ? "Pre-op" : "6 h";
+      return;
+    }
+    const last = rs[rs.length-1].timepoint, i = TPS.indexOf(last);
+    $("rTp").value = (i>=0 && i<TPS.length-2) ? TPS[i+1] : last;
+  }
+  let lastSel=null;
+  const _rw = renderWorkspace;
+  renderWorkspace = function(){ if (S.sel!==lastSel && S.editingReading){ S.editingReading=null; $("rTitle").textContent="Add reading"; $("saveReading").textContent="Save reading"; $("cancelEdit").style.display="none"; clearForm(); } _rw(); if (S.sel && S.sel!==lastSel){ lastSel=S.sel; const p=S.patients.find(x=>x.patient_id===S.sel); if(p) suggestTp(p); } };
+  function fillForm(r){
+    const v=(x,f)=>{ const n=num(x); return n===null?"":f(n); };
+    $("rDt").value = String(r.datetime||"").slice(0,16);
+    $("rTp").value = r.timepoint || "Other";
+    $("rCa").value = v(r.ca_total_mgdl, n=>S.unit==="mg"?+n.toFixed(2):+(n*0.2495).toFixed(2));
+    $("rAlb").value = v(r.albumin_gdl, n=>S.unit==="mg"?+n.toFixed(1):+(n*10).toFixed(0));
+    $("rIca").value = v(r.ica_mmol, n=>n);
+    $("rMg").value = v(r.mg_mgdl, n=>S.unit==="mg"?+n.toFixed(2):+(n*0.4114).toFixed(2));
+    $("rPth").value = v(r.pth_pgml, n=>n);
+    $("rSym").value = r.symptoms || "none"; $("rOral").value = r.oral_ok==="no"?"no":"yes";
+    $("rTx").value = r.treatment_given || ""; $("rNotes").value = r.notes || "";
+  }
+  function clearForm(){ ["rCa","rAlb","rIca","rMg","rPth","rTx","rNotes"].forEach(id=>$(id).value=""); $("rSym").value="none"; $("rOral").value="yes"; $("rDt").value=nowLocal(); }
+  function startEdit(id){
+    const r = S.readings.find(x=>x.reading_id===id); if(!r) return;
+    S.editingReading = id; fillForm(r);
+    $("rTitle").textContent = "Edit reading ("+r.timepoint+")"; $("saveReading").textContent="Update reading"; $("cancelEdit").style.display="";
+    $("rMsg").className="msg"; $("rMsg").textContent="Correct the values, then press Update. The change is logged.";
+    renderWorkspace(); $("rTitle").scrollIntoView({behavior:"smooth", block:"center"});
+  }
+  function endEdit(){
+    S.editingReading=null; clearForm();
+    $("rTitle").textContent="Add reading"; $("saveReading").textContent="Save reading"; $("cancelEdit").style.display="none";
+    const p=S.patients.find(x=>x.patient_id===S.sel); if (p) suggestTp(p);
+  }
+  $("cancelEdit").onclick = ()=>{ endEdit(); $("rMsg").textContent=""; renderWorkspace(); };
+  let preArmed=false;
+  $("rTp").addEventListener("change", ()=>{ preArmed=false; $("rMsg").textContent=""; });
+  $("saveReading").onclick = async ()=>{
+    const p = S.patients.find(x=>x.patient_id===S.sel); if(!p) return;
+    if ($("rTp").value==="Pre-op" && !preArmed && !S.editingReading){
+      const hasPre = readingsOf(p.patient_id).some(r=>r.timepoint==="Pre-op");
+      const afterSurgery = p.surgery_date && ($("rDt").value||"").slice(0,10) >= p.surgery_date;
+      if (hasPre || afterSurgery){
+        preArmed=true; $("rMsg").className="msg err";
+        $("rMsg").textContent = (hasPre?"A pre-op reading already exists":"This reading is dated on or after the surgery date")+" — time point is still ‘Pre-op’. Change the time point, or press Save again to keep it as pre-op.";
+        return;
+      }
+    }
+    preArmed=false;
+    const r = { patient_id:p.patient_id, datetime:$("rDt").value || nowLocal(), timepoint:$("rTp").value,
+      ca_total_mgdl: caIn(num($("rCa").value)), albumin_gdl: albIn(num($("rAlb").value)), ica_mmol: num($("rIca").value),
+      mg_mgdl: mgIn(num($("rMg").value)), pth_pgml: num($("rPth").value), symptoms:$("rSym").value, oral_ok:$("rOral").value,
+      treatment_given:$("rTx").value.trim(), notes:$("rNotes").value.trim() };
+    ["ca_total_mgdl","albumin_gdl","mg_mgdl"].forEach(k=>{ if (r[k]!==null) r[k]=+r[k].toFixed(k==="albumin_gdl"?2:3); });
+    if ([r.ca_total_mgdl,r.albumin_gdl,r.ica_mmol,r.mg_mgdl,r.pth_pgml].every(v=>v===null) && r.symptoms==="none" && !r.treatment_given && !r.notes){
+      $("rMsg").className="msg err"; $("rMsg").textContent="Enter at least one value."; return; }
+    if (r.ca_total_mgdl!==null && (r.ca_total_mgdl<3 || r.ca_total_mgdl>16)){ $("rMsg").className="msg err"; $("rMsg").textContent="Calcium looks implausible — check the units ("+uCa()+")."; return; }
+    if (r.ica_mmol!==null && (r.ica_mmol<0.3 || r.ica_mmol>2.5)){ $("rMsg").className="msg err"; $("rMsg").textContent="Ionised calcium should be in mmol/L (e.g. 1.15)."; return; }
+    $("saveReading").disabled=true; $("rMsg").className="msg"; $("rMsg").textContent="Saving…";
+    if (S.editingReading){
+      try{
+        r.reading_id = S.editingReading;
+        Object.keys(r).forEach(k=>{ if (r[k]===null) r[k]=""; });
+        const cur = S.readings.find(x=>x.reading_id===r.reading_id);
+        if (S.online){ const j=await api("updateReading",{reading:r}); if(!j.ok) throw new Error(j.error); Object.assign(cur, j.reading); }
+        else Object.assign(cur, r, {edited_at:nowLocal(), edited_by:""});
+        endEdit(); $("rMsg").className="msg ok"; $("rMsg").textContent="Reading updated."; setTimeout(()=>$("rMsg").textContent="",2500);
+        renderAll();
+      }catch(e){ $("rMsg").className="msg err"; $("rMsg").textContent="Not updated: "+e.message; }
+      $("saveReading").disabled=false; return;
+    }
+    try{
+      if (S.online){ const j=await api("addReading",{reading:r}); if(!j.ok) throw new Error(j.error); S.readings.push(j.reading); }
+      else { r.reading_id="LR-"+Date.now(); r.entered_by=""; S.readings.push(r); }
+      ["rCa","rAlb","rIca","rMg","rPth","rTx","rNotes"].forEach(id=>$(id).value=""); $("rSym").value="none";
+      $("rDt").value=nowLocal(); suggestTp(p); $("rMsg").className="msg ok"; $("rMsg").textContent="Saved — next time point selected."; setTimeout(()=>$("rMsg").textContent="",2000);
+      renderAll();
+    }catch(e){ $("rMsg").className="msg err"; $("rMsg").textContent="Not saved: "+e.message; }
+    $("saveReading").disabled=false;
+  };
+  async function delReading(b){
+    if (b.dataset.armed!=="1"){ b.dataset.armed="1"; b.textContent="Delete?"; b.classList.add("warn"); setTimeout(()=>{ if(b.isConnected){ b.dataset.armed=""; b.textContent="✕"; b.classList.remove("warn"); } },3000); return; }
+    const id=b.dataset.id;
+    try{
+      if (S.online){ const j=await api("deleteReading",{reading_id:id}); if(!j.ok) throw new Error(j.error); }
+      S.readings = S.readings.filter(r=>r.reading_id!==id); renderAll();
+    }catch(e){ $("listInfo").textContent="Not deleted: "+e.message; }
+  }
+
+  $("copy").onclick = async ()=>{
+    try{ await navigator.clipboard.writeText(window.__summary||""); $("copied").className="msg ok"; $("copied").textContent="Copied."; }
+    catch(e){ $("copied").className="msg err"; $("copied").textContent="Copy not allowed here."; }
+    setTimeout(()=>$("copied").textContent="",2500);
+  };
+
+  // ---------- start ----------
+  setUnit(S.unit);
+  if (S.url && S.token){ setOnline(true); loadAll(); } else setOnline(false);
+})();
+</script>
+</body>
+</html>
